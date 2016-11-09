@@ -462,20 +462,30 @@ class GPIO:
             raise Exception('GPIO must be setup before used')
         else:
             objPin = dictionaryPins[channel]
+
+
             if(objPin.SetMode == "OUT"):
                 #if channel is setup as OUTPUT and used as an INPUT
-                raise Exception('GPIO must be setup as IN')
+                # I have allowed this to work and commented out the exception as I believe
+                # the real GPIO pins does not throw here.
 
-        objPin = dictionaryPins[channel]
-        if(objPin.In == "1"):
-            return True
-        elif(objPin.Out == "0"):
-            return False
+                if (objPin.Out == "1"):
+                    return True
+                elif (objPin.Out == "0"):
+                    return False
+                #raise Exception('GPIO must be setup as IN')
+
+            else: #Mode is INPUT
+                    objPin = dictionaryPins[channel]
+                    if(objPin.In == "1"):
+                        return True
+                    elif(objPin.In == "0"):
+                        return False
 
 
     
-    def cleanup():
-        pass
+    def cleanup(self):
+        dictionaryPins.clear()
        
                 
             
