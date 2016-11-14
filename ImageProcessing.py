@@ -1,9 +1,7 @@
 from PIL import Image
 import numpy
 
-
-
-img = Image.open('C:/Users/Hannah/Documents/Hackspace/CameraPic/Test1.png')
+img = Image.open('C:/Users/Hannah/Documents/Hackspace/CameraPic/Test2.png')
 #img = Image.open('C:/Users/Hannah/Documents/Hackspace/CameraPic/greentriangle.jpg')
 
 img = img.convert('L')
@@ -15,40 +13,52 @@ print(img.format, img.size, img.mode)
 pixels = numpy.asarray(img)
 width, height = img.size
 
-average_index =[]
+average_index_rows = []
+average_index_cols = []
 
-for x_index in range(0, width):
 
-    #Initialise counts.
-    total_white_pixels = 0
-    total_white_index = 0
 
-    for y_index in range(0, height):
-
-        #Check whether pixel qualifies as 'white'
-        current_pixel = pixels[y_index][x_index]
-
-        if current_pixel > 130:
-            total_white_pixels +=  1
-            total_white_index += y_index
-
-    if total_white_pixels != 0:
-        current_average_index = total_white_index/total_white_pixels
+for cc in range(0, width):
+    indices = numpy.where(pixels[:,cc] > 130)
+    total_white_index = indices[0].sum()
+    total_white_pixels = len(indices[0])
+    if total_white_pixels !=0:
+        average_index_cols.append(total_white_index/total_white_pixels)
     else:
-        current_average_index = -1
-    average_index.append(current_average_index)
+        average_index_cols.append(-1)
+
+
+for rr in range(0, height):
+    indices = numpy.where(pixels[rr] > 130)
+    total_white_index = indices[0].sum()
+    total_white_pixels = len(indices[0])
+    if total_white_pixels !=0:
+        average_index_rows.append(total_white_index/total_white_pixels)
+    else:
+        average_index_rows.append(-1)
+
 
 
 img = img.convert('RGB')
 img_pixel = img.load()
 
-for index in range(0, width):
-    if average_index[index] != -1:
-        current_average_pixel = average_index[index]
+for rr in range(0, height):
+    if average_index_rows[rr] != -1:
+        current_average_pixel = average_index_rows[rr]
 
         for pixel in range(-3,3):
-            if (current_average_pixel+pixel > 0) and (current_average_index+pixel < height):
-                img_pixel[index, current_average_pixel+pixel] = (255,10,10)
+            if (current_average_pixel+pixel > 0) and (current_average_pixel+pixel < height):
+                img_pixel[current_average_pixel+pixel, rr] = (255,10,10)
+    else:
+        x=0
 
+
+#for cc in range(0, width):
+#    if average_index_cols[cc] != -1:
+#        current_average_pixel = average_index_cols[cc]
+#
+#        for pixel in range(-3,3):
+#            if (current_average_pixel+pixel > 0) and (current_average_pixel+pixel < width):
+#                img_pixel[cc, current_average_pixel+pixel ] = (10,255,10)
 
 img.show()
