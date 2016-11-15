@@ -71,7 +71,7 @@ class Motor:
 
         """
 
-        number_of_steps = rps * self.steps_per_revolution * duration
+        number_of_steps = round(rps * self.steps_per_revolution * duration)
         wait_time = 1 / (rps * self.steps_per_revolution)
 
         for step in range(number_of_steps):
