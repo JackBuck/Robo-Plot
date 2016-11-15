@@ -1,27 +1,30 @@
 # Author: Hannah Howell
 # Date: 10/11/16
 
+# import RPi.GPIO as GPIO
 from EmulatorGUI import GPIO
-#import RPi.GPIO as GPIO
-# This class is the collection of functions to set up and use a motor.
+
+
 class Motor:
-#Initialiser
+    """This class is the collection of functions to set up and use a motor."""
+
     def __init__(self, pins, sequence, rps):
+        """Initialiser"""
         self.GPIO_pins = pins
         self.rps = rps
         self.sequence = sequence
-        self.Clockwise = True
-        self.waitTime = 200/rps
+        self.clockwise = True
+        self.wait_time = 200 / rps
         self.next_step = 0
 
-        #Setup pins
+        # Setup pins
         for pin in pins:
             GPIO.setup(pin, GPIO.OUT)
             GPIO.output(pin, False)
 
-
-# This function steps the motor once and increments the sequence.
     def step(self):
+        """This function steps the motor once and increments the sequence."""
+
         for pin in range(0, 4):  # Creates an Index from 0-3
 
             # Check what status the current pin should be set to based on the current step count.
@@ -35,34 +38,27 @@ class Motor:
                 GPIO.output(current_pin, False)
 
         # Increment / decrement the step count based on the direction of the motor.
-        if (self.Clockwise):
+        if self.clockwise:
             self.next_step = (self.next_step + 1) % 4
         else:
             self.next_step = (self.next_step - 1) % 4
 
-
-    # This function starts the motor running at the stored rps and direction of the motor
-    # for the specified amount of time (in seconds).
     def start(self, time):
-        number_of_steps = time/(self.rps*200)
+        """This function starts the motor running at the stored rps and direction of the motor for the specified
+        amount of time (in seconds)."""
+        number_of_steps = time / (self.rps * 200)
 
         # Step the motor the required number of steps. Waiting between the steps to achieve
         # required rps
         for step in range(0, number_of_steps):
             self.step()
-            time.sleep(self.waitTime)
+            time.sleep(self.wait_time)
 
-
-    # This function changes the direction the motor will move in the next time it steps.
-    # This function is simple and is not currently tested.
     def change_direction(self, clockwise):
-        self.Clockwise = clockwise
-
-
-
+        """This function changes the direction the motor will move in the next time it steps.
+        This function is simple and is not currently tested."""
+        self.clockwise = clockwise
 
     def __str__(self):
         buf = "Motor.py: Pins:" + str(self.pin[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
         return buf
-
-
