@@ -71,7 +71,7 @@ class Motor:
 
         """
 
-        number_of_steps = duration / (rps * self.steps_per_revolution)
+        number_of_steps = rps * self.steps_per_revolution * duration
 
         # Step the motor the required number of steps. Waiting between the steps to achieve
         # required rps
