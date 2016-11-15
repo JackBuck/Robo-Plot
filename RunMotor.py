@@ -9,4 +9,4 @@ steps_per_revolution = 200
 a_motor = Motor(pins, sequence, steps_per_revolution)
 
 # Start motor for 60s
-a_motor.Start(time=60, rps=10)
+a_motor.start(time=60, rps=10)
