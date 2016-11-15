@@ -72,12 +72,11 @@ class Motor:
         """
 
         number_of_steps = rps * self.steps_per_revolution * duration
+        wait_time = 1 / (rps * self.steps_per_revolution)
 
-        # Step the motor the required number of steps. Waiting between the steps to achieve
-        # required rps
-        for step in range(0, number_of_steps):
+        for step in range(number_of_steps):
             self.step()
-            time.sleep(self.steps_per_revolution / rps)
+            time.sleep(wait_time)
 
     def change_direction(self, clockwise):
         """This function changes the direction the motor will move in the next time it steps.
