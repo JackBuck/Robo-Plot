@@ -60,5 +60,5 @@ class Motor:
         self.clockwise = clockwise
 
     def __str__(self):
-        buf = "Motor.py: Pins:" + str(self.pin[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
+        buf = "Motor.py: Pins:" + str(self.pins[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
         return buf
