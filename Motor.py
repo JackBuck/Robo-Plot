@@ -28,6 +28,9 @@ class Motor:
         self.next_step = 0
         self.steps_per_revolution = steps_per_revolution
 
+        if not GPIO.setModeDone:  # TODO: I am not sure whether this is part of the RPi.GPIO module or not!
+            GPIO.setmode(GPIO.BCM)
+
         # Setup pins
         for pin in pins:
             GPIO.setup(pin, GPIO.OUT)
