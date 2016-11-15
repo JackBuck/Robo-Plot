@@ -1,6 +1,7 @@
 # Author: Hannah Howell
 # Date: 10/11/16
 
+import time
 # import RPi.GPIO as GPIO
 from EmulatorGUI import GPIO
 
@@ -53,13 +54,13 @@ class Motor:
         else:
             self.next_step = (self.next_step - 1) % 4
 
-    def start(self, time, rps):
+    def start(self, duration, rps):
         """
         This function starts the motor running at the stored rps and direction of the motor for the specified amount
         of time (in seconds).
 
         Args:
-            time: The total time for which the motor should run.
+            duration: The total time for which the motor should run.
             rps: The speed of the motor in revolutions per second.
 
         Returns:
@@ -67,7 +68,7 @@ class Motor:
 
         """
 
-        number_of_steps = time / (rps * self.steps_per_revolution)
+        number_of_steps = duration / (rps * self.steps_per_revolution)
 
         # Step the motor the required number of steps. Waiting between the steps to achieve
         # required rps
