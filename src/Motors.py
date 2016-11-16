@@ -29,9 +29,9 @@ class StepperMotor:
         self.clockwise = True
         self._next_step = 0
 
+        self.steps_per_revolution = steps_per_revolution
         self._gpio_pins = pins
         self._sequence = sequence
-        self._steps_per_revolution = steps_per_revolution
 
         if not GPIO.setModeDone:  # TODO: I am not sure whether this is part of the RPi.GPIO module or not!
             GPIO.setmode(GPIO.BCM)
@@ -76,8 +76,8 @@ class StepperMotor:
 
         """
 
-        number_of_steps = round(rps * self._steps_per_revolution * duration)
-        wait_time = 1 / (rps * self._steps_per_revolution)
+        number_of_steps = round(rps * self.steps_per_revolution * duration)
+        wait_time = 1 / (rps * self.steps_per_revolution)
 
         for step in range(number_of_steps):
             self.step()
