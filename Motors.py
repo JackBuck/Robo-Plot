@@ -6,8 +6,8 @@ import time
 from EmulatorGUI import GPIO
 
 
-class Motor:
-    """This class is the collection of functions to set up and use a motor."""
+class StepperMotor:
+    """This class is the collection of functions to set up and use a stepper motor."""
 
     def __init__(self, pins, sequence, steps_per_revolution):
         """
@@ -84,5 +84,5 @@ class Motor:
         self.clockwise = clockwise
 
     def __str__(self):
-        buf = "Motor.py: Pins:" + str(self.pins[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
+        buf = "Motors.py: Pins:" + str(self.pins[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
         return buf
