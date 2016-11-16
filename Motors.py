@@ -16,17 +16,18 @@ class StepperMotor:
         Args:
             pins: The GPIO pins to which the real motor is connected.
 
-            sequence: The step sequence associated with the stepper motor. This should be a (python) sequence of four
+            sequence: The step _sequence associated with the stepper motor. This should be a (python) _sequence of four
                       sequences of length four. The ith element gives the states of the four pins at the ith step.
 
             steps_per_revolution: The number of steps required to turn the motor one revolution.
         """
 
-        self.GPIO_pins = pins
-        self.sequence = sequence
         self.clockwise = True
-        self.next_step = 0
-        self.steps_per_revolution = steps_per_revolution
+        self._next_step = 0
+
+        self._gpio_pins = pins
+        self._sequence = sequence
+        self._steps_per_revolution = steps_per_revolution
 
         if not GPIO.setModeDone:  # TODO: I am not sure whether this is part of the RPi.GPIO module or not!
             GPIO.setmode(GPIO.BCM)
@@ -37,14 +38,14 @@ class StepperMotor:
             GPIO.output(pin, False)
 
     def step(self):
-        """This function steps the motor once and increments the sequence."""
+        """This function steps the motor once and increments the _sequence."""
 
         for pin in range(0, 4):  # Creates an Index from 0-3
 
             # Check what status the current pin should be set to based on the current step count.
-            current_pin = self.GPIO_pins[pin]
+            current_pin = self._gpio_pins[pin]
 
-            if self.sequence[self.next_step][pin] == 1:
+            if self._sequence[self._next_step][pin] == 1:
                 # Keep/Turn on the pin
                 GPIO.output(current_pin, True)
             else:
@@ -53,9 +54,9 @@ class StepperMotor:
 
         # Increment / decrement the step count based on the direction of the motor.
         if self.clockwise:
-            self.next_step = (self.next_step + 1) % 4
+            self._next_step = (self._next_step + 1) % 4
         else:
-            self.next_step = (self.next_step - 1) % 4
+            self._next_step = (self._next_step - 1) % 4
 
     def start(self, duration, rps):
         """
@@ -71,8 +72,8 @@ class StepperMotor:
 
         """
 
-        number_of_steps = round(rps * self.steps_per_revolution * duration)
-        wait_time = 1 / (rps * self.steps_per_revolution)
+        number_of_steps = round(rps * self._steps_per_revolution * duration)
+        wait_time = 1 / (rps * self._steps_per_revolution)
 
         for step in range(number_of_steps):
             self.step()
@@ -90,7 +91,7 @@ class StepperMotor:
 
 def large_stepper_motor(gpio_pins):
     """
-    Creates a StepperMotor with the step sequence and number of steps per revolution of the large stepper motor
+    Creates a StepperMotor with the step _sequence and number of steps per revolution of the large stepper motor
     (42BYGHW208).
 
     Args:
@@ -107,7 +108,7 @@ def large_stepper_motor(gpio_pins):
 
 def small_stepper_motor(gpio_pins):
     """
-    Creates a StepperMotor with the step sequence and number of steps per revolution of the small stepper motor
+    Creates a StepperMotor with the step _sequence and number of steps per revolution of the small stepper motor
     (28BYJ-48).
 
     Args:
