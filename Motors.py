@@ -86,3 +86,37 @@ class StepperMotor:
     def __str__(self):
         buf = "Motors.py: Pins:" + str(self.pins[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
         return buf
+
+
+def large_stepper_motor(gpio_pins):
+    """
+    Creates a StepperMotor with the step sequence and number of steps per revolution of the large stepper motor
+    (42BYGHW208).
+
+    Args:
+        gpio_pins: The gpio pins to which the motor is connected.
+
+    Returns:
+        StepperMotor: An API for the stepper motor.
+
+    """
+    return StepperMotor(gpio_pins,
+                        sequence=[[1, 0, 1, 0], [0, 1, 1, 0], [0, 1, 0, 1], [1, 0, 0, 1]],
+                        steps_per_revolution=200)
+
+
+def small_stepper_motor(gpio_pins):
+    """
+    Creates a StepperMotor with the step sequence and number of steps per revolution of the small stepper motor
+    (28BYJ-48).
+
+    Args:
+        gpio_pins: The gpio pins to which the motor is connected.
+
+    Returns:
+        StepperMotor: An API for the stepper motor.
+
+    """
+    return StepperMotor(gpio_pins,
+                        sequence=[[0, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1], [1, 1, 0, 0]],
+                        steps_per_revolution=4096)
