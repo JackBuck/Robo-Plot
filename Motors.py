@@ -1,5 +1,9 @@
-# Author: Hannah Howell
-# Date: 10/11/16
+"""
+This module defines all GPIO motor connections.
+
+Authors:
+    Hannah Howell, Jack Buckingham
+"""
 
 import time
 # import RPi.GPIO as GPIO
@@ -64,7 +68,7 @@ class StepperMotor:
         of time (in seconds).
 
         Args:
-            duration (float): The total time for which the motor should run.
+            duration (float): The total time in seconds for which the motor should run.
             rps (float): The speed of the motor in revolutions per second.
 
         Returns:
