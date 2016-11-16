@@ -63,8 +63,8 @@ class Motor:
         of time (in seconds).
 
         Args:
-            duration: The total time for which the motor should run.
-            rps: The speed of the motor in revolutions per second.
+            duration (float): The total time for which the motor should run.
+            rps (float): The speed of the motor in revolutions per second.
 
         Returns:
             None
@@ -80,7 +80,7 @@ class Motor:
 
     def change_direction(self, clockwise):
         """This function changes the direction the motor will move in the next time it steps.
-        This function is simple and is not currently tested."""
+           This function is simple and is not currently tested."""
         self.clockwise = clockwise
 
     def __str__(self):
