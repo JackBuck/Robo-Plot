@@ -1,5 +1,5 @@
 import unittest
-from Motor import Motor
+from Motors import StepperMotor
 from EmulatorGUI import GPIO
 import time
 
@@ -17,19 +17,19 @@ class MotorTest(unittest.TestCase):
         # Define inputs
         input_pins = [17, 22, 23, 24]
         input_sequence = [[1,0,1,0],[0,1,1,0],[0,1,0,1],[1,0,0,1]]
-        input_rps = 10.0
+        input_steps_per_revolution = 200
 
         #Construct Motor
-        a_motor = Motor(input_pins, input_sequence, input_rps)
+        a_motor = StepperMotor(input_pins, input_sequence, input_steps_per_revolution)
 
         #Check motor has been assigned correctly
-        output_pins = a_motor.GPIO_pins
+        output_pins = a_motor._gpio_pins
         self.failUnlessEqual(input_pins, output_pins)
-        output_rps = a_motor.rps
-        self.failUnlessEqual(input_rps, output_rps)
-        output_sequence = a_motor.sequence
+        output_steps_per_revolution = a_motor._steps_per_revolution
+        self.failUnlessEqual(input_steps_per_revolution, output_steps_per_revolution)
+        output_sequence = a_motor._sequence
         self.failUnlessEqual(input_sequence, output_sequence)
-        self.failUnless(a_motor.Clockwise)
+        self.failUnless(a_motor.clockwise)
 
         GPIO.cleanup(self)
 
@@ -43,7 +43,7 @@ class MotorTest(unittest.TestCase):
         input_pins = [17, 22, 23, 24]
         input_sequence = [[1, 0, 1, 0], [0, 1, 1, 0], [0, 1, 0, 1], [1, 0, 0, 1]]
         input_rps = 10.0
-        a_motor = Motor(input_pins, input_sequence, input_rps)
+        a_motor = StepperMotor(input_pins, input_sequence, input_rps)
 
         a_motor.step()
 
@@ -59,12 +59,12 @@ class MotorTest(unittest.TestCase):
                 correct_status = (input_sequence[step %4][pin] == 1)
                 self.failUnless(pin_status == correct_status)
 
-            if a_motor.Clockwise:
+            if a_motor.clockwise:
                 next_step = (step+1) % 4
             else:
                 next_step = (step-1) % 4
 
-            self.failUnless(a_motor.next_step == next_step)
+            self.failUnless(a_motor._next_step == next_step)
 
             # Optional delay to visually see the changes.
             time.sleep(1)

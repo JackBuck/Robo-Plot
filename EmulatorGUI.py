@@ -384,8 +384,8 @@ class GPIO:
             raise Exception('GPIO ' + str(channel) + ' does not exist')
 
         #check if channel is already setup
-        if str(channel) in dictionaryPins:
-            raise Exception('GPIO is already setup')
+        #if str(channel) in dictionaryPins:
+        #    raise Exception('GPIO is already setup')
 
         if(state == GPIO.OUT):
             #GPIO is set as output, default OUT 0
