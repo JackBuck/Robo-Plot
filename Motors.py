@@ -6,6 +6,8 @@ Authors:
 """
 
 import time
+import math
+from Geometry import CalcLineDistances
 # import RPi.GPIO as GPIO
 from EmulatorGUI import GPIO
 
@@ -82,6 +84,43 @@ class StepperMotor:
         for step in range(number_of_steps):
             self.step()
             time.sleep(wait_time)
+
+
+    def start_distance(self, distance, Vmax, Amax, DecMax):
+        """
+        This function starts the motor running at the stored rps and direction of the motor for the specified amount
+        of time (in seconds).
+
+        Args:
+            duration (float): The total time in seconds for which the motor should run.
+            rps (float): The speed of the motor in revolutions per second.
+
+        Returns:
+            None
+
+        """
+
+        D = CalcLineDistances(Vmax,Amax, DecMax, distance)
+
+        for step in range(0, int(D[0])):
+            self.step()
+
+            current_velocity_time = math.sqrt(2*step*D[3])
+
+            if current_velocity_time < 1:
+                current_velocity_time = 1
+
+            time.sleep(1/current_velocity_time)
+
+        for step in range(int(D[0]), int(D[1])):
+            self.step()
+            current_velocity_time = 1/D[2]
+            time.sleep(1/current_velocity_time)
+
+        for step in range(int(D[1]), distance):
+            self.step()
+            current_velocity_time = math.sqrt(2*D[4]*(step-D[1]+(D[2]**2)/(2*D[4])))
+            time.sleep(1/current_velocity_time)
 
     def change_direction(self, clockwise):
         """This function changes the direction the motor will move in the next time it steps.

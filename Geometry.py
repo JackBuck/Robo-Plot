@@ -40,7 +40,7 @@ import math
 def CalcLineDistances(Vmax, Amax, DecMax, D):
 
     #First check that neither Amax or DecMax are 0's
-    if(Amax = 0) or (DecMax = 0):
+    if(Amax == 0) or (DecMax == 0):
         return [0,0]
 
     #Next check whether or not we're travelling a positive or a negative Distance
