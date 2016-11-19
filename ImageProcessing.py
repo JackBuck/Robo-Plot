@@ -9,39 +9,36 @@ def compute_weighted_centroid(lightnesses):
     num_white = sum(is_white)
     weighted = np.multiply(is_white,x)
     np.savetxt('weight.txt', weighted)
-    flt_centroid = sum(is_white * x)/num_white
-
-    if flt_centroid != flt_centroid or flt_centroid == 0.0:
+    if num_white == 0:
         return -1
     else:
-        return int(flt_centroid)
+        flt_centroid = sum(is_white * x)/num_white
 
+    if flt_centroid == 0.0:
+         return -1
+    else:
+        return int(flt_centroid)
 
 
 img = Image.open('C:/Users/Hannah/Documents/Hackspace/CameraPic/Test4.png')
 #img = Image.open('C:/Users/Hannah/Documents/Hackspace/CameraPic/greentriangle.jpg')
 
 img = img.convert('L')
-#img.show()
 print("Size of image is:")
-size = img.size
 print(img.format, img.size, img.mode)
 
 pixels = np.asarray(img)
-
-np.savetxt('test.txt', pixels)
 width, height = img.size
 
 average_index_rows = []
 average_index_rows.append(int(width/2))
 average_index_cols = []
 average_index_cols.append(int(height/2))
-tol = 20
 
 count = 0
 for cc in range(int(width/2), width):
-    min_index = max(0, average_index_cols[count] - 1000)
-    max_index = min(height, average_index_cols[count] + 1000)
+    min_index = max(0, average_index_cols[count] - 10000)
+    max_index = min(height, average_index_cols[count] + 10000)
     count += 1
     sub_array = pixels[min_index:max_index, cc]
     next_centroid = compute_weighted_centroid((sub_array))
@@ -49,23 +46,15 @@ for cc in range(int(width/2), width):
 
 count = 0
 for rr in range(int(height/2), height):
-    min_index = max(0, average_index_rows[count]-1000)
-    max_index = min(height, average_index_rows[count]+1000)
+    min_index = max(0, average_index_rows[count]-10000)
+    max_index = min(height, average_index_rows[count]+10000)
     count += 1
     sub_array = pixels[ rr, min_index:max_index]
     next_centroid = compute_weighted_centroid((sub_array))
     average_index_rows.append(next_centroid)
 
-
-np.savetxt('cc.txt', average_index_cols)
-np.savetxt('rr.txt', average_index_rows)
-
 img = img.convert('RGB')
 img_pixel = img.load()
-
-for i in range(-5,5):
-    for j in range(-5,5):
-        img_pixel[int(width/2) + i, int(height/2) + j] = (10,200,200)
 
 for cc in range(1, len(average_index_cols)):
     if average_index_cols[cc] != -1:
