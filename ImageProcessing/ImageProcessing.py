@@ -93,11 +93,11 @@ class ImageAnalyser:
 
     #Get average pixel positions.
         if(scan_direction == Direction.North):
-            average_pixels = self.AnalyseRow(True)
+            average_pixels = self.AnalyseRow(False)
         elif(scan_direction == Direction.East):
             average_pixels = self.AnalyseCol(True)
         elif (scan_direction == Direction.South):
-            average_pixels = self.AnalyseRow(False)
+            average_pixels = self.AnalyseRow(True)
         elif (scan_direction == Direction.West):
             average_pixels = self.AnalyseCol(False)
 
