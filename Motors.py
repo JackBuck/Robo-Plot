@@ -6,12 +6,17 @@ Authors:
 """
 
 import time
+
 # import RPi.GPIO as GPIO
 from EmulatorGUI import GPIO
 
 
 class StepperMotor:
     """This class is the collection of functions to set up and use a stepper motor."""
+
+    steps_per_revolution = 0
+    clockwise = True
+    _next_step = 0
 
     def __init__(self, pins, sequence, steps_per_revolution):
         """
@@ -25,9 +30,6 @@ class StepperMotor:
 
             steps_per_revolution: The number of steps required to turn the motor one revolution.
         """
-
-        self.clockwise = True
-        self._next_step = 0
 
         self.steps_per_revolution = steps_per_revolution
         self._gpio_pins = pins
