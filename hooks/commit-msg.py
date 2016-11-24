@@ -16,12 +16,19 @@
 import sys
 import re
 
+print("Running commit-msg hook...")
+
 commit_msg_path = sys.argv[1]
 
 title_line_pattern = r'^#\d+ :: .*'
 
-with open(commit_msg_path) as msg_file:
-    commit_message = msg_file.read().splitlines()
-    assert re.match(title_line_pattern, commit_message[0])
-    if len(commit_message) >= 2:
-        assert commit_message[1] == ''
+try:
+    with open(commit_msg_path) as msg_file:
+        commit_message = msg_file.read().splitlines()
+        assert re.match(title_line_pattern, commit_message[0])
+        if len(commit_message) >= 2:
+            assert commit_message[1] == ''
+
+except AssertionError:
+    print("Invalid commit message format!")
+    raise
