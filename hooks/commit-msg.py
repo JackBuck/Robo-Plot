@@ -18,7 +18,7 @@ import re
 
 commit_msg_path = sys.argv[1]
 
-title_line_pattern = r'^#\d :: .*'
+title_line_pattern = r'^#\d+ :: .*'
 
 with open(commit_msg_path) as msg_file:
     commit_message = msg_file.read().splitlines()
