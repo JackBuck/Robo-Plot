@@ -7,9 +7,12 @@ Authors:
 
 import time
 import math
+
 from Geometry import CalcLineDistances
 # import RPi.GPIO as GPIO
 from EmulatorGUI import GPIO
+
+GPIO.setmode(GPIO.BCM)
 
 
 class StepperMotor:
@@ -34,9 +37,6 @@ class StepperMotor:
         self._gpio_pins = pins
         self._sequence = sequence
         self._steps_per_revolution = steps_per_revolution
-
-        if not GPIO.setModeDone:  # TODO: I am not sure whether this is part of the RPi.GPIO module or not!
-            GPIO.setmode(GPIO.BCM)
 
         # Setup pins
         for pin in pins:
@@ -84,7 +84,6 @@ class StepperMotor:
         for step in range(number_of_steps):
             self.step()
             time.sleep(wait_time)
-
 
     def start_distance(self, distance, Vmax, Amax, DecMax):
         """
