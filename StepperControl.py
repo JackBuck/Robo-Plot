@@ -9,6 +9,23 @@ All distances in the module are expressed in MILLIMETRES.
 import numpy as np
 
 
+class Axis:
+    def __init__(self, motor, lead):
+        """
+        Creates an Axis.
+
+        Args:
+            motor (StepperMotor): The stepper motor driving the axis.
+            lead (float): The lead of the axis, in millimetres per revolution of the motor.
+        """
+        self.motor = motor
+        self.lead = lead
+
+    @property
+    def millimetres_per_step(self):
+        return self.lead / self.motor.steps_per_revolution
+
+
 class AxisPair:
     def __init__(self, x_axis: Axis, y_axis: Axis):
         self.x_axis = x_axis
@@ -30,24 +47,6 @@ class AxisPair:
         # once that pull request has been approved.
 
 
-class Axis:
-    def __init__(self, motor, lead):
-        """
-        Creates an Axis.
-
-        Args:
-            motor (StepperMotor): The stepper motor driving the axis.
-            lead (float): The lead of the axis, in millimetres per revolution of the motor.
-        """
-        self.motor = motor
-        self.lead = lead
-
-    @property
-    def millimetres_per_step(self):
-        return self.lead / self.motor.steps_per_revolution
-
-
-# TODO: Make Curve an abstract class, and have shapes deriving from it?
 # TODO: Add functionality to chain curves
 class Curve:
     def __init__(self, total_length: float, parameterisation):
