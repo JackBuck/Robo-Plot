@@ -49,68 +49,65 @@ class AxisPair:
 
 # TODO: Add functionality to chain curves
 class Curve:
-    def __init__(self, total_length: float, parameterisation):
-        """ Define a curve.
+    @property
+    def total_millimetres(self):
+        raise NotImplementedError("The total length property must be overriden in derived classes.")
 
-        Args:
-            total_length (float): The total length of the path in MILLIMETRES
-            parameterisation (callable): The parameterisation of the path by arc length (in MILLIMETRES). This should
-                                         take a numpy.nd array to a numpy.nd array.
+    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
         """
-        self.total_length = total_length
-        self.parameterisation = parameterisation
-
-    def to_series_of_points(self, interval_millimetres: float) -> np.ndarray:
-        """Express the path by a series of points.
-
-        WARNING: The output does not include the last point in the path.
-        This is because:
-         * If you are chaining paths together, most of the time you won't want the last point, since it will be the
-           first point of the next path,
-         * This is how python's range and numpys arange functions behave (so it's a python-intuitive behaviour).
+        This method should be overridden in derived classes to return the coordinates on the curve at (a) given
+        position(s).
 
         Args:
-            interval_millimetres: The size of each interval (in MILLIMETRES)
+            arc_length (np.ndarray): A vector of positions along the curve, expressed in arc length in millimetres.
 
         Returns:
-            np.ndarray: A list of pairs of points (in MILLIMETRES) to which to move the motors.
+            np.ndarray: An nx2 matrix whose ith row is the ith requested point on the curve.
 
         """
-        parameter = np.arange(0, self.total_length, interval_millimetres, dtype=float)
-        return self.parameterisation(parameter)
+        raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
 
-
-class LineSegment:
-    def __init__(self, start, end):
-        """Define a line segment.
-
-        If the line is to be evaluated at multiple points at once then it is recommended to pass the start and end
-        parameters as numpy column vectors.
+    def to_series_of_points(self, interval_millimetres: float, include_last_point: bool = True) -> np.ndarray:
+        """Express the path by a series of points.
 
         Args:
-            start: The 2D start point (in MILLIMETRES).
-            end: The 2D end point (in MILLIMETRES).
+            interval_millimetres (float): The size of each interval (in MILLIMETRES)
+            include_last_point (bool): If true then the series of points will include the last point on the curve.
+                                       Otherwise it will not, which is useful when chaining curves.
+
+        Returns:
+            np.ndarray: An nx2 matrix whose ith row is the ith point (in MILLIMETRES) to which to move the axes.
+
+        """
+        arc_lengths = np.arange(0, self.total_millimetres, interval_millimetres, dtype=float)
+
+        if include_last_point:
+            arc_lengths = np.append(arc_lengths, self.total_millimetres)
+
+        return self.evaluate_at(arc_lengths)
+
+
+class LineSegment(Curve):
+    def __init__(self, start: np.ndarray, end: np.ndarray):
+        """Define a line segment.
+
+        Args:
+            start (np.ndarray): The 2D start point (in MILLIMETRES).
+            end (np.ndarray): The 2D end point (in MILLIMETRES).
 
         Returns:
             LineSegment: The line segment.
 
         """
-        self.start = start
-        self.end = end
-        self.total_length = np.linalg.norm(self.end - self.start)
+        self.start = start.reshape(2)
+        self.end = end.reshape(2)
 
-    def evaluate_at(self, arc_length: float) -> float:
-        """Evaluate a point on the line at a particular arc length
+    @property
+    def total_millimetres(self):
+        return np.linalg.norm(self.end - self.start)
 
-        Args:
-            arc_length (float): The distance(s) along the line at which to evaluate the line.
-
-        Returns:
-            float: The point(s) corresponding to the supplied arc lengths.
-
-        """
-        t = arc_length / self.total_length
+    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
+        arc_length = arc_length.reshape(-1, 1)  # Make it a column vector
+        t = arc_length / self.total_millimetres
         return (1 - t) * self.start + t * self.end
 
-    def curve(self):
-        return Curve(self.total_length, lambda s: self.evaluate_at(s))
