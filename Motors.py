@@ -16,6 +16,10 @@ GPIO.setmode(GPIO.BCM)
 class StepperMotor:
     """This class is the collection of functions to set up and use a stepper motor."""
 
+    steps_per_revolution = 0
+    clockwise = True
+    _next_step = 0
+
     def __init__(self, pins, sequence, steps_per_revolution):
         """
         Initialises the Motor class.
@@ -29,12 +33,9 @@ class StepperMotor:
             steps_per_revolution: The number of steps required to turn the motor one revolution.
         """
 
-        self.clockwise = True
-        self._next_step = 0
-
+        self.steps_per_revolution = steps_per_revolution
         self._gpio_pins = pins
         self._sequence = sequence
-        self._steps_per_revolution = steps_per_revolution
 
         # Setup pins
         for pin in pins:
@@ -76,8 +77,8 @@ class StepperMotor:
 
         """
 
-        number_of_steps = round(rps * self._steps_per_revolution * duration)
-        wait_time = 1 / (rps * self._steps_per_revolution)
+        number_of_steps = round(rps * self.steps_per_revolution * duration)
+        wait_time = 1 / (rps * self.steps_per_revolution)
 
         for step in range(number_of_steps):
             self.step()
