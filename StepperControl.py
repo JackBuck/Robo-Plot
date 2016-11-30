@@ -52,15 +52,15 @@ class StepperMotorPair:
         first_motor_step_count = 0
         second_motor_step_count = 0
 
-        while True:
-            if first_motor_step_count * second_motor_steps <= second_motor_step_count * first_motor_steps:
+        while not (first_motor_step_count == first_motor_steps and second_motor_step_count == second_motor_steps):
+            if first_motor_step_count == first_motor_steps:
+                self._second_motor.step()
+                second_motor_step_count += 1
+            elif first_motor_step_count * second_motor_steps <= second_motor_step_count * first_motor_steps:
                 self._first_motor.step()
                 first_motor_step_count += 1
             else:
                 self._second_motor.step()
                 second_motor_step_count += 1
-
-            if first_motor_step_count == first_motor_steps and second_motor_step_count == second_motor_steps:
-                break
 
             time.sleep(seconds_per_step)
