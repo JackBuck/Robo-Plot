@@ -2,37 +2,49 @@
 
 This module controls the 2D drive system for the plotter.
 
-All distances in the module are expressed in MILLIMETRES or STEPS.
+All distances in the module are expressed in MILLIMETRES.
 
 """
 
 import numpy as np
 
-# TODO: Refactor this into an axis object?
-#       The control theory would ideally happen at an axis level (though not strictly necessary) whilst the shape
-#       drawing layer needs to translate mm into steps. However, the lead isn't a property of the shape - it is more
-#       closely linked to the motor!!
-#        - Maybe wrap each the motor in an axis object? Then change StepperMotorPair to axis_pair?
-#        - Alternatively, have some sort of a 'coordinator' class which takes two axis objects, links the inner motor
-#          objects and translates the curve into steps. Then the control theory remains in terms of numbers of steps.
 
-first_axis_lead = 8
-second_axis_lead = 8
+class AxisPair:
+    def __init__(self, x_axis: Axis, y_axis: Axis):
+        self.x_axis = x_axis
+        self.y_axis = y_axis
 
-
-class StepperMotorPair:
-    def follow(self, curve):  # TODO: This is a hack -- see above!! (need to remove dependence on lead)
-        points = curve.to_series_of_points()
-        points = points.T / [first_axis_lead, second_axis_lead]
+    def follow(self, curve, pen_velocity):
+        points = curve.to_series_of_points().T
         previous_pt = points[0]
         for pt in points.T[1:]:
             difference = pt - previous_pt
-            self.step_by(difference)
+            self.move_linearly(difference[0], difference[1], pen_velocity)
             previous_pt = pt
 
-    def step_by(self, first_motor_steps, second_motor_steps, sum_of_rps):
-        # TODO: Implemented on another branch (issue #5) -- merge it once that pull request has been approved.
-        pass
+    def move_linearly(self, x_millimetres, y_millimetres, pen_velocity):
+        x_steps = x_millimetres / self.x_axis.millimetres_per_step
+        y_steps = y_millimetres / self.y_axis.millimetres_per_step
+        # TODO: UNFINISHED!!
+        # Most of this is implemented on another branch (issue #5) (in StepperMotorPair.step_by(...)) -- merge it
+        # once that pull request has been approved.
+
+
+class Axis:
+    def __init__(self, motor, lead):
+        """
+        Creates an Axis.
+
+        Args:
+            motor (StepperMotor): The stepper motor driving the axis.
+            lead (float): The lead of the axis, in millimetres per revolution of the motor.
+        """
+        self.motor = motor
+        self.lead = lead
+
+    @property
+    def millimetres_per_step(self):
+        return self.lead / self.motor.steps_per_revolution
 
 
 # TODO: Make Curve an abstract class, and have shapes deriving from it?
@@ -49,7 +61,7 @@ class Curve:
         self.total_length = total_length
         self.parameterisation = parameterisation
 
-    def to_series_of_points(self, interval_size: float) -> np.ndarray:
+    def to_series_of_points(self, interval_millimetres: float) -> np.ndarray:
         """Express the path by a series of points.
 
         WARNING: The output does not include the last point in the path.
@@ -59,13 +71,13 @@ class Curve:
          * This is how python's range and numpys arange functions behave (so it's a python-intuitive behaviour).
 
         Args:
-            interval_size: The size of each step (in MILLIMETRES)
+            interval_millimetres: The size of each interval (in MILLIMETRES)
 
         Returns:
             np.ndarray: A list of pairs of points (in MILLIMETRES) to which to move the motors.
 
         """
-        parameter = np.arange(0, self.total_length, interval_size, dtype=float)
+        parameter = np.arange(0, self.total_length, interval_millimetres, dtype=float)
         return self.parameterisation(parameter)
 
 
