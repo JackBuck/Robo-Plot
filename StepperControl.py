@@ -12,75 +12,13 @@ import numpy as np
 import Motors
 
 
-class StepperMotorPair:
-    """Represents a synchronised pair of stepper motors."""
-
-    def __init__(self, first_motor: Motors.StepperMotor, second_motor: Motors.StepperMotor):
-        """
-        Initialise a synchronised pair of stepper motors.
-
-        Currently there is no implementation for synchronising motors with different step sizes.
-
-        Args:
-            first_motor: The first stepper motor
-            second_motor: The second stepper motor
-        """
-        if first_motor.steps_per_revolution != second_motor.steps_per_revolution:
-            raise NotImplementedError('There is currently no implementation for synchronising motors with different '
-                                      'step sizes.')
-
-        self._first_motor = first_motor
-        self._second_motor = second_motor
-
-    def step_by(self, first_motor_steps: int, second_motor_steps: int, sum_of_rps: float) -> None:
-        """
-        Steps the motors as close to linearly as possible by the specified amounts.
-
-        Supply negative numbers of steps to achieve motion in the opposite direction.
-
-        Args:
-            first_motor_steps: The number of steps to advance the first motor.
-            second_motor_steps: The number of steps to advance the second motor.
-            sum_of_rps: The sum of the revolutions per second of the motors. While unnatural in an API, this is what
-                        is easiest on the 'inside'. It will be changed once we know how we want to call this method.
-
-        Returns:
-            None
-
-        """
-        self._first_motor.clockwise = first_motor_steps >= 0
-        first_motor_steps = abs(first_motor_steps)
-
-        self._second_motor.clockwise = second_motor_steps >= 0
-        second_motor_steps = abs(second_motor_steps)
-
-        # We are restricting to the case where both motors have the same number of step per revolution
-        seconds_per_step = 1 / (sum_of_rps * self._first_motor.steps_per_revolution)
-
-        # TODO: Refactor this once we have encoders
-        first_motor_step_count = 0
-        second_motor_step_count = 0
-
-        while True:
-            if first_motor_step_count * second_motor_steps <= second_motor_step_count * first_motor_steps:
-                self._first_motor.step()
-                first_motor_step_count += 1
-            else:
-                self._second_motor.step()
-                second_motor_step_count += 1
-
-            if first_motor_step_count == first_motor_steps and second_motor_step_count == second_motor_steps:
-                break
-
-            time.sleep(seconds_per_step)
-
 class Axis:
-    def __init__(self, motor, lead):
+    def __init__(self, motor: Motors.StepperMotor, lead: float):
         """
         Creates an Axis.
 
         Args:
-            motor (StepperMotor): The stepper motor driving the axis.
+            motor (Motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
         """
         self.motor = motor
@@ -96,20 +34,75 @@ class AxisPair:
         self.x_axis = x_axis
         self.y_axis = y_axis
 
-    def follow(self, curve, pen_velocity):
-        points = curve.to_series_of_points().T
+    def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1) -> None:
+        """
+        Step the motors so as to follow a curve.
+
+        Args:
+            curve (Curve): The curve to follow.
+            pen_speed (float): The target speed of the pen (in MILLIMETRES / SECOND).
+            resolution (float): The resolution to use when splitting the curve into line segments (in MILLIMETRES).
+
+        Returns:
+            None
+
+        """
+        points = curve.to_series_of_points(resolution)
         previous_pt = points[0]
         for pt in points.T[1:]:
             difference = pt - previous_pt
-            self.move_linearly(difference[0], difference[1], pen_velocity)
+            self.move_linearly(difference[0], difference[1], pen_speed)
             previous_pt = pt
 
-    def move_linearly(self, x_millimetres, y_millimetres, pen_velocity):
+    def move_linearly(self, x_millimetres: float, y_millimetres: float, pen_speed: float) -> None:
+        """
+        Steps the motors as close to linearly as possible to achieve the specified axis displacements.
+
+        Supply negative displacements to achieve motion in the opposite direction.
+
+        Args:
+            x_millimetres (float): The displacement to move the first axis (in MILLIMETRES)
+            y_millimetres (float): The displacement to move the second axis (in MILLIMETRES)
+            pen_speed (float): The target speed of the pen (in MILLIMETRES / SECOND).
+
+        """
+        # TODO: A lot of this method needs refactoring so that it reads more naturally (i.e. so that we don't keep
+        # digging into the Axis.motor field).
+
+        # Convert to steps
         x_steps = x_millimetres / self.x_axis.millimetres_per_step
         y_steps = y_millimetres / self.y_axis.millimetres_per_step
-        # TODO: UNFINISHED!!
-        # Most of this is implemented on another branch (issue #5) (in StepperMotorPair.step_by(...)) -- merge it
-        # once that pull request has been approved.
+
+        # Address direction
+        self.x_axis.motor.clockwise = x_steps >= 0
+        x_steps = abs(x_steps)
+
+        self.y_axis.motor.clockwise = y_steps >= 0
+        y_steps = abs(y_steps)
+
+        # Compute the wait time
+        pen_millimetres = np.linalg.norm([x_millimetres, y_millimetres])
+        total_seconds = pen_millimetres / pen_speed
+        total_steps = x_steps + y_steps
+        seconds_per_step = total_seconds / total_steps
+
+        # Step the motors
+        # TODO: Refactor this once we have encoders
+        x_step_count = 0
+        y_step_count = 0
+
+        while True:
+            if x_step_count * y_steps <= y_step_count * x_steps:
+                self.x_axis.motor.step()
+                x_step_count += 1
+            else:
+                self.y_axis.motor.step()
+                y_step_count += 1
+
+            if x_step_count == x_steps and y_step_count == y_steps:
+                break
+
+            time.sleep(seconds_per_step)
 
 
 # TODO: Add functionality to chain curves
@@ -168,11 +161,10 @@ class LineSegment(Curve):
         self.end = end.reshape(2)
 
     @property
-    def total_millimetres(self):
+    def total_millimetres(self) -> float:
         return np.linalg.norm(self.end - self.start)
 
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
         arc_length = arc_length.reshape(-1, 1)  # Make it a column vector
         t = arc_length / self.total_millimetres
         return (1 - t) * self.start + t * self.end
-
