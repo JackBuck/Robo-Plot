@@ -91,16 +91,16 @@ class AxisPair:
         x_step_count = 0
         y_step_count = 0
 
-        while True:
-            if x_step_count * y_steps <= y_step_count * x_steps:
+        while not (x_step_count == x_steps and y_step_count == y_steps):
+            if x_step_count == x_steps:
+                self.y_axis.motor.step()
+                y_step_count += 1
+            elif x_step_count * y_steps <= y_step_count * x_steps:
                 self.x_axis.motor.step()
                 x_step_count += 1
             else:
                 self.y_axis.motor.step()
                 y_step_count += 1
-
-            if x_step_count == x_steps and y_step_count == y_steps:
-                break
 
             time.sleep(seconds_per_step)
 
