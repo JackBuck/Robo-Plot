@@ -109,6 +109,7 @@ class AxisPair:
 class Curve:
     @property
     def total_millimetres(self):
+        """The total length of the curve (in MILLIMETRES)."""
         raise NotImplementedError("The total length property must be overriden in derived classes.")
 
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
@@ -168,3 +169,28 @@ class LineSegment(Curve):
         arc_length = arc_length.reshape(-1, 1)  # Make it a column vector
         t = arc_length / self.total_millimetres
         return (1 - t) * self.start + t * self.end
+
+
+class Circle(Curve):
+    def __init__(self, centre: np.ndarray, radius: float):
+        """
+        Define a circle.
+
+        Args:
+            centre (np.ndarray): A 2-element vector specifying the centre of the circle (in MILLIMETRES).
+            radius (float): The radius of the circle (in MILLIMETRES).
+        """
+        self.centre = centre.reshape(2)
+        self.radius = radius
+
+    @property
+    def total_millimetres(self):
+        return 2 * np.pi * self.radius
+
+    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
+        arc_length = arc_length.reshape(-1, 1)  # Make column vector
+        radians = arc_length / self.total_millimetres
+        points = np.hstack((np.cos(radians), np.sin(radians)))
+        points = self.radius * points + self.centre
+        return points
+
