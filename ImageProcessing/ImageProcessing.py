@@ -1,6 +1,9 @@
 from enum import Enum
 from PIL import Image
+from PIL import ImageDraw
 import numpy as np
+import matplotlib.pyplot as plt
+import math
 
 debug = True
 
@@ -74,35 +77,132 @@ class ImageAnalyser:
 
     def compute_weighted_centroid(lightnesses):
         num_elements = lightnesses.shape
+        np.savetxt('Lightnesses.txt', lightnesses, fmt="%2.1f", delimiter=',')
+
         x = np.arange(num_elements[0])
         is_white = lightnesses > 130
         num_white = sum(is_white)
         weighted = np.multiply(is_white, x)
-        np.savetxt('weight.txt', weighted)
+        np.savetxt('weight.txt', weighted, fmt="%2.1f", delimiter=" , ")
+
         if num_white == 0:
             return -1
         else:
             flt_centroid = sum(is_white * x) / num_white
 
-        if flt_centroid == 0.0:
-            return -1
-        else:
-            return int(flt_centroid)
+        return int(flt_centroid)
+
+
+    #def compute_weighted_centroid(lightnesses):
+    #    num_elements = lightnesses.shape[0]
+    #    x = np.arange(num_elements)
+#
+    #    lightnesses = lightnesses/np.mean(lightnesses)
+#
+    #    centroid = np.mean(lightnesses * x)
+#
+    #    return centroid
 
     def AnalyseImage(self, scan_direction):
 
     #Get average pixel positions.
+
+
         if(scan_direction == Direction.North):
-            average_pixels = self.AnalyseRow(False)
+            average_pixels = np.array(self.AnalyseRow(False))
         elif(scan_direction == Direction.East):
-            average_pixels = self.AnalyseCol(True)
+            average_pixels = np.array(self.AnalyseCol(True))
         elif (scan_direction == Direction.South):
-            average_pixels = self.AnalyseRow(True)
+            average_pixels = np.array(self.AnalyseRow(True))
         elif (scan_direction == Direction.West):
-            average_pixels = self.AnalyseCol(False)
+            average_pixels = np.array(self.AnalyseCol(False))
+
+        #Approximate the pixels with a line.
+
+        a_interpolator = InterpolateAverages(average_pixels)
+
+        if (scan_direction == Direction.North) or (scan_direction == Direction.South):
+            x_indices = average_pixels
+            y_indices = np.arange(len(x_indices))
+        else:
+            y_indices = average_pixels
+            x_indices = np.arange(len(y_indices))
 
 
-        #Calculate the average index in the direction required.
+
+        max_error = 1e99
+        segments = [0, len(x_indices)]
+        lines = []
+        segment_index = 0
+        tol = 10
+
+        while segments[segment_index] != len(x_indices):
+            while max_error > tol:
+                start_index = segments[segment_index]
+                end_index = segments[segment_index + 1]
+                (m, c) = a_interpolator.ApproximateWithLine(x_indices[start_index: end_index], y_indices[start_index: end_index])
+
+
+                lines.append((m,c))
+
+                (max_error, index) = a_interpolator.ErrorFromLine((m, c), x_indices[start_index: end_index], y_indices[start_index: end_index])
+
+                if max_error > tol:
+                    segments.insert(segment_index + 1, index)
+
+            segment_index += 1
+
+
+        if(debug):
+
+            self.ShowApproximation(lines, segments, scan_direction)
+
+
+    def ShowApproximation(self, lines, segments, scan_direction):
+
+        scale_factor_x = 2000/self._width
+        scale_factor_y = 2000/self._height
+        image = self._img.resize((2000, 2000))
+
+
+        for current_line in range(0, len(lines)):
+            (m, c) = lines[current_line]
+
+            x_start_cart = segments[current_line]
+            y_start_cart = (segments[current_line] * m) + c
+            (x_start_image, y_start_image) = self.ConvertToImageCoOrds(x_start_cart, y_start_cart, scan_direction, scale_factor_x, scale_factor_y)
+
+            x_end_cart = segments[current_line + 1]
+            y_end_cart = (segments[current_line + 1] * m) + c
+            (x_end_image, y_end_image) = self.ConvertToImageCoOrds(x_end_cart, y_end_cart, scan_direction, scale_factor_x, scale_factor_y)
+            draw = ImageDraw.Draw(image)
+
+
+            draw.line([x_start_image, y_start_image, x_end_image, y_end_image], (50, 100, 240), 8)
+            draw.ellipse((x_start_image - 8, y_start_image - 8, x_start_image + 8, y_start_image + 8), fill = 'blue', outline='blue')
+            draw.ellipse((x_end_image - 8, y_end_image - 8, x_end_image + 8, y_end_image + 8), fill = 'blue', outline='blue')
+
+            del draw
+
+        image.show()
+
+
+    def ConvertToImageCoOrds(self, x, y, scan_direction, scale_factor_x, scale_factor_y):
+        if (scan_direction == Direction.North):
+            x_image = x
+            y_image = (self._height/2) - y
+        elif (scan_direction == Direction.East):
+            x_image = (self._width/2) + x
+            y_image = self._height - y
+        elif (scan_direction == Direction.South):
+            x_image = self._width - x
+            y_image = (self._height/2) - y
+        elif (scan_direction == Direction.West):
+            x_image = (self._width/2) - x
+            y_image = self._height - y
+
+        return (x_image*scale_factor_x, y_image*scale_factor_y)
+
 
     def AnalyseRow(self, is_pos):
         average_index_rows = []
@@ -117,16 +217,19 @@ class ImageAnalyser:
 
         count = 0
         for rr in range(int(self._height/2), end_index, increment):
-            min_index = max(0, average_index_rows[count]-self._tol)
-            max_index = min(self._height, average_index_rows[count]+self._tol)
+            min_index = int(max(0, average_index_rows[count]-self._tol))
+            max_index = int(min(self._height, average_index_rows[count]+self._tol))
+
             count += 1
             sub_array = self._pixels[ rr, min_index:max_index]
-            next_centroid = ImageAnalyser.compute_weighted_centroid((sub_array))
+            next_centroid = min_index + ImageAnalyser.compute_weighted_centroid(sub_array)
             average_index_rows.append(next_centroid)
-        if (debug):
+
+        if debug:
             self.ShowDebugAverageRows(average_index_rows, is_pos)
 
             return average_index_rows
+
 
     def AnalyseCol(self, is_pos):
 
@@ -142,15 +245,15 @@ class ImageAnalyser:
 
         count = 0
         for cc in range(int(self._width / 2), end_index, increment):
-            min_index = max(0, average_index_cols[count] - self._tol)
-            max_index = min(self._height, average_index_cols[count] + self._tol)
+            min_index = int(max(0, average_index_cols[count] - self._tol))
+            max_index = int(min(self._height, average_index_cols[count] + self._tol))
             count += 1
             sub_array = self._pixels[min_index:max_index, cc]
-            next_centroid = ImageAnalyser.compute_weighted_centroid((sub_array))
+            next_centroid = min_index + ImageAnalyser.compute_weighted_centroid(sub_array)
             average_index_cols.append(next_centroid)
 
 
-        if(debug):
+        if debug:
             self.ShowDebugAverageCols(average_index_cols, is_pos)
 
             return average_index_cols
@@ -178,8 +281,9 @@ class ImageAnalyser:
             row += increment
 
         # resize so the result can be seen
-        self._img = self._img.resize((2000, 2000))
-        self._img.show()
+        image = self._img.resize((2000, 2000))
+        #image.show()
+
 
     def ShowDebugAverageCols(self, average_index_cols, is_pos):
         self._img = self._img.convert('RGB')
@@ -202,5 +306,56 @@ class ImageAnalyser:
             col += increment
 
         # resize so the result can be seen
-        self._img = self._img.resize((2000, 2000))
-        self._img.show()
+        image = self._img.resize((2000, 2000))
+        #image.show()
+
+
+
+class InterpolateAverages:
+    """This class takes the average row/columns and approximates them with lines
+    ready to add to the path"""
+
+    def __init__(self, average_indices):
+
+        self._average_indices = average_indices
+
+
+
+    def ApproximateWithLine(self, x_indices, y_indices):
+
+         #line = np.polyfit(x_indices, y_indices, 1)
+
+         line = (0, 94)
+
+         return line
+
+
+    def ErrorFromLine(self, line, x_indices, y_indices):
+
+        magnitude = math.sqrt(line[0] * line[0] + 1)
+        line_normal = ((1/magnitude), -float(line[0])/magnitude)
+
+        origin = np.asarray([0, line[1]])
+
+        error=[]
+
+        for index in range(0, len(x_indices)):
+
+            indices = np.asarray([x_indices[index], y_indices[index]])
+            error.append(InterpolateAverages.Error(line_normal, origin, indices))
+
+        error_indices = np.argmax(error)
+        error_index = np.arange(len(error))
+
+
+
+        return (error[error_indices], error_indices)
+
+
+
+    def Error(line_normal, line_origin, indices):
+
+        error = abs(np.dot(line_normal, indices - line_origin))
+
+        return error
+
