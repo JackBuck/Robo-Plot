@@ -131,12 +131,12 @@ class ImageAnalyser:
 
 
         max_error = 1e99
-        segments = [0, len(x_indices)]
+        segments = [0, len(x_indices)-1]
         lines = []
         segment_index = 0
         tol = 10
 
-        while segments[segment_index] != len(x_indices):
+        while segments[segment_index] != len(x_indices)-1:
             while max_error > tol:
                 start_index = segments[segment_index]
                 end_index = segments[segment_index + 1]
@@ -155,10 +155,10 @@ class ImageAnalyser:
 
         if(debug):
 
-            self.ShowApproximation(lines, segments, scan_direction)
+            self.ShowApproximation(lines, segments, x_indices, scan_direction)
 
 
-    def ShowApproximation(self, lines, segments, scan_direction):
+    def ShowApproximation(self, lines, segments, x_indices, scan_direction):
 
         scale_factor_x = 2000/self._width
         scale_factor_y = 2000/self._height
@@ -168,13 +168,17 @@ class ImageAnalyser:
         for current_line in range(0, len(lines)):
             (m, c) = lines[current_line]
 
-            x_start_cart = segments[current_line]
-            y_start_cart = (segments[current_line] * m) + c
+            x_start_cart = x_indices[segments[current_line]]
+            y_start_cart = (x_start_cart * m) + c
             (x_start_image, y_start_image) = self.ConvertToImageCoOrds(x_start_cart, y_start_cart, scan_direction, scale_factor_x, scale_factor_y)
 
-            x_end_cart = segments[current_line + 1]
-            y_end_cart = (segments[current_line + 1] * m) + c
+            x_end_cart = x_indices[segments[current_line + 1]]
+            y_end_cart = (x_end_cart * m) + c
             (x_end_image, y_end_image) = self.ConvertToImageCoOrds(x_end_cart, y_end_cart, scan_direction, scale_factor_x, scale_factor_y)
+
+            #plt.plot((x_start_cart, x_end_cart), (y_start_cart, y_end_cart))
+            #plt.show()
+
             draw = ImageDraw.Draw(image)
 
 
@@ -187,13 +191,14 @@ class ImageAnalyser:
         image.show()
 
 
+
     def ConvertToImageCoOrds(self, x, y, scan_direction, scale_factor_x, scale_factor_y):
         if (scan_direction == Direction.North):
             x_image = x
             y_image = (self._height/2) - y
         elif (scan_direction == Direction.East):
             x_image = (self._width/2) + x
-            y_image = self._height - y
+            y_image = y
         elif (scan_direction == Direction.South):
             x_image = self._width - x
             y_image = (self._height/2) - y
@@ -323,10 +328,7 @@ class InterpolateAverages:
 
     def ApproximateWithLine(self, x_indices, y_indices):
 
-         #line = np.polyfit(x_indices, y_indices, 1)
-
-         line = (0, 94)
-
+         line = np.polyfit(x_indices, y_indices, 1)
          return line
 
 
@@ -345,9 +347,6 @@ class InterpolateAverages:
             error.append(InterpolateAverages.Error(line_normal, origin, indices))
 
         error_indices = np.argmax(error)
-        error_index = np.arange(len(error))
-
-
 
         return (error[error_indices], error_indices)
 
