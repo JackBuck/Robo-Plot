@@ -200,11 +200,11 @@ class ImageAnalyser:
             x_image = (self._width/2) + x
             y_image = y
         elif (scan_direction == Direction.South):
-            x_image = self._width - x
-            y_image = (self._height/2) - y
+            x_image = x
+            y_image = (self._height/2) + y
         elif (scan_direction == Direction.West):
             x_image = (self._width/2) - x
-            y_image = self._height - y
+            y_image = y
 
         return (x_image*scale_factor_x, y_image*scale_factor_y)
 
