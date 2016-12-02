@@ -3,6 +3,7 @@ from PIL import Image
 from PIL import ImageDraw
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import math
 
 debug = True
@@ -62,6 +63,8 @@ class ImageAnalyser:
         self._width = 200
         self._height = 200
         self._img = self._img.resize((self._width, self._height))
+
+        #self._img.thumbnail((self._width, self._height), Image.ANTIALIAS)
 
         # Convert image to black and white - we cannot take the photos in black and white as we
         # must first search for the red triangle.
@@ -140,12 +143,16 @@ class ImageAnalyser:
             while max_error > tol:
                 start_index = segments[segment_index]
                 end_index = segments[segment_index + 1]
-                (m, c) = a_interpolator.ApproximateWithLine(x_indices[start_index: end_index], y_indices[start_index: end_index])
-
+                
+                #print(start_index)
+                #print(end_index)
+                m = a_interpolator.ApproximateWithLine(x_indices[start_index: end_index], y_indices[start_index: end_index])
+                c = x_indices[start_index]
 
                 lines.append((m,c))
+                print("Lines: ", lines[-1])
 
-                (max_error, index) = a_interpolator.ErrorFromLine((m, c), x_indices[start_index: end_index], y_indices[start_index: end_index])
+                (max_error, index) = a_interpolator.ErrorFromLine(lines[-1], x_indices[start_index: end_index], y_indices[start_index: end_index])
 
                 if max_error > tol:
                     segments.insert(segment_index + 1, index)
@@ -328,8 +335,11 @@ class InterpolateAverages:
 
     def ApproximateWithLine(self, x_indices, y_indices):
 
-         line = np.polyfit(x_indices, y_indices, 1)
-         return line
+         #print(x_indices, y_indices)
+         x_indices = x_indices[:,np.newaxis]
+         m, _, _, _ = np.linalg.lstsq(x_indices, y_indices)
+         
+         return m
 
 
     def ErrorFromLine(self, line, x_indices, y_indices):
@@ -344,7 +354,10 @@ class InterpolateAverages:
         for index in range(0, len(x_indices)):
 
             indices = np.asarray([x_indices[index], y_indices[index]])
+            #print("Indices: ", indices)
+            #print("Line:", line)
             error.append(InterpolateAverages.Error(line_normal, origin, indices))
+            #print ("Error: ", error[-1])
 
         error_indices = np.argmax(error)
 
@@ -357,4 +370,5 @@ class InterpolateAverages:
         error = abs(np.dot(line_normal, indices - line_origin))
 
         return error
+          
 
