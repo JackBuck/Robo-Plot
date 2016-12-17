@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import time
 import argparse
 
@@ -25,6 +24,8 @@ args = parser.parse_args()
 x_axis = StepperControl.Axis(motor=Motors.large_stepper_motor([22, 23, 24, 25]), lead=8)
 y_axis = StepperControl.Axis(motor=Motors.large_stepper_motor([19, 26, 20, 21]), lead=8)
 both_motors = StepperControl.AxisPair(x_axis, y_axis)
+
+time.sleep(args.wait)
 
 start_time = time.time()
 
