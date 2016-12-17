@@ -9,9 +9,14 @@ import time
 
 # import RPi.GPIO as GPIO
 from roboplot.EmulatorGUI import GPIO
+from roboplot.EmulatorGUI import app
 
 GPIO.setmode(GPIO.BCM)
 
+
+def quit_gui():
+    print('\nExiting Emulator GUI... (focus on another window to complete the exit)')
+    app.root.quit()  # Still needs tweaking -- something stops the gui from quitting when it has focus...
 
 class StepperMotor:
     """This class is the collection of functions to set up and use a stepper motor."""

@@ -20,7 +20,11 @@ parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_
 parser.add_argument('-w', '--wait', type=float, default=0,
                     help='an initial sleep time in seconds (default: %(default)s)')
 
-args = parser.parse_args()
+try:
+    args = parser.parse_args()
+except:
+    Motors.quit_gui()
+    raise
 
 # Script body
 x_axis = StepperControl.Axis(motor=Motors.large_stepper_motor([22, 23, 24, 25]), lead=8)
@@ -39,3 +43,5 @@ print('Elapsed: ', end='')
 print(end_time - start_time)
 print('Predicted: ', end='')
 print(2 * np.pi * args.radius / args.pen_millimetres_per_second)
+
+Motors.quit_gui()
