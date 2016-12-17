@@ -9,7 +9,7 @@ import time
 
 import numpy as np
 
-import Motors
+from roboplot import Motors
 
 
 # TODO: Add functionality to chain curves

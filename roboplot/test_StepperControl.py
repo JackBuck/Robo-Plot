@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import call, create_autospec
 
-import Motors
 import StepperControl
+
+from roboplot import Motors
 
 
 class TestStepperMotorPair(unittest.TestCase):

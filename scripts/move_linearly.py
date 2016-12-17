@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import time
 import argparse
+import time
 
-import Motors
-import StepperControl
-
+from context import roboplot
+from roboplot import Motors
+from roboplot import StepperControl
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Move the pen in a straight line using the low level linear move method.')

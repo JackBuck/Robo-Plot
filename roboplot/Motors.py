@@ -8,7 +8,7 @@ Authors:
 import time
 
 # import RPi.GPIO as GPIO
-from EmulatorGUI import GPIO
+from roboplot.EmulatorGUI import GPIO
 
 GPIO.setmode(GPIO.BCM)
 

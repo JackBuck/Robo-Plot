@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-import time
 import argparse
+import time
 
 import numpy as np
 
-import Motors
-import StepperControl
+from context import roboplot
+from roboplot import Motors
+from roboplot import StepperControl
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Draw a circle.')
