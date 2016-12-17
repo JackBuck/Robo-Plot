@@ -90,8 +90,7 @@ class StepperMotor:
         self.clockwise = clockwise
 
     def __str__(self):
-        buf = "Motors.py: Pins:" + str(self.pins[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
-        return buf
+        return "Motors.py: Pins:" + ''.join(str(pin) for pin in self._gpio_pins)
 
 
 def large_stepper_motor(gpio_pins):
