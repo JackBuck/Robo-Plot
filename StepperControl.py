@@ -87,7 +87,7 @@ class Circle(Curve):
             centre (np.ndarray): A 2-element vector specifying the centre of the circle (in MILLIMETRES).
             radius (float): The radius of the circle (in MILLIMETRES).
         """
-        self.centre = centre.reshape(2)
+        self.centre = np.reshape(centre, 2)
         self.radius = radius
 
     @property
