@@ -138,6 +138,11 @@ class Axis:
         self._motor.step()
         self._advance_current_location()
 
+    def nearest_reachable_location(self, target_location):
+        target_displacement = target_location - self.current_location
+        best_possible_displacement = self.millimetres_per_step * round(target_displacement / self.millimetres_per_step)
+        return best_possible_displacement + self.current_location
+
 
 class AxisPair:
     def __init__(self, x_axis: Axis, y_axis: Axis):
@@ -181,36 +186,53 @@ class AxisPair:
             pen_speed (float): The target speed of the pen (in MILLIMETRES / SECOND).
 
         """
-        # TODO: Replace this first set of maths with a 'nearest reachable location' property on the Axis
-        target_displacement = target_location - self.current_location
-        millimetres_per_step = [self.x_axis.millimetres_per_step, self.y_axis.millimetres_per_step]
-        xy_steps = np.round(target_displacement / millimetres_per_step)
 
-        target_displacement = xy_steps * millimetres_per_step
-        target_location = target_displacement + self.current_location
+        # TODO: Change the pen_speed input to a target_completion_time.
+        # Indeed, when following a curve, we loose timing precision due to the number of small steps we split it into.
 
-        # Address direction
-        self.x_axis.forwards = target_location[0] >= self.current_location[0]
-        self.y_axis.forwards = target_location[1] >= self.current_location[1]
+        start_time = time.time()
 
-        # Compute the wait time
-        pen_millimetres = np.linalg.norm(target_displacement)
-        total_seconds = pen_millimetres / pen_speed
-        total_steps = sum(abs(xy_steps))
-        seconds_per_step = total_seconds / total_steps
+        target_location = self.nearest_reachable_location(target_location)
+        total_seconds = self._target_duration_for(target_location, pen_speed)
+        self._set_axis_directions_for(target_location)
 
-        # Step the motors
+        # TODO: Extract a class with member variables AxisPair, start_location, target_location, start_time,
+        # target_duration. Either a ProgressMonitor or a LinearMove...
         start_location = self.current_location
         target_distances = abs(target_location - start_location)
         current_distances = abs(self.current_location - start_location)
 
         while any(current_distances < target_distances):
-            if current_distances[0] >= target_distances[0]:
-                self.y_axis.step()
-            elif current_distances[0] * target_distances[1] <= current_distances[1] * target_distances[0]:
-                self.x_axis.step()
-            else:
-                self.y_axis.step()
+            self._step_the_axis_which_is_behind(current_distances, target_distances)
 
             current_distances = abs(self.current_location - start_location)
-            time.sleep(seconds_per_step)
+            with np.errstate(divide='ignore', invalid='ignore'):
+                time_of_next_step = total_seconds * np.nansum(current_distances / target_distances) / 2 + start_time
+            _sleep_until(time_of_next_step)
+
+    def nearest_reachable_location(self, target_location):
+        return (self.x_axis.nearest_reachable_location(target_location[0]),
+                self.y_axis.nearest_reachable_location(target_location[1]))
+
+    def _target_duration_for(self, target_location, pen_speed):
+        target_displacement = target_location - self.current_location
+        pen_millimetres = np.linalg.norm(target_displacement)
+        return pen_millimetres / pen_speed
+
+    def _set_axis_directions_for(self, target_location):
+        self.x_axis.forwards = target_location[0] >= self.current_location[0]
+        self.y_axis.forwards = target_location[1] >= self.current_location[1]
+
+    def _step_the_axis_which_is_behind(self, current_distances, target_distances):
+        if current_distances[0] >= target_distances[0]:
+            self.y_axis.step()
+        elif current_distances[0] * target_distances[1] <= current_distances[1] * target_distances[0]:
+            self.x_axis.step()
+        else:
+            self.y_axis.step()
+
+
+def _sleep_until(wake_time):
+    sleep_duration = wake_time - time.time()
+    if sleep_duration > 0:
+        time.sleep(sleep_duration)

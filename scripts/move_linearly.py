@@ -36,6 +36,7 @@ start_time = time.time()
 both_motors.move_linearly([args.x_millimetres, args.y_millimetres], args.pen_millimetres_per_second)
 
 end_time = time.time()
+
 print("Elapsed: ", end='')
 print(end_time - start_time)
 print("Predicted: ", end='')
