@@ -3,7 +3,7 @@
 import argparse
 import time
 
-from context import roboplot
+import context
 from roboplot import Motors
 from roboplot import StepperControl
 

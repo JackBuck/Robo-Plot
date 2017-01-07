@@ -5,7 +5,7 @@ import time
 
 import numpy as np
 
-from context import roboplot
+import context
 from roboplot import Motors
 from roboplot import StepperControl
 
