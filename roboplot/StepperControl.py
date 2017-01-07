@@ -172,52 +172,49 @@ class AxisPair:
 
         """
         points = curve.to_series_of_points(resolution)
-        self.current_location = points[0]  # Temporary until we can lift up the pen
-        for pt in points[1:]:
-            self.move_linearly(pt, pen_speed)
+        distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
+        cumulative_distances = np.cumsum(distances_between_points)
+        target_times = time.time() + cumulative_distances / pen_speed
 
-    def move_linearly(self, target_location: np.ndarray, pen_speed: float) -> None:
+        self.current_location = points[0]  # Temporary until we can lift up the pen
+        for pt, target_time in zip(points[1:], target_times):
+            self.move_linearly(pt, target_time)
+
+    def move_linearly(self, target_location: np.ndarray, target_completion_time: float) -> None:
         """
         Steps the motors as close to linearly as possible to achieve the specified axis positions.
 
         Args:
             target_location (float): An 2-element array whose first (resp. second) elements determine the position to
                                      which to move the first (resp. second) axis. (in MILLIMETRES)
-            pen_speed (float): The target speed of the pen (in MILLIMETRES / SECOND).
-
+            target_completion_time (float): The target time at which the move should be completed. This should be
+                                            given as a number of seconds since the Epoch (the same format as returned by
+                                            time.time()).
+                                            If this is zero or negative then the move will be conducted as fast as
+                                            possible.
         """
-
-        # TODO: Change the pen_speed input to a target_completion_time.
-        # Indeed, when following a curve, we loose timing precision due to the number of small steps we split it into.
-
         start_time = time.time()
+        total_seconds = target_completion_time - start_time
 
-        target_location = self.nearest_reachable_location(target_location)
-        total_seconds = self._target_duration_for(target_location, pen_speed)
+        target_location = self._nearest_reachable_location(target_location)
         self._set_axis_directions_for(target_location)
 
-        # TODO: Extract a class with member variables AxisPair, start_location, target_location, start_time,
-        # target_duration. Either a ProgressMonitor or a LinearMove...
+        # TODO: This would be cleaner if I could think of a way to pull a class out with member variables
+        # start_location, target_location, current_distances, ... Some sort of LinearMoveProgressTracker
         start_location = self.current_location
         target_distances = abs(target_location - start_location)
-        current_distances = abs(self.current_location - start_location)
+        current_distances = np.array([0, 0])
 
         while any(current_distances < target_distances):
             self._step_the_axis_which_is_behind(current_distances, target_distances)
 
             current_distances = abs(self.current_location - start_location)
-            with np.errstate(divide='ignore', invalid='ignore'):
-                time_of_next_step = total_seconds * np.nansum(current_distances / target_distances) / 2 + start_time
+            time_of_next_step = start_time + total_seconds * sum(current_distances) / sum(target_distances)
             _sleep_until(time_of_next_step)
 
-    def nearest_reachable_location(self, target_location):
+    def _nearest_reachable_location(self, target_location):
         return (self.x_axis.nearest_reachable_location(target_location[0]),
                 self.y_axis.nearest_reachable_location(target_location[1]))
-
-    def _target_duration_for(self, target_location, pen_speed):
-        target_displacement = target_location - self.current_location
-        pen_millimetres = np.linalg.norm(target_displacement)
-        return pen_millimetres / pen_speed
 
     def _set_axis_directions_for(self, target_location):
         self.x_axis.forwards = target_location[0] >= self.current_location[0]
