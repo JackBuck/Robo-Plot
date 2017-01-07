@@ -190,8 +190,7 @@ class AxisPair:
             target_completion_time (float): The target time at which the move should be completed. This should be
                                             given as a number of seconds since the Epoch (the same format as returned by
                                             time.time()).
-                                            If this is zero or negative then the move will be conducted as fast as
-                                            possible.
+                                            If this is in the past then the move will be conducted as fast as possible.
         """
         start_time = time.time()
         total_seconds = target_completion_time - start_time
