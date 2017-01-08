@@ -3,8 +3,8 @@ import time
 import tkinter as tk
 from tkinter import *
 
-from roboplot.core.GPIO.TypeChecker import typeassert
-from roboplot.core.GPIO.PIN import PIN
+from roboplot.core.gpio.TypeChecker import typeassert
+from roboplot.core.gpio.PIN import PIN
 
 #http://www.tutorialspoint.com/python/tk_button.htm
 
@@ -29,7 +29,7 @@ class App(threading.Thread):
 
     def run(self):
         self.root = tk.Tk()
-        self.root.wm_title("GPIO EMULATOR")
+        self.root.wm_title("gpio EMULATOR")
         self.root.protocol("WM_DELETE_WINDOW", self.callback)
 
 
@@ -283,7 +283,7 @@ def toggleButton(gpioID):
     elif(objPin.In == "0"):
         objPin.In = "1"
         
-    objBtn["text"] = "GPIO" + str(gpioID) + "\nIN=" + str(objPin.In)
+    objBtn["text"] = "gpio" + str(gpioID) + "\nIN=" + str(objPin.In)
     
     
   
@@ -315,7 +315,7 @@ def drawGPIOOut(gpioID):
     
 
     if(objPin.SetMode == "OUT"):
-        objBtn["text"] = "GPIO" + str(gpioID) + "\nOUT=" + str(objPin.Out)
+        objBtn["text"] = "gpio" + str(gpioID) + "\nOUT=" + str(objPin.Out)
         if(str(objPin.Out) == "1"):
             objBtn.configure(background='tan2')
             objBtn.configure(activebackground='tan2')
@@ -334,7 +334,7 @@ def drawBindUpdateButtonIn(gpioID,In):
     objBtn.configure(activebackground='gainsboro')
     objBtn.configure(relief='raised')
     objBtn.configure(bd="1px")
-    objBtn["text"] = "GPIO" + str(gpioID) + "\nIN=" + str(In)
+    objBtn["text"] = "gpio" + str(gpioID) + "\nIN=" + str(In)
     objBtn.bind("<Button-1>", buttonClick)
     objBtn.bind("<ButtonRelease-1>", buttonClickRelease)
 
@@ -358,10 +358,10 @@ class GPIO:
     #Extra functions
     def checkModeValidator():
         if(GPIO.setModeDone == False):
-            raise Exception('Setup your GPIO mode. Must be set to BCM')
+            raise Exception('Setup your gpio mode. Must be set to BCM')
 
     
-    #GPIO LIBRARY Functions
+    #gpio LIBRARY Functions
     @typeassert(int)
     def setmode(mode):
         time.sleep(1)
@@ -381,14 +381,14 @@ class GPIO:
         GPIO.checkModeValidator()
 
         if str(channel) not in GPIONames:
-            raise Exception('GPIO ' + str(channel) + ' does not exist')
+            raise Exception('gpio ' + str(channel) + ' does not exist')
 
         #check if channel is already setup
         if str(channel) in dictionaryPins:
-            raise Exception('GPIO is already setup')
+            raise Exception('gpio is already setup')
 
         if(state == GPIO.OUT):
-            #GPIO is set as output, default OUT 0
+            #gpio is set as output, default OUT 0
             objTemp =  PIN("OUT")
             if(initial == GPIO.HIGH):
                 objTemp.Out = "1"
@@ -428,12 +428,12 @@ class GPIO:
 
         if channel not in dictionaryPins:
             #if channel is not setup
-            raise Exception('GPIO must be setup before used')
+            raise Exception('gpio must be setup before used')
         else:
             objPin = dictionaryPins[channel]
             if(objPin.SetMode == "IN"):
                 #if channel is setup as IN and used as an OUTPUT
-                raise Exception('GPIO must be setup as OUT')
+                raise Exception('gpio must be setup as OUT')
 
         
         if(outmode != GPIO.LOW and outmode != GPIO.HIGH):
@@ -459,7 +459,7 @@ class GPIO:
 
         if channel not in dictionaryPins:
             #if channel is not setup
-            raise Exception('GPIO must be setup before used')
+            raise Exception('gpio must be setup before used')
         else:
             objPin = dictionaryPins[channel]
 
@@ -467,13 +467,13 @@ class GPIO:
             if(objPin.SetMode == "OUT"):
                 #if channel is setup as OUTPUT and used as an INPUT
                 # I have allowed this to work and commented out the exception as I believe
-                # the real GPIO pins does not throw here.
+                # the real gpio pins does not throw here.
 
                 if (objPin.Out == "1"):
                     return True
                 elif (objPin.Out == "0"):
                     return False
-                #raise Exception('GPIO must be setup as IN')
+                #raise Exception('gpio must be setup as IN')
 
             else: #Mode is INPUT
                     objPin = dictionaryPins[channel]

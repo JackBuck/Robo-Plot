@@ -7,8 +7,8 @@ Authors:
 
 import time
 
-from roboplot.core.GPIO.EmulatorGUI import GPIO
-from roboplot.core.GPIO.EmulatorGUI import app
+from roboplot.core.gpio.EmulatorGUI import GPIO
+from roboplot.core.gpio.EmulatorGUI import app
 
 GPIO.setmode(GPIO.BCM)
 
@@ -32,7 +32,7 @@ class StepperMotor:
         Initialises the Motor class.
 
         Args:
-            pins: The GPIO pins to which the real motor is connected.
+            pins: The gpio pins to which the real motor is connected.
 
             sequence: The step _sequence associated with the stepper motor. This should be a (python) _sequence of four
                       sequences of length four. The ith element gives the states of the four pins at the ith step.
