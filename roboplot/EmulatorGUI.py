@@ -1,10 +1,10 @@
-from tkinter import *
-import tkinter as tk
-from PIN import PIN
-from TypeChecker import typeassert
 import threading
 import time
+import tkinter as tk
+from tkinter import *
 
+from roboplot.TypeChecker import typeassert
+from roboplot.PIN import PIN
 
 #http://www.tutorialspoint.com/python/tk_button.htm
 

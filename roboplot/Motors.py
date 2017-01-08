@@ -8,9 +8,15 @@ Authors:
 import time
 
 # import RPi.GPIO as GPIO
-from EmulatorGUI import GPIO
+from roboplot.EmulatorGUI import GPIO
+from roboplot.EmulatorGUI import app
 
 GPIO.setmode(GPIO.BCM)
+
+
+def quit_gui():
+    print('\nExiting Emulator GUI... (focus on another window to complete the exit)')
+    app.root.quit()  # Still needs tweaking -- something stops the gui from quitting when it has focus...
 
 
 class StepperMotor:
@@ -19,8 +25,10 @@ class StepperMotor:
     steps_per_revolution = 0
     clockwise = True
     _next_step = 0
+    _minimum_seconds_between_steps = 0.001
+    _earliest_next_step = time.time()
 
-    def __init__(self, pins, sequence, steps_per_revolution):
+    def __init__(self, pins, sequence, steps_per_revolution, minimum_seconds_between_steps=0.001):
         """
         Initialises the Motor class.
 
@@ -36,6 +44,7 @@ class StepperMotor:
         self.steps_per_revolution = steps_per_revolution
         self._gpio_pins = pins
         self._sequence = sequence
+        self._minimum_seconds_between_steps = minimum_seconds_between_steps
 
         # Setup pins
         for pin in pins:
@@ -43,8 +52,20 @@ class StepperMotor:
             GPIO.output(pin, False)
 
     def step(self):
-        """This function steps the motor once and increments the _sequence."""
+        """
+        This function steps the motor once and increments the _sequence.
 
+        It will also ensure the minimum time between steps is upheld.
+        """
+        self._wait_until_safe_to_step()
+        self._step_without_time_check()
+        self._set_earliest_next_step()
+
+    def _wait_until_safe_to_step(self):
+        while time.time() < self._earliest_next_step:
+            pass
+
+    def _step_without_time_check(self):
         for pin in range(0, 4):  # Creates an Index from 0-3
 
             # Check what status the current pin should be set to based on the current step count.
@@ -62,6 +83,9 @@ class StepperMotor:
             self._next_step = (self._next_step + 1) % 4
         else:
             self._next_step = (self._next_step - 1) % 4
+
+    def _set_earliest_next_step(self):
+        self._earliest_next_step = time.time() + self._minimum_seconds_between_steps
 
     def start(self, duration, rps):
         """
@@ -90,8 +114,7 @@ class StepperMotor:
         self.clockwise = clockwise
 
     def __str__(self):
-        buf = "Motors.py: Pins:" + str(self.pins[0]) + str(self.pins[2]) + str(self.pins[3]) + str(self.pins[4])
-        return buf
+        return "Motors.py: Pins:" + ''.join(str(pin) for pin in self._gpio_pins)
 
 
 def large_stepper_motor(gpio_pins):
