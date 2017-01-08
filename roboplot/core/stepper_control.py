@@ -9,7 +9,7 @@ import time
 
 import numpy as np
 
-from roboplot import Motors
+from roboplot.core import gpio_connections
 
 
 # TODO: Add functionality to chain curves
@@ -105,12 +105,12 @@ class Circle(Curve):
 class Axis:
     current_location = 0
 
-    def __init__(self, motor: Motors.StepperMotor, lead: float):
+    def __init__(self, motor: gpio_connections.StepperMotor, lead: float):
         """
         Creates an Axis.
 
         Args:
-            motor (Motors.StepperMotor): The stepper motor driving the axis.
+            motor (gpio_connections.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
         """
         self._motor = motor

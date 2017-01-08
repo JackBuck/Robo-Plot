@@ -7,9 +7,8 @@ Authors:
 
 import time
 
-# import RPi.GPIO as GPIO
-from roboplot.EmulatorGUI import GPIO
-from roboplot.EmulatorGUI import app
+from roboplot.core.GPIO.EmulatorGUI import GPIO
+from roboplot.core.GPIO.EmulatorGUI import app
 
 GPIO.setmode(GPIO.BCM)
 
@@ -114,7 +113,7 @@ class StepperMotor:
         self.clockwise = clockwise
 
     def __str__(self):
-        return "Motors.py: Pins:" + ''.join(str(pin) for pin in self._gpio_pins)
+        return "gpio_connections.py: Pins:" + ''.join(str(pin) for pin in self._gpio_pins)
 
 
 def large_stepper_motor(gpio_pins):

@@ -6,8 +6,8 @@ import time
 import numpy as np
 
 import context
-from roboplot import Motors
-from roboplot import StepperControl
+import roboplot.core.stepper_control as stepper_control
+import roboplot.core.gpio_connections as gpio_connections
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Move the pen in a straight line using the low level linear move method.')
@@ -23,13 +23,13 @@ parser.add_argument('-w', '--wait', type=float, default=0,
 try:
     args = parser.parse_args()
 except:
-    Motors.quit_gui()
+    gpio_connections.quit_gui()
     raise
 
 # Script body
-x_axis = StepperControl.Axis(motor=Motors.large_stepper_motor([22, 23, 24, 25]), lead=8)
-y_axis = StepperControl.Axis(motor=Motors.large_stepper_motor([19, 26, 20, 21]), lead=8)
-both_motors = StepperControl.AxisPair(x_axis, y_axis)
+x_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([22, 23, 24, 25]), lead=8)
+y_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([19, 26, 20, 21]), lead=8)
+both_motors = stepper_control.AxisPair(x_axis, y_axis)
 
 target_duration = np.linalg.norm([args.x_millimetres, args.y_millimetres]) / args.pen_millimetres_per_second
 
@@ -45,4 +45,4 @@ print(end_time - start_time)
 print("Predicted: ", end='')
 print(target_duration)
 
-Motors.quit_gui()
+gpio_connections.quit_gui()

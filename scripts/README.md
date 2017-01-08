@@ -1,3 +1,5 @@
+### Directory: *scripts*
+
 This is a directory to keep all the scripts which lever the functionality of the `roboplot` package.
 
 In order to be able to run the scripts in this folder directly, they should be executable and contain the shebang 

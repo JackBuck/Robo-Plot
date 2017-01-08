@@ -1,9 +1,8 @@
-from roboplot.EmulatorGUI import GPIO
-#import RPi.GPIO as GPIO
 import time
 import traceback
 
-          
+from roboplot.core.GPIO.EmulatorGUI import GPIO
+
 
 def Main():
     try:
