@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import context
-from roboplot.core import gpio_connections
+from roboplot.core.hardware import x_axis_motor
 
-a_motor = gpio_connections.large_stepper_motor(gpio_pins=[17, 22, 23, 24])
-a_motor.start(duration=60, rps=0.01)
+x_axis_motor.start(duration=60, rps=0.01)
