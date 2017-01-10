@@ -483,8 +483,8 @@ class GPIO:
                         return False
 
 
-    
-    def cleanup(self):
+    @staticmethod
+    def cleanup():
         dictionaryPins.clear()
        
                 

@@ -6,6 +6,7 @@ import time
 import numpy as np
 
 import context
+import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.stepper_control as stepper_control
 import roboplot.core.gpio_connections as gpio_connections
 
@@ -23,7 +24,7 @@ parser.add_argument('-w', '--wait', type=float, default=0,
 try:
     args = parser.parse_args()
 except:
-    gpio_connections.quit_gui()
+    gpio_wrapper.clean_up()
     raise
 
 # Script body
@@ -44,4 +45,4 @@ print(end_time - start_time)
 print('Predicted: ', end='')
 print(2 * np.pi * args.radius / args.pen_millimetres_per_second)
 
-gpio_connections.quit_gui()
+gpio_wrapper.clean_up()
