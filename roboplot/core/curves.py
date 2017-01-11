@@ -60,8 +60,8 @@ class LineSegment(Curve):
             LineSegment: The line segment.
 
         """
-        self.start = start.reshape(2)
-        self.end = end.reshape(2)
+        self.start = np.reshape(start, 2)
+        self.end = np.reshape(end, 2)
 
     @property
     def total_millimetres(self) -> float:
