@@ -73,7 +73,39 @@ class LineSegment(Curve):
         return (1 - t) * self.start + t * self.end
 
 
-class Circle(Curve):
+class CircularArc(Curve):
+    def __init__(self, centre: np.ndarray, radius: float, start_degrees: float, end_degrees: float):
+        """
+        Define a circular arc.
+
+        Note that the direction the arc is traversed can be reversed by switching the start_degrees and end_degrees
+        arguments.
+
+        Args:
+            centre (np.ndarray): A 2-element vector specifying the centre of the circle (in MILLIMETRES)
+            radius (float): The radius of the circle (in MILLIMETRES)
+            start_degrees (float): The start angle (in DEGREES)
+            end_degrees (float): The end angle (in DEGREES)
+        """
+        self.centre = np.reshape(centre, 2)
+        self.radius = radius
+        self.start_degrees = start_degrees
+        self.end_degrees = end_degrees
+
+    @property
+    def total_millimetres(self):
+        radians = deg2rad(self.end_degrees - self.start_degrees)
+        return abs(radians) * self.radius
+
+    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
+        arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
+        radians = arc_length / self.radius + deg2rad(self.start_degrees)
+        points = np.hstack((np.cos(radians), np.sin(radians)))
+        points = self.radius * points + self.centre
+        return points
+
+
+class Circle(CircularArc):
     def __init__(self, centre: np.ndarray, radius: float):
         """
         Define a circle.
@@ -82,16 +114,20 @@ class Circle(Curve):
             centre (np.ndarray): A 2-element vector specifying the centre of the circle (in MILLIMETRES).
             radius (float): The radius of the circle (in MILLIMETRES).
         """
-        self.centre = np.reshape(centre, 2)
-        self.radius = radius
+        CircularArc.__init__(self,
+                             centre=centre,
+                             radius=radius,
+                             start_degrees=0,
+                             end_degrees=360)
 
-    @property
-    def total_millimetres(self):
-        return 2 * np.pi * self.radius
 
-    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
-        arc_length = arc_length.reshape(-1, 1)  # Make column vector
-        radians = arc_length / self.radius
-        points = np.hstack((np.cos(radians), np.sin(radians)))
-        points = self.radius * points + self.centre
-        return points
+# TODO: Consider replacing these methods with an Angle class...
+# (then the conversions would be available wherever the Angle is used)
+def deg2rad(degrees):
+    """Convert values in degrees to radians."""
+    return degrees * np.pi / 180
+
+
+def rad2deg(radians):
+    """Convert values in radians to degrees."""
+    return radians * 180 / np.pi
