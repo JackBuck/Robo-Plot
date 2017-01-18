@@ -5,6 +5,7 @@ All distances in the module are expressed in MILLIMETRES.
 """
 
 import numpy as np
+import svgpathtools as svg
 
 
 # TODO: Add functionality to chain curves
@@ -131,3 +132,32 @@ def deg2rad(degrees):
 def rad2deg(radians):
     """Convert values in radians to degrees."""
     return radians * 180 / np.pi
+
+
+# TODO: Allow for translations, rotations, shears, reflections... (i.e. an arbitrary 3x3 transformation matrix)
+# The difficulty here will be to
+class SVGPath(Curve):
+    """A curve which wraps an svgpathtools.Path object."""
+
+    def __init__(self, path: svg.Path, scale_factor: float = 1):
+        """
+        Create a wrapper around an svgpathtools.Path.
+
+        Args:
+            path (svg.Path): The svg path to wrap.
+            scale_factor (float): The scale factor for both axes. This should be such that a point (x,y) in user
+                                  space maps to a point scale_factor*(x,y) in millimetres.
+        """
+        self._path = path
+        self._scale_factor = scale_factor
+
+    @property
+    def total_millimetres(self):
+        return self._path.length() * self._scale_factor
+
+    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
+        # First use ilength(...) to map path lengths to the built-in parameterisation
+        t_values = [self._path.ilength(s) for s in arc_length / self._scale_factor]
+
+        # Then evaluate the curve at these points
+        return np.array([self._path.point(t) for t in t_values])
