@@ -12,11 +12,11 @@ import roboplot.core.hardware as hardware
 
 try:
     # Commandline arguments
-    parser = argparse.ArgumentParser(description='Draw a circle.')
-    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
-                        help='the centre (x,y) of the circle in millimetres (default: %(default)smm)')
-    parser.add_argument('-r', '--radius', type=float, required=True,
-                        help='the radius of the circle in millimetres')
+    parser = argparse.ArgumentParser(description='Draw a line segment.')
+    parser.add_argument('-f', '--first-point', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
+                        help='the first point (x,y) of the line segment, in millimetres (default: %(default)smm)')
+    parser.add_argument('-l', '--last-point', metavar=('x', 'y'), nargs=2, type=float, required=True,
+                        help='the last point (x,y) of the line segment, in millimetres (required)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
@@ -24,20 +24,22 @@ try:
 
     args = parser.parse_args()
 
-    # Draw a circle
-    circle = curves.Circle(args.centre, args.radius)
+    # Draw a line segment
+    line_segment = curves.LineSegment(args.first_point, args.last_point)
 
     time.sleep(args.wait)
 
     start_time = time.time()
-    hardware.both_axes.follow(curve=circle, pen_speed=args.pen_millimetres_per_second)
+    hardware.both_axes.follow(curve=line_segment, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()
 
     # Report statistics
     print('Elapsed: ', end='')
     print(end_time - start_time)
     print('Predicted: ', end='')
-    print(2 * np.pi * args.radius / args.pen_millimetres_per_second)
+    distance_travelled = np.linalg.norm((args.first_point[0] - args.last_point[0],
+                                         args.first_point[1] - args.last_point[1]))
+    print(distance_travelled / args.pen_millimetres_per_second)
 
 finally:
     gpio_connections.quit_gui()
