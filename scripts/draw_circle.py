@@ -6,9 +6,9 @@ import time
 import numpy as np
 
 import context
-import roboplot.core.stepper_control as stepper_control
-import roboplot.core.gpio_connections as gpio_connections
 import roboplot.core.curves as curves
+import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
+import roboplot.core.hardware as hardware
 
 try:
     # Commandline arguments
@@ -24,18 +24,13 @@ try:
 
     args = parser.parse_args()
 
-    # Set up the hardware
-    x_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([22, 23, 24, 25]), lead=8)
-    y_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([19, 26, 20, 21]), lead=8)
-    both_motors = stepper_control.AxisPair(x_axis, y_axis)
-
     # Draw a circle
     circle = curves.Circle(args.centre, args.radius)
 
     time.sleep(args.wait)
 
     start_time = time.time()
-    both_motors.follow(curve=circle, pen_speed=args.pen_millimetres_per_second)
+    hardware.both_axes.follow(curve=circle, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()
 
     # Report statistics
@@ -45,4 +40,4 @@ try:
     print(2 * np.pi * args.radius / args.pen_millimetres_per_second)
 
 finally:
-    gpio_connections.quit_gui()
+    gpio_wrapper.clean_up()

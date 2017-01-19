@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# This hook is run after every update to the Robo-Plot repository.
+# Its purpose is to checkout the branch just pushed.
+# 
+# It assumes a directory structure:
+# 
+# .
+# |-- Robo-Plot/
+# |-- Robo-Plot.git/
+#
+# where Robo-Plot.git/ is a git directory and Robo-Plot/ is the corresponding working directory.
+#
+# To set this up from scratch:
+#   mkdir Robo-Plot
+#   mkdir Robo-Plot.git
+#   git init --separate-git-dir Robo-Plot.git/ Robo-Plot/
+#   cd Robo-Plot
+#
+# The Robo-Plot repository must also be set-up to allow pushes to update the current branch:
+#   git config receive.denyCurrentBranch ignore
+#
+# Finally, to install the hook:
+#   scp post-receive.pi pi@robo-plot:~/SoftwareDevelopment/Robo-Plot.git/hooks/post-receive
+#   ssh pi@robo-plot
+#   chmod +x ~/SoftwareDevelopment/Robo-Plot.git/hooks/post-receive
+#   ^D
+#
+
+echo Checking out working copy...
+
+working_tree=../Robo-Plot
+gitdir=$working_tree.git
+
+cd $working_tree
+
+read oldref newref refname
+branchname=${refname#refs/heads/}
+
+git --work-tree=./ --git-dir=$gitdir checkout -f $branchname || { echo "ERROR: Could not checkout first updated branch ($branchname)"; exit 1; }
+git --work-tree=./ --git-dir=$gitdir clean -fd || { echo "ERROR: Could not clean the working tree"; exit 1; }
+
+cd $gitdir
+
+exit 0

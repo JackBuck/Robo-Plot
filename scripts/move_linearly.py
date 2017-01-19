@@ -6,8 +6,8 @@ import time
 import numpy as np
 
 import context
-import roboplot.core.stepper_control as stepper_control
-import roboplot.core.gpio_connections as gpio_connections
+import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
+import roboplot.core.hardware as hardware
 
 try:
     # Commandline arguments
@@ -23,19 +23,14 @@ try:
 
     args = parser.parse_args()
 
-    # Define hardware
-    x_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([22, 23, 24, 25]), lead=8)
-    y_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([19, 26, 20, 21]), lead=8)
-    both_motors = stepper_control.AxisPair(x_axis, y_axis)
-
-    # Move linearly
+    # Script body
     target_duration = np.linalg.norm([args.x_millimetres, args.y_millimetres]) / args.pen_millimetres_per_second
 
     time.sleep(args.wait)
 
     start_time = time.time()
-    both_motors.move_linearly(target_location=[args.x_millimetres, args.y_millimetres],
-                              target_completion_time=start_time + target_duration)
+    hardware.both_axes.move_linearly(target_location=[args.x_millimetres, args.y_millimetres],
+                                     target_completion_time=start_time + target_duration)
     end_time = time.time()
 
     # Report statistics
@@ -45,4 +40,4 @@ try:
     print(target_duration)
 
 finally:
-    gpio_connections.quit_gui()
+    gpio_wrapper.clean_up()
