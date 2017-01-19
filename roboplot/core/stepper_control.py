@@ -10,19 +10,19 @@ import time
 
 import numpy as np
 
-from roboplot.core import gpio_connections
+from roboplot.core import stepper_motors
 from roboplot.core.curves import Curve
 
 
 class Axis:
     current_location = 0
 
-    def __init__(self, motor: gpio_connections.StepperMotor, lead: float):
+    def __init__(self, motor: stepper_motors.StepperMotor, lead: float):
         """
         Creates an Axis.
 
         Args:
-            motor (gpio_connections.StepperMotor): The stepper motor driving the axis.
+            motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
         """
         self._motor = motor

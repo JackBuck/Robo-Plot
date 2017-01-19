@@ -7,15 +7,7 @@ Authors:
 
 import time
 
-from roboplot.core.gpio.EmulatorGUI import GPIO
-from roboplot.core.gpio.EmulatorGUI import app
-
-GPIO.setmode(GPIO.BCM)
-
-
-def quit_gui():
-    print('\nExiting Emulator GUI... (focus on another window to complete the exit)')
-    app.root.quit()  # Still needs tweaking -- something stops the gui from quitting when it has focus...
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
 
 class StepperMotor:
@@ -113,7 +105,7 @@ class StepperMotor:
         self.clockwise = clockwise
 
     def __str__(self):
-        return "gpio_connections.py: Pins:" + ''.join(str(pin) for pin in self._gpio_pins)
+        return "stepper_motors.py: Pins:" + ''.join(str(pin) for pin in self._gpio_pins)
 
 
 def large_stepper_motor(gpio_pins):

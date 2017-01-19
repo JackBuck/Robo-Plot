@@ -7,14 +7,14 @@ hardware.
 It is also where the GPIO pins used for each piece of hardware are defined.
 """
 
-import roboplot.core.gpio_connections as gpio_connections
+import roboplot.core.stepper_motors as stepper_motors
 import roboplot.core.stepper_control as stepper_control
 
 # Direct GPIO connections
-x_axis_motor = gpio_connections.large_stepper_motor(gpio_pins=(22, 23, 24, 25))
-y_axis_motor = gpio_connections.large_stepper_motor(gpio_pins=(19, 26, 20, 21))
-small_stepper_1 = gpio_connections.small_stepper_motor(gpio_pins=(5, 6, 12, 16))
-small_stepper_2 = gpio_connections.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
+x_axis_motor = stepper_motors.large_stepper_motor(gpio_pins=(22, 23, 24, 25))
+y_axis_motor = stepper_motors.large_stepper_motor(gpio_pins=(19, 26, 20, 21))
+small_stepper_1 = stepper_motors.small_stepper_motor(gpio_pins=(5, 6, 12, 16))
+small_stepper_2 = stepper_motors.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
 
 # Higher level objects
 x_axis = stepper_control.Axis(x_axis_motor, lead=8)

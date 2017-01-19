@@ -7,7 +7,7 @@ import numpy as np
 
 import context
 import roboplot.core.curves as curves
-import roboplot.core.gpio_connections as gpio_connections
+import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
 
 try:
@@ -42,4 +42,4 @@ try:
     print(distance_travelled / args.pen_millimetres_per_second)
 
 finally:
-    gpio_connections.quit_gui()
+    gpio_wrapper.clean_up()
