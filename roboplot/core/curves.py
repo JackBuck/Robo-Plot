@@ -135,7 +135,8 @@ def rad2deg(radians):
 
 
 # TODO: Allow for translations, rotations, shears, reflections... (i.e. an arbitrary 3x3 transformation matrix)
-# The difficulty here will be to
+# The difficulty here will be to make sure you've got all the ways of transforming the shape...
+# Maybe iterate up 'parent' elements, looking for the transform attribute at each one? (and ViewBox, height & width)
 class SVGPath(Curve):
     """A curve which wraps an svgpathtools.Path object."""
 

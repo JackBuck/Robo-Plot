@@ -10,12 +10,15 @@ import svgpathtools as svg
 
 import context
 import roboplot.core.curves as curves
-import roboplot.core.stepper_control as stepper_control
-import roboplot.core.gpio_connections as gpio_connections
+import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
+import roboplot.core.hardware as hardware
 
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a stick figure constructed as a cubic Bezier curve.')
+    parser.add_argument('-r', '--resolution', type=float, default=10,
+                        help='the resolution in millimetres to use when splitting the image into linear moves ('
+                             'default: %(default)smm)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
@@ -55,11 +58,6 @@ try:
     scale_factors = (width / viewbox.width, height / viewbox.height)
     scale_factor = np.mean(scale_factors)
 
-    # Set up the hardware
-    x_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([22, 23, 24, 25]), lead=8)
-    y_axis = stepper_control.Axis(motor=gpio_connections.large_stepper_motor([19, 26, 20, 21]), lead=8)
-    both_motors = stepper_control.AxisPair(x_axis, y_axis)
-
     # Draw
     time.sleep(args.wait)
     start_time = time.time()
@@ -67,7 +65,7 @@ try:
     distance_travelled = 0
     for path in paths:
         svg_curve = curves.SVGPath(path)
-        both_motors.follow(svg_curve, pen_speed=args.pen_millimetres_per_second)
+        hardware.both_axes.follow(svg_curve, pen_speed=args.pen_millimetres_per_second, resolution=args.resolution)
         distance_travelled += svg_curve.total_millimetres
 
     end_time = time.time()
@@ -79,4 +77,4 @@ try:
     print(distance_travelled / args.pen_millimetres_per_second)
 
 finally:
-    gpio_connections.quit_gui()
+    gpio_wrapper.clean_up()
