@@ -88,3 +88,8 @@ ENV/
 # Rope project settings
 .ropeproject
 /scripts/Challenge 2
+/.idea/Robo-Plot_Clone.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/vcs.xml
+/.idea/workspace.xml
