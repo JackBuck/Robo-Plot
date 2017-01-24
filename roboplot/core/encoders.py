@@ -12,7 +12,7 @@ from roboplot.core.gpio.gpio_wrapper import GPIO
 class AxisEncoder(threading.Thread):
     """This class is a collection of functions and variables to setup and use an encoder"""
 
-    def __init__(self, pins, positions_per_revolution, distance_per_revolution, thread_name=None):
+    def __init__(self, pins, positions_per_revolution, thread_name=None):
         """
         Initialises the encoder class.
 
@@ -22,10 +22,6 @@ class AxisEncoder(threading.Thread):
 
             positions_per_revolution (int): the number of counts the encoder has per revolution.
 
-            distance_per_revolution (float): the linear movement of the axis caused by a full revolution in the
-                                             transmission. i.e. in the case of a lead screw, this will be the pitch.
-                                             Normalise this to the unit in which you choose to work
-
             thread_name (str): a name to use to identify the base class thread object.
         """
 
@@ -34,11 +30,9 @@ class AxisEncoder(threading.Thread):
 
         # In python, class members appear to be created when you refer to them
         self._positions_per_revolution = positions_per_revolution
-        self._distance_per_revolution = distance_per_revolution
 
         # Initialise the position to 0 upon creation (may need to be reset on referencing)
         self._count = 0
-        self._position = 0
 
         # setup pins
         for pin in pins:
@@ -58,15 +52,10 @@ class AxisEncoder(threading.Thread):
         # setup exit flag
         self._exit_requested = False
 
-    def get_position(self):
-        """
-        This function returns the value of the _position variable
-        """
-
-        # First, transform count into a linear positio
-        self._position = self._distance_per_revolution * self._count / self._positions_per_revolution
-
-        return self._position
+    @property
+    def revolutions(self):
+        """The number of partial revolutions completed since the last reset (or since initialisation)."""
+        return self._count / self._positions_per_revolution
 
     def reset_position(self):
         """
@@ -75,7 +64,7 @@ class AxisEncoder(threading.Thread):
         self._lock.acquire()
 
         try:
-            self._position = 0
+            self._count = 0
         finally:
             self._lock.release()
 
