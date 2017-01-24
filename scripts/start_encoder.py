@@ -8,8 +8,8 @@ EncX.start()
 
 i = 0
 while(i < 10000):
-    print("{0:06}".format(EncX.GetPosition()), end='\r')
+    print("{0:06}".format(EncX.get_position()), end='\r')
     i = i + 1
 
-EncX.ExitThread()
+EncX.exit_thread()
 print("Program Ended")
