@@ -41,10 +41,6 @@ class AxisEncoder(threading.Thread):
         for pin in (self._a_pin, self._b_pin):
             GPIO.setup(pin, GPIO.IN)
 
-        # Get first encoder pin values
-        self._a = GPIO.input(self._a_pin)
-        self._b = GPIO.input(self._b_pin)
-
     @property
     def revolutions(self):
         """The number of partial revolutions completed since the last reset (or since initialisation)."""
@@ -67,42 +63,46 @@ class AxisEncoder(threading.Thread):
             self._exit_requested = True  # TODO: Is there any point in locking here? We do not lock when we read it...
 
     def encoder_loop(self):
+
+        a = GPIO.input(self._a_pin)
+        b = GPIO.input(self._b_pin)
+
         # Infinite while loop until program ends, at which point a flag can be set from another thread
         while True:
             # Get encoder pin values
-            self._A_Prev = self._a
-            self._B_Prev = self._b
-            self._a = GPIO.input(self._a_pin)
-            self._b = GPIO.input(self._b_pin)
+            a_prev = a
+            b_prev = b
+            a = GPIO.input(self._a_pin)
+            b = GPIO.input(self._b_pin)
 
             # Depending on what changes have occurred, increment or decrement the encoder value
             # Check current and previous values of encoders
-            tempcount = 0
-            if ((self._a == 0) and (self._A_Prev == 0)):
-                if ((self._b == 1) and (self._B_Prev == 0)):
-                    tempcount = tempcount + 1
-                if ((self._b == 0) and (self._B_Prev == 1)):
-                    tempcount = tempcount - 1
-            elif ((self._a == 1) and (self._A_Prev == 1)):
-                if ((self._b == 1) and (self._B_Prev == 0)):
-                    tempcount = tempcount - 1
-                if ((self._b == 0) and (self._B_Prev == 1)):
-                    tempcount = tempcount + 1
+            count_change = 0
+            if (a == 0) and (a_prev == 0):
+                if (b == 1) and (b_prev == 0):
+                    count_change += 1
+                if (b == 0) and (b_prev == 1):
+                    count_change -= 1
+            elif (a == 1) and (a_prev == 1):
+                if (b == 1) and (b_prev == 0):
+                    count_change -= 1
+                if (b == 0) and (b_prev == 1):
+                    count_change += 1
 
-            if ((self._b == 0) and (self._B_Prev == 0)):
-                if ((self._a == 1) and (self._A_Prev == 0)):
-                    tempcount = tempcount - 1
-                if ((self._a == 0) and (self._A_Prev == 1)):
-                    tempcount = tempcount + 1
-            elif ((self._b == 1) and (self._B_Prev == 1)):
-                if ((self._a == 1) and (self._A_Prev == 0)):
-                    tempcount = tempcount + 1
-                if ((self._a == 0) and (self._A_Prev == 1)):
-                    tempcount = tempcount - 1
+            if (b == 0) and (b_prev == 0):
+                if (a == 1) and (a_prev == 0):
+                    count_change -= 1
+                if (a == 0) and (a_prev == 1):
+                    count_change += 1
+            elif (b == 1) and (b_prev == 1):
+                if (a == 1) and (a_prev == 0):
+                    count_change += 1
+                if (a == 0) and (a_prev == 1):
+                    count_change -= 1
 
             # Use a lock to make count variable thread safe
             with self._lock:
-                self._count += tempcount
+                self._count += count_change
 
             # Exit while loop (and consequently kill thread)
             # if exit is requested
