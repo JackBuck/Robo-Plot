@@ -68,7 +68,8 @@ class AxisEncoder(threading.Thread):
         b = GPIO.input(self._b_pin)
 
         # Infinite while loop until program ends, at which point a flag can be set from another thread
-        while True:
+        while not self._exit_requested:
+
             # Get encoder pin values
             a_prev = a
             b_prev = b
@@ -103,8 +104,3 @@ class AxisEncoder(threading.Thread):
             # Use a lock to make count variable thread safe
             with self._lock:
                 self._count += count_change
-
-            # Exit while loop (and consequently kill thread)
-            # if exit is requested
-            if self._exit_requested:
-                break
