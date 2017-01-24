@@ -61,12 +61,8 @@ class AxisEncoder(threading.Thread):
         """
         This function resets the position to 0
         """
-        self._lock.acquire()
-
-        try:
+        with self._lock:
             self._count = 0
-        finally:
-            self._lock.release()
 
     def exit_thread(self):
         """
@@ -74,12 +70,8 @@ class AxisEncoder(threading.Thread):
 
         Shortly after calling this function the thread will exit
         """
-        self._lock.acquire()
-
-        try:
-            self._exit_requested = True
-        finally:
-            self._lock.release()
+        with self._lock:
+            self._exit_requested = True  # TODO: Is there any point in locking here? We do not lock when we read it...
 
     def encoder_loop(self):
         # Infinite while loop until program ends, at which point a flag can be set from another thread
@@ -116,11 +108,8 @@ class AxisEncoder(threading.Thread):
                     tempcount = tempcount - 1
 
             # Use a lock to make count variable thread safe
-            self._lock.acquire()
-            try:
+            with self._lock:
                 self._count += tempcount
-            finally:
-                self._lock.release()
 
             # Exit while loop (and consequently kill thread)
             # if exit is requested
