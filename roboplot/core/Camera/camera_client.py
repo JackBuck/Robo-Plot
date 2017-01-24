@@ -18,7 +18,7 @@ PORT = 8888
 
 try:
     remote_ip = socket.gethostbyname(HOST)
-except socket.gaierror():
+except socket.oserror():
     print
     'Hostname could not be resolved. Exiting'
     sys.exit()
