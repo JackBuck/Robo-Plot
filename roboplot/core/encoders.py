@@ -1,41 +1,36 @@
-#
-# Class to manage encoder activities
-#
-# Author: Luke W
+"""
+This module defines a class to manage encoder activities.
 
-# import RPi.GPIO as GPIO
-from EmulatorGUI import GPIO
+Author: Luke W
+"""
+
 import threading
 
-#Set mode to BCM numbering
-GPIO.setmode(GPIO.BCM)
+from roboplot.core.gpio.gpio_wrapper import GPIO
+
 
 class AxisEncoder(threading.Thread):
     """This class is a collection of functions and variables to setup and use an encoder"""
 
-    def __init__(self, pins, positions_per_revolution, distance_per_revolution, group=None, name=None, args=(), kwargs=None):
+    def __init__(self, pins, positions_per_revolution, distance_per_revolution, thread_name=None):
         """
         Initialises the encoder class.
 
         Args:
             pins: BCM number of the GPIO pins which make up the A and B channel of the encoder.
-                  See pin allocation scheme on google drive
+                  See pin allocation scheme on google drive.
 
-                  positions_per_revolution: the number of counts the encoder has per revolution.
+            positions_per_revolution: the number of counts the encoder has per revolution.
 
-                  distance_per_revolution: the linear movement of the axis caused by a full revolution in the transmission.
-                                           i.e. in the case of a lead screw, this will be the pitch.
-                                           Normalise this to the unit in which you choose to work
+            distance_per_revolution: the linear movement of the axis caused by a full revolution in the transmission.
+                                     i.e. in the case of a lead screw, this will be the pitch.
+                                     Normalise this to the unit in which you choose to work
         """
 
-        #setup function which will be run in separate threading
-        self._target = self.EncoderLoop
+        # Initialise thread object (base class initialiser)
+        threading.Thread.__init__(self, group=None, target=self.EncoderLoop, name=thread_name)
 
-        #Initialise thread object
-        threading.Thread.__init__(self, group=group, target=self._target, name=name)
-
-        #In python, class members appear to be created when you refer to them
-        self._gpio_pins = pins
+        # In python, class members appear to be created when you refer to them
         self._positions_per_revolution = positions_per_revolution
         self._distance_per_revolution  = distance_per_revolution
 
