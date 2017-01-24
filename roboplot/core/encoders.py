@@ -5,6 +5,7 @@ Author: Luke W
 """
 
 import threading
+import warnings
 
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
@@ -62,45 +63,68 @@ class AxisEncoder(threading.Thread):
         with self._lock:
             self._exit_requested = True  # TODO: Is there any point in locking here? We do not lock when we read it...
 
-    def encoder_loop(self):
-
+    def _compute_current_section(self):
+        """
+        Returns a number modulo 4 to indicate the current reading from the encoder.
+        """
         a = GPIO.input(self._a_pin)
         b = GPIO.input(self._b_pin)
 
+        return self._compute_section(a, b)
+
+    @staticmethod
+    def _compute_section(a, b):
+        """
+        Returns a number modulo 4 to indicate the state of the encoder corresponding to the supplied pin readings.
+
+        Args:
+            a: the pin reading for the A channel (either 0 or 1)
+            b: the pin reading for the B channel (either 0 or 1)
+
+        Returns:
+            The value modulo 4 corresponding to the pin readings.
+        """
+        # return 3*a + (1-b)*(1-2*a)  # Some opaque magic...
+
+        if (a, b) == (0, 1):
+            return 0
+        elif (a, b) == (0, 0):
+            return 1
+        elif (a, b) == (1, 0):
+            return 2
+        elif (a, b) == (1, 1):
+            return 3
+        else:
+            assert False, "GPIO input pins returned unexpected values!"
+
+    def encoder_loop(self):
+        """
+        Loop to update the encoder count until an exit is requested.
+
+        Returns:
+            None
+        """
+
+        current_section = self._compute_current_section()
+
         # Infinite while loop until program ends, at which point a flag can be set from another thread
         while not self._exit_requested:
+            previous_section = current_section
+            current_section = self._compute_current_section()
 
-            # Get encoder pin values
-            a_prev = a
-            b_prev = b
-            a = GPIO.input(self._a_pin)
-            b = GPIO.input(self._b_pin)
+            # Sections are modulo 4; hopefully the change is 0,1, or -1 modulo 4
+            count_change = _get_modular_representative(current_section - previous_section)
 
-            # Depending on what changes have occurred, increment or decrement the encoder value
-            # Check current and previous values of encoders
-            count_change = 0
-            if (a == 0) and (a_prev == 0):
-                if (b == 1) and (b_prev == 0):
-                    count_change += 1
-                if (b == 0) and (b_prev == 1):
-                    count_change -= 1
-            elif (a == 1) and (a_prev == 1):
-                if (b == 1) and (b_prev == 0):
-                    count_change -= 1
-                if (b == 0) and (b_prev == 1):
-                    count_change += 1
-
-            if (b == 0) and (b_prev == 0):
-                if (a == 1) and (a_prev == 0):
-                    count_change -= 1
-                if (a == 0) and (a_prev == 1):
-                    count_change += 1
-            elif (b == 1) and (b_prev == 1):
-                if (a == 1) and (a_prev == 0):
-                    count_change += 1
-                if (a == 0) and (a_prev == 1):
-                    count_change -= 1
+            # But if it is not...
+            if count_change == 2:
+                warnings.warn("Encoder moved more than one step")
+                count_change = 0  # We do not know whether we gained two or lost two steps - so do nothing!
 
             # Use a lock to make count variable thread safe
-            with self._lock:
-                self._count += count_change
+            if count_change != 0:
+                with self._lock:
+                    self._count += count_change
+
+
+def _get_modular_representative(value, min, modulus):
+    return ((value - min) % modulus) + min
