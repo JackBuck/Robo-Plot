@@ -1,7 +1,7 @@
 """
 This module defines a class to manage encoder activities.
 
-Author: Luke W
+Author: Luke W (refactored by Jack)
 """
 
 import threading
