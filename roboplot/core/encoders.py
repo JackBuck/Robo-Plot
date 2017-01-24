@@ -12,6 +12,10 @@ from roboplot.core.gpio.gpio_wrapper import GPIO
 class AxisEncoder(threading.Thread):
     """This class is a collection of functions and variables to setup and use an encoder"""
 
+    _lock = threading.Lock()
+    _count = 0
+    _exit_requested = False
+
     def __init__(self, pins, positions_per_revolution, thread_name=None):
         """
         Initialises the encoder class.
@@ -30,27 +34,16 @@ class AxisEncoder(threading.Thread):
 
         # In python, class members appear to be created when you refer to them
         self._positions_per_revolution = positions_per_revolution
-
-        # Initialise the position to 0 upon creation (may need to be reset on referencing)
-        self._count = 0
-
-        # setup pins
-        for pin in pins:
-            GPIO.setup(pin, GPIO.IN)
-
-        # Get easier to remember names for pins
         self._a_pin = pins[0]
         self._b_pin = pins[1]
+
+        # Setup pins
+        for pin in (self._a_pin, self._b_pin):
+            GPIO.setup(pin, GPIO.IN)
 
         # Get first encoder pin values
         self._a = GPIO.input(self._a_pin)
         self._b = GPIO.input(self._b_pin)
-
-        # setup lock object
-        self._lock = threading.Lock()
-
-        # setup exit flag
-        self._exit_requested = False
 
     @property
     def revolutions(self):
