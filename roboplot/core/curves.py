@@ -47,6 +47,17 @@ class Curve:
 
         return self.evaluate_at(arc_lengths)
 
+    def get_start_point(self):
+        """
+        This method should be overridden in derived classes to return the coordinates on the curve at (a) given
+        position(s).
+
+        Returns:
+            np.ndarray: An nx2 matrix the first point in the curve.
+
+               """
+        raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
+
 
 class LineSegment(Curve):
     def __init__(self, start: np.ndarray, end: np.ndarray):
@@ -71,6 +82,9 @@ class LineSegment(Curve):
         arc_length = arc_length.reshape(-1, 1)  # Make it a column vector
         t = arc_length / self.total_millimetres
         return (1 - t) * self.start + t * self.end
+
+    def get_start_point(self):
+        return self.start
 
 
 class CircularArc(Curve):
@@ -103,6 +117,9 @@ class CircularArc(Curve):
         points = np.hstack((np.cos(radians), np.sin(radians)))
         points = self.radius * points + self.centre
         return points
+
+    def get_start_point(self):
+        return np.array([self.radius * np.cos(deg2rad(self.start_degrees)), self.radius * np.sin(deg2rad(self.start_degrees))] + self.centre)
 
 
 class Circle(CircularArc):

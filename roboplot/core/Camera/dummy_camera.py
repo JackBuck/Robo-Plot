@@ -2,7 +2,6 @@
 import numpy as np
 import cv2
 
-global debug
 
 class DummyCamera:
     """This class holds the functions required to mimic the behavior of the plotter when taking photos."""
@@ -11,20 +10,18 @@ class DummyCamera:
         file_path = '../../resources/Challenge_2_Test_Images/HackspacePath_Sample.png'
         self._map = cv2.imread(file_path)
 
-
         #Resize to make it A4 ratio with 40mm = 200 pixels
         self._map = cv2.resize(self._map, (5940, 4200))
         self.debug_map = self._map.copy()
 
-
-        # Get width and height. (Should be the same as given above.
+        # Get width and height. (Should be the same as given above).
         self._map_width = self._map.shape[0]
         self._map_height = self._map.shape[1]
 
-        self.conversion_factor = 0.2 # This converts pixels to mm, 1mm  is 5 pixels
+        self.conversion_factor = 0.2  # This converts pixels to mm, 1mm  is 5 pixels
         self._photo_size = 200
 
-    def take_photo_at(self, camera_centre):
+    def take_photo(self, camera_centre):
         """ This function takes a sub-array representing a photo at the given co-ordinates.
                 Args:
                     np.ndarray: An 1x2 matrix representing the global co-ordinates of the picture needed.
@@ -79,9 +76,6 @@ class DummyCamera:
         # Get dummy photo as sub array of the map.
         dummy_photo[image_y_min_placement:image_y_max_placement, image_x_min_placement:image_x_max_placement] = \
             self._map[image_y_min:image_y_max, image_x_min:image_x_max]
-
-        if debug:
-            cv2.imshow('Dummy Photo', cv2.resize(dummy_photo, (200, 200)))
 
         return dummy_photo
 
