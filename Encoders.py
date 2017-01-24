@@ -1,1 +1,0 @@
-import wiringpi as wiringpi
