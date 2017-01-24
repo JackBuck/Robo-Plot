@@ -2,18 +2,20 @@ import io
 import socket
 import struct
 import sys
+import cv2
+import numpy
 
 
 # On robo_plot
 try:
-    socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 except socket.error as msg:
     print('Failed to create socket. Error code: ' + str(msg[0]) + ' , Error message : ' + msg[1])
     sys.exit()
 
 print('Socket Created')
 
-HOST = 'robo-plot'
+HOST = 'HH_RPi_01'
 PORT = 8888
 
 try:
@@ -24,7 +26,7 @@ except socket.oserror():
     sys.exit()
 
 # Connect to remote server (other pi)
-socket.connect((remote_ip, PORT))
+s.connect((remote_ip, PORT))
 
 print
 'Socket connected to ' + HOST + ' on ip ' + remote_ip
@@ -33,7 +35,7 @@ print
 message = 'Take_Photo'
 
 try:
-    socket.sendall(message)
+    s.sendall(message)
 except socket.error:
     # Send failed
     print
@@ -47,14 +49,14 @@ print
 while True:
     # Read the length of the image as a 32-bit unsigned int. If the
     # length is zero, quit the loop
-    image_len = struct.unpack('<L', connection.read(struct.calcsize('<L')))[0]
+    image_len = struct.unpack('<L', s.read(struct.calcsize('<L')))[0]
     if not image_len:
         break
 
     # Construct a stream to hold the image data and read the image
     # data from the connection
     image_stream = io.BytesIO()
-    image_stream.write(connection.read(image_len))
+    image_stream.write(s.read(image_len))
 
     # Rewind the stream, open it as an image with PIL and do some
     # processing on it
@@ -63,4 +65,4 @@ while True:
     print('Image is %dx%d' % image.shape)
     cv2.imshow("Recieved Image", image)
 
-socket.close()
+s.close()
