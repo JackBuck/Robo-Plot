@@ -1,15 +1,9 @@
-from roboplot.core.encoders import AxisEncoder
+import roboplot.core.hardware as hardware
 
-#Create a new object of axis encoder type
-EncX = AxisEncoder(pins=[22,23],positions_per_revolution=96)
+EncX = hardware.x_axis_encoder
 
-#run the second thread
-EncX.start()
-
-i = 0
-while(i < 10000):
+for i in range(10000):
     print("{0:06}".format(EncX.revolutions), end='\r')
-    i = i + 1
 
 EncX.exit_thread()
 print("Program Ended")

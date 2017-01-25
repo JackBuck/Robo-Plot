@@ -17,12 +17,12 @@ class AxisEncoder(threading.Thread):
     _count = 0
     _exit_requested = False
 
-    def __init__(self, pins, positions_per_revolution, thread_name=None):
+    def __init__(self, gpio_pins, positions_per_revolution, thread_name=None):
         """
         Initialises the encoder class.
 
         Args:
-            pins: BCM number of the GPIO pins which make up the A and B channel of the encoder.
+            gpio_pins: BCM number of the GPIO pins which make up the A and B channel of the encoder.
                   See pin allocation scheme on google drive.
 
             positions_per_revolution (int): the number of counts the encoder has per revolution.
@@ -35,10 +35,10 @@ class AxisEncoder(threading.Thread):
 
         # In python, class members appear to be created when you refer to them
         self._positions_per_revolution = positions_per_revolution
-        self._a_pin = pins[0]
-        self._b_pin = pins[1]
+        self._a_pin = gpio_pins[0]
+        self._b_pin = gpio_pins[1]
 
-        # Setup pins
+        # Setup gpio_pins
         for pin in (self._a_pin, self._b_pin):
             GPIO.setup(pin, GPIO.IN)
 
