@@ -10,50 +10,84 @@ import time
 
 import numpy as np
 
-from roboplot.core import stepper_motors
+from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
+from roboplot.core.encoders import AxisEncoder
 
 
 class Axis:
-    current_location = 0
-
-    def __init__(self, motor: stepper_motors.StepperMotor, lead: float):
+    def __init__(self, motor: StepperMotor, encoder: AxisEncoder, lead: float, invert_encoder: bool = False):
         """
         Creates an Axis.
 
         Args:
-            motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
+            motor (StepperMotor): The stepper motor driving the axis.
+            encoder (AxisEncoder): The encoder monitoring the axis position.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
+            invert_encoder (bool): If true, then the position recorded by the encoder is multiplied by -1.
         """
         self._motor = motor
+        self._encoder = encoder
         self._lead = lead
+        self._encoder_multiplier = -1 if invert_encoder else 1
+        self._position_offset = 0
 
     @property
-    def millimetres_per_step(self):
-        return self._lead / self._motor.steps_per_revolution
+    def current_location(self):
+        """
+        The current location as measured by the encoder.
+
+        Set this property when homing the axis.
+
+        Returns:
+            the current position of the axis.
+        """
+        return self._encoder.revolutions * self._lead * self._encoder_multiplier + self._position_offset
+
+    @current_location.setter
+    def current_location(self, value):
+        self._position_offset = value
+        self._encoder.reset_position()
 
     @property
-    def forwards(self):
+    def millimetres_per_encoder_mark(self) -> float:
+        """The resolution of the current_location property."""
+        return self._encoder.resolution * self._lead
+
+    @property
+    def forwards(self) -> bool:
+        """
+        If true, then stepping the motor will move the axis 'forwards'.
+
+        Returns:
+            bool: true if stepping the motor moves the axis 'forwards'.
+        """
         return self._motor.clockwise
 
     @forwards.setter
-    def forwards(self, value):
+    def forwards(self, value: bool) -> None:
         self._motor.clockwise = value
 
-    def _advance_current_location(self):
-        if self.forwards:
-            self.current_location += self.millimetres_per_step
-        else:
-            self.current_location -= self.millimetres_per_step
-
     def step(self):
+        """Move the axis the minimum possible amount in the current direction."""
         self._motor.step()
-        self._advance_current_location()
 
-    def nearest_reachable_location(self, target_location):
-        target_displacement = target_location - self.current_location
-        best_possible_displacement = self.millimetres_per_step * round(target_displacement / self.millimetres_per_step)
-        return best_possible_displacement + self.current_location
+    def nearest_measureable_location(self, target_location):
+        """
+        Returns approximately the location of the nearest mark on the encoders.
+
+        Args:
+            target_location: the target location.
+
+        Returns:
+            approximately the nearest location to the target location which is measureable by the encoders.
+        """
+        current_location = self.current_location  # Cached in case the encoder changes during the method
+
+        target_displacement = target_location - current_location
+        best_measureable_location = self.millimetres_per_encoder_mark * round(
+            target_displacement / self.millimetres_per_encoder_mark)
+        return best_measureable_location + current_location
 
 
 class AxisPair:
@@ -107,25 +141,36 @@ class AxisPair:
         start_time = time.time()
         total_seconds = target_completion_time - start_time
 
-        target_location = self._nearest_reachable_location(target_location)
+        target_location = self._nearest_measureable_location(target_location)
         self._set_axis_directions_for(target_location)
 
         # TODO: This would be cleaner if I could think of a way to pull a class out with member variables
         # start_location, target_location, current_distances, ... Some sort of LinearMoveProgressTracker
+        # Then you could refactor the following to read:
+        #   while not axes_have_reached(target_location):
+        #       self._step_the_axis_which_is_behind(target_location, start_location)
+        #       time_of_next_step = ??
+        #       _sleep_until(time_of_next_step)
         start_location = self.current_location
         target_distances = abs(target_location - start_location)
         current_distances = np.array([0, 0])
 
-        while any(current_distances < target_distances):
+        # Checking at half the encoder resolution to avoid precision errors
+        while any(current_distances < target_distances - self._millimetres_per_encoder_mark / 2):
             self._step_the_axis_which_is_behind(current_distances, target_distances)
 
             current_distances = abs(self.current_location - start_location)
             time_of_next_step = start_time + total_seconds * sum(current_distances) / sum(target_distances)
             _sleep_until(time_of_next_step)
 
-    def _nearest_reachable_location(self, target_location):
-        return (self.x_axis.nearest_reachable_location(target_location[0]),
-                self.y_axis.nearest_reachable_location(target_location[1]))
+    def _nearest_measureable_location(self, target_location):
+        return (self.x_axis.nearest_measureable_location(target_location[0]),
+                self.y_axis.nearest_measureable_location(target_location[1]))
+
+    @property
+    def _millimetres_per_encoder_mark(self):
+        return np.array(self.x_axis.millimetres_per_encoder_mark,
+                        self.y_axis.millimetres_per_encoder_mark)
 
     def _set_axis_directions_for(self, target_location):
         self.x_axis.forwards = target_location[0] >= self.current_location[0]

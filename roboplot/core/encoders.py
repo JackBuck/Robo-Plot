@@ -43,7 +43,12 @@ class AxisEncoder(threading.Thread):
             GPIO.setup(pin, GPIO.IN)
 
     @property
-    def revolutions(self):
+    def resolution(self) -> float:
+        """The size of a step on the encoder as a proportion of a revolution."""
+        return 1 / self._positions_per_revolution
+
+    @property
+    def revolutions(self) -> float:
         """The number of partial revolutions completed since the last reset (or since initialisation)."""
         return self._count / self._positions_per_revolution
 
