@@ -13,7 +13,7 @@ import roboplot.core.hardware as hardware
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a circular arc.')
-    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
+    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[150, 100],
                         help='the centre (x,y) of the circle in millimetres (default: %(default)smm)')
     parser.add_argument('-r', '--radius', type=float, required=True,
                         help='the radius of the circle in millimetres')
@@ -25,18 +25,20 @@ try:
                         help='an initial sleep time in seconds (default: %(default)s)')
 
     args = parser.parse_args()
+    time.sleep(args.wait)
+    start_time = time.time()
 
-    # Create the line segments defining a circle
+    # Create circle path.
     arc = curves.CircularArc(centre=args.centre,
                              radius=args.radius,
                              start_degrees=args.interval_degrees[0],
                              end_degrees=args.interval_degrees[1])
 
-    time.sleep(args.wait)
+    # Move to start of path.
+    line_to_start = curves.LineSegment(hardware.both_axes.current_location, arc.get_start_point())
+    hardware.both_axes.follow(curve=line_to_start, pen_speed=args.pen_millimetres_per_second)
 
-    start_time = time.time()
-
-    # Draw the circle.
+    # Draw path.
     hardware.both_axes.follow(curve=arc, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()
 

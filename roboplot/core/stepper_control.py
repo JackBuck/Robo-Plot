@@ -6,10 +6,12 @@ This module controls the 2D drive system for the plotter.
 All distances in the module are expressed in MILLIMETRES.
 
 """
-import time
 import math
+import time
+
 import numpy as np
 
+from roboplot.core import debug_movement
 from roboplot.core import stepper_motors
 from roboplot.core.curves import Curve
 
@@ -61,14 +63,22 @@ class AxisPair:
         self.x_axis = x_axis
         self.y_axis = y_axis
 
-    @property #This will be changed so that it uses the encoders to check the current location.
+        if __debug__:
+            self.debug = debug_movement.DebugImage(self.x_axis.millimetres_per_step)
+
+    @property
     def current_location(self):
-        return np.array([self.x_axis.current_location, self.y_axis.current_location])
+        location = np.array([self.x_axis.current_location, self.y_axis.current_location])
+        return location
 
     @current_location.setter
     def current_location(self, value):
         self.x_axis.current_location = value[0]
         self.y_axis.current_location = value[1]
+
+        if __debug__:
+            self.debug.add_point(value)
+            self.debug.change_colour()
 
     def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1) -> None:
         """
@@ -83,19 +93,26 @@ class AxisPair:
             None
 
         """
+
+        if __debug__:
+            self.debug.change_colour()
+
         points = curve.to_series_of_points(resolution)
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
 
-        #Check we are at the start point throw if not (1mm tolerance)
-        dist = math.hypot(points[0] - self.current_location[0], points[1] - self.current_location[1])
+        # Check we are at the start point throw if not (1mm tolerance)
+        dist = math.hypot(points[0][0] - self.current_location[0], points[0][1] - self.current_location[1])
 
         if abs(dist) > 1.0:
             raise ValueError('The current location of the axis does not match the start point of the curve')
 
         for pt, target_time in zip(points[1:], target_times):
             self.move_linearly(pt, target_time)
+
+        if __debug__:
+            self.debug.save_image()
 
     def move_linearly(self, target_location: np.ndarray, target_completion_time: float) -> None:
         """
@@ -117,10 +134,6 @@ class AxisPair:
 
         # TODO: This would be cleaner if I could think of a way to pull a class out with member variables
         # start_location, target_location, current_distances, ... Some sort of LinearMoveProgressTracker
-
-        # Fixed sleep time so that the speed the line segment is drawn is constant.
-        time_of_next_step = total_seconds / sum(abs(target_location - self.current_location))
-
         start_location = self.current_location
         target_distances = abs(target_location - start_location)
         current_distances = np.array([0, 0])
@@ -128,7 +141,11 @@ class AxisPair:
         while any(current_distances < target_distances):
             self._step_the_axis_which_is_behind(current_distances, target_distances)
 
+            if __debug__:
+                self.debug.add_point(self.current_location)
+
             current_distances = abs(self.current_location - start_location)
+            time_of_next_step = start_time + total_seconds * sum(current_distances) / sum(target_distances)
             _sleep_until(time_of_next_step)
 
     def _nearest_reachable_location(self, target_location):

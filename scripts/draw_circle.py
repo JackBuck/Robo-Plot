@@ -13,7 +13,7 @@ import roboplot.core.hardware as hardware
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a circle.')
-    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
+    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[150, 100],
                         help='the centre (x,y) of the circle in millimetres (default: %(default)smm)')
     parser.add_argument('-r', '--radius', type=float, required=True,
                         help='the radius of the circle in millimetres')
@@ -28,6 +28,10 @@ try:
     circle = curves.Circle(args.centre, args.radius)
 
     time.sleep(args.wait)
+
+    # Move to start of path.
+    line_to_start = curves.LineSegment(hardware.both_axes.current_location, circle.get_start_point())
+    hardware.both_axes.follow(curve=line_to_start, pen_speed=args.pen_millimetres_per_second)
 
     start_time = time.time()
     hardware.both_axes.follow(curve=circle, pen_speed=args.pen_millimetres_per_second)
