@@ -25,16 +25,14 @@ try:
                         help='an initial sleep time in seconds (default: %(default)s)')
 
     args = parser.parse_args()
+    time.sleep(args.wait)
+    start_time = time.time()
 
     # Create circle path.
     arc = curves.CircularArc(centre=args.centre,
                              radius=args.radius,
                              start_degrees=args.interval_degrees[0],
                              end_degrees=args.interval_degrees[1])
-
-    time.sleep(args.wait)
-
-    start_time = time.time()
 
     # Move to start of path.
     line_to_start = curves.LineSegment(hardware.both_axes.current_location, arc.get_start_point())
