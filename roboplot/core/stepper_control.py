@@ -7,7 +7,7 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import time
-
+import math
 import numpy as np
 
 from roboplot.core import stepper_motors
@@ -61,7 +61,7 @@ class AxisPair:
         self.x_axis = x_axis
         self.y_axis = y_axis
 
-    @property
+    @property #This will be changed so that it uses the encoders to check the current location.
     def current_location(self):
         return np.array([self.x_axis.current_location, self.y_axis.current_location])
 
@@ -88,7 +88,12 @@ class AxisPair:
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
 
-        self.current_location = points[0]  # Temporary until we can lift up the pen
+        #Check we are at the start point throw if not (1mm tolerance)
+        dist = math.hypot(points[0] - self.current_location[0], points[1] - self.current_location[1])
+
+        if abs(dist) > 1.0:
+            raise ValueError('The current location of the axis does not match the start point of the curve')
+
         for pt, target_time in zip(points[1:], target_times):
             self.move_linearly(pt, target_time)
 
@@ -112,6 +117,10 @@ class AxisPair:
 
         # TODO: This would be cleaner if I could think of a way to pull a class out with member variables
         # start_location, target_location, current_distances, ... Some sort of LinearMoveProgressTracker
+
+        # Fixed sleep time so that the speed the line segment is drawn is constant.
+        time_of_next_step = total_seconds / sum(abs(target_location - self.current_location))
+
         start_location = self.current_location
         target_distances = abs(target_location - start_location)
         current_distances = np.array([0, 0])
@@ -120,7 +129,6 @@ class AxisPair:
             self._step_the_axis_which_is_behind(current_distances, target_distances)
 
             current_distances = abs(self.current_location - start_location)
-            time_of_next_step = start_time + total_seconds * sum(current_distances) / sum(target_distances)
             _sleep_until(time_of_next_step)
 
     def _nearest_reachable_location(self, target_location):

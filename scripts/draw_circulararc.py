@@ -26,7 +26,7 @@ try:
 
     args = parser.parse_args()
 
-    # Draw a circle
+    # Create the line segments defining a circle
     arc = curves.CircularArc(centre=args.centre,
                              radius=args.radius,
                              start_degrees=args.interval_degrees[0],
@@ -35,6 +35,8 @@ try:
     time.sleep(args.wait)
 
     start_time = time.time()
+
+    # Draw the circle.
     hardware.both_axes.follow(curve=arc, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()
 

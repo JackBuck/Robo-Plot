@@ -4,6 +4,8 @@ This module houses global variables which need to be shared across files.
 All global variables are declared here.
 
 """
+global use_dummy_photo
+global debug
 
 def init_():
     global use_dummy_photo
