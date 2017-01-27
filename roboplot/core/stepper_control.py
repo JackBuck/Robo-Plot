@@ -16,20 +16,34 @@ from roboplot.core.encoders import AxisEncoder
 
 
 class Axis:
-    def __init__(self, motor: StepperMotor, encoder: AxisEncoder, lead: float, invert_encoder: bool = False):
+    def __init__(self,
+                 motor: StepperMotor,
+                 encoder: AxisEncoder,
+                 lead: float,
+                 invert_axis: bool = False):
         """
         Creates an Axis.
 
+        By default, the 'forwards' direction is that induced by rotating the stepper motor clockwise. The axis can be
+        inverted to change this behaviour.
+
         Args:
             motor (StepperMotor): The stepper motor driving the axis.
-            encoder (AxisEncoder): The encoder monitoring the axis position.
-            lead (float): The lead of the axis, in millimetres per revolution of the motor.
-            invert_encoder (bool): If true, then the position recorded by the encoder is multiplied by -1.
+            encoder (AxisEncoder): The encoder monitoring the axis position. The encoder should be inverted if
+                                   necessary to align increasing revolutions with the clockwise motion of the stepper
+                                   motor.
+            lead (float): The lead of the axis, in millimetres per revolution of the motor. This should be positive!
+            invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
+        assert isinstance(motor, StepperMotor)
+        assert isinstance(encoder, AxisEncoder)
+        assert lead > 0, "The lead specified must be positive!"
+        assert isinstance(invert_axis, bool)
+
         self._motor = motor
         self._encoder = encoder
         self._lead = lead
-        self._encoder_multiplier = -1 if invert_encoder else 1
+        self._invert_axis = invert_axis
         self._position_offset = 0
 
     @property
@@ -42,11 +56,13 @@ class Axis:
         Returns:
             the current position of the axis.
         """
-        return self._encoder.revolutions * self._lead * self._encoder_multiplier + self._position_offset
+        sign = -1 if self._invert_axis else 1
+        return sign * (self._encoder.revolutions * self._lead + self._position_offset)
 
     @current_location.setter
     def current_location(self, value):
-        self._position_offset = value
+        sign = -1 if self._invert_axis else 1
+        self._position_offset = sign * value
         self._encoder.reset_position()
         self._motor.cumulative_step_count = 0
 
@@ -60,7 +76,8 @@ class Axis:
         Returns:
             the current expected position of the axis.
         """
-        return self._motor.cumulative_step_count * self.millimetres_per_step + self._position_offset
+        sign = -1 if self._invert_axis else 1
+        return sign * (self._motor.cumulative_step_count * self.millimetres_per_step + self._position_offset)
 
     @property
     def millimetres_per_encoder_mark(self) -> float:
@@ -80,11 +97,11 @@ class Axis:
         Returns:
             bool: true if stepping the motor moves the axis 'forwards'.
         """
-        return self._motor.clockwise
+        return self._motor.clockwise != self._invert_axis
 
     @forwards.setter
     def forwards(self, value: bool) -> None:
-        self._motor.clockwise = value
+        self._motor.clockwise = value != self._invert_axis
 
     def step(self):
         """Move the axis the minimum possible amount in the current direction."""
