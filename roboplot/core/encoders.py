@@ -8,9 +8,10 @@ import threading
 import warnings
 
 from roboplot.core.gpio.gpio_wrapper import GPIO
+from roboplot.core.stepper_motors import StepperMotor
 
 
-class AxisEncoder(threading.Thread):
+class Encoder(threading.Thread):
     """This class is a collection of functions and variables to setup and use an encoder"""
 
     _lock = threading.Lock()
@@ -137,3 +138,42 @@ class AxisEncoder(threading.Thread):
 
 def _get_modular_representative(value, min, modulus):
     return ((value - min) % modulus) + min
+
+
+class PretendEncoder:
+    """A wrapper class to give a StepperMotor an Encoder interface."""
+
+    _offset_from_motor = 0
+
+    def __init__(self, motor: StepperMotor):
+        """
+        Initialises an encoder which wraps a supplied encoder.
+
+        Position measurements are determined by querying the supplied motor.
+
+        This class is intended to be used as a replacement for a real encoder class when testing without real
+        hardware. As such,the motor passed to this method is treated as completely 'readonly'.
+
+        Args:
+            motor: The stepper motor to wrap as an encoder.
+        """
+        self._motor = motor
+
+    @property
+    def resolution(self) -> float:
+        """The size of a step on the encoder as a proportion of a revolution."""
+        return 1 / self._motor.steps_per_revolution
+
+    @property
+    def revolutions(self):
+        """The number of revolutions completed, as measured by the stepper motor."""
+        return (self._motor.cumulative_step_count + self._offset_from_motor) / self._motor.steps_per_revolution
+
+    def reset_position(self):
+        """Resets the position of the encoder without affecting the count on the wrapped motor."""
+        self._offset_from_motor = -self._motor.cumulative_step_count
+
+    # noinspection PyMethodMayBeStatic
+    def exit_thread(self):
+        """Does nothing"""
+        pass

@@ -12,13 +12,13 @@ import numpy as np
 
 from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
-from roboplot.core.encoders import AxisEncoder
+from roboplot.core.encoders import Encoder
 
 
 class Axis:
     def __init__(self,
                  motor: StepperMotor,
-                 encoder: AxisEncoder,
+                 encoder: Encoder,
                  lead: float,
                  invert_axis: bool = False):
         """
@@ -29,14 +29,12 @@ class Axis:
 
         Args:
             motor (StepperMotor): The stepper motor driving the axis.
-            encoder (AxisEncoder): The encoder monitoring the axis position. The encoder should be inverted if
+            encoder (Encoder): The encoder monitoring the axis position. The encoder should be inverted if
                                    necessary to align increasing revolutions with the clockwise motion of the stepper
                                    motor.
             lead (float): The lead of the axis, in millimetres per revolution of the motor. This should be positive!
             invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
-        assert isinstance(motor, StepperMotor)
-        assert isinstance(encoder, AxisEncoder)
         assert lead > 0, "The lead specified must be positive!"
         assert isinstance(invert_axis, bool)
 
