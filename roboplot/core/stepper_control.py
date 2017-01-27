@@ -120,8 +120,8 @@ class Axis:
         current_location = self.current_location  # Cached in case the encoder changes during the method
 
         target_displacement = target_location - current_location
-        best_measureable_location = self.millimetres_per_encoder_mark * round(
-            target_displacement / self.millimetres_per_encoder_mark)
+        best_measureable_location = \
+            self.millimetres_per_encoder_mark * round(target_displacement / self.millimetres_per_encoder_mark)
         return best_measureable_location + current_location
 
 
