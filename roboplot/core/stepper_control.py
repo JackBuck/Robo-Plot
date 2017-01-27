@@ -48,11 +48,29 @@ class Axis:
     def current_location(self, value):
         self._position_offset = value
         self._encoder.reset_position()
+        self._motor.cumulative_step_count = 0
+
+    @property
+    def expected_location(self):
+        """
+        The current location as estimated by the stepper motor.
+
+        This property is reset when the current_location is reset.
+
+        Returns:
+            the current expected position of the axis.
+        """
+        return self._motor.cumulative_step_count * self.millimetres_per_step + self._position_offset
 
     @property
     def millimetres_per_encoder_mark(self) -> float:
         """The resolution of the current_location property."""
         return self._encoder.resolution * self._lead
+
+    @property
+    def millimetres_per_step(self) -> float:
+        """The approximate length of a single step of the motor."""
+        return self._lead / self._motor.steps_per_revolution
 
     @property
     def forwards(self) -> bool:

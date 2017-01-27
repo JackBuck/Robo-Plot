@@ -15,6 +15,7 @@ class StepperMotor:
 
     steps_per_revolution = 0
     clockwise = True
+    cumulative_step_count = 0
     _next_step = 0
     _minimum_seconds_between_steps = 0.001
     _earliest_next_step = time.time()
@@ -72,8 +73,10 @@ class StepperMotor:
         # Increment / decrement the step count based on the direction of the motor.
         if self.clockwise:
             self._next_step = (self._next_step + 1) % 4
+            self.cumulative_step_count += 1
         else:
             self._next_step = (self._next_step - 1) % 4
+            self.cumulative_step_count -= 1
 
     def _set_earliest_next_step(self):
         self._earliest_next_step = time.time() + self._minimum_seconds_between_steps
