@@ -161,5 +161,5 @@ class SVGPath(Curve):
         t_values = [self._path.ilength(s) for s in arc_length / self._scale_factor]
 
         # Then evaluate the curve at these points
-        points_as_complex = np.array([self._path.point(t) for t in t_values])
+        points_as_complex = np.array([self._path.point(t) for t in t_values]) * self._scale_factor
         return np.column_stack([np.real(points_as_complex), np.imag(points_as_complex)])
