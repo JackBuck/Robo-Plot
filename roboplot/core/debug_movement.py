@@ -20,9 +20,13 @@ class Colour:
 
 
 class DebugImage:
-    def __init__(self, millimetres_per_step):
+    def __init__(self, millimetres_per_step, bgimage_path=None):
         """
         Creates debug image.
+
+        Args:
+            bgimage_path (str): An optional path to a background image to use for the debugger output.
+
         """
 
         self.dir_path = os.path.join(config.resources_dir, 'DebugImages')
@@ -36,13 +40,12 @@ class DebugImage:
         for file_name in file_list:
             os.remove(self.dir_path + "/" + file_name)
 
-        # Choose whether to start with blank image or background.
-        # Blank image
-        self.debug_image = np.zeros((594, 420, 3), np.uint8)
-
-        # Background image that can be changed.
-        # self.debug_image = cv2.imread("resources/HackspacePath_Sample.jpg")
-        # cv2.resize(self.debug_image, (594, 420))
+        # Background image
+        if bgimage_path is not None:
+            self.debug_image = cv2.imread(bgimage_path)
+            cv2.resize(self.debug_image, (594, 420))
+        else:
+            self.debug_image = np.zeros((594, 420, 3), np.uint8)
 
         # This value should depend on the picture size chosen currently a 1:1 mappings
         self.pixels_per_mm = 2
