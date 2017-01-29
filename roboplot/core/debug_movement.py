@@ -4,11 +4,10 @@ Debug Movement Module
 This module creates a debug images showing the movement of the plotter.
 
 """
-import time
 import os
+
 import cv2
 import numpy as np
-import enum
 
 import roboplot.config as config
 
