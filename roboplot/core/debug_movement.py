@@ -54,7 +54,7 @@ class DebugImage:
         self.millimeters_between_saves = 20
         self.steps_between_saves = self.millimeters_between_saves / millimetres_per_step
 
-        cv2.imwrite(self.dir_path + 'Initial_Image.png', self.debug_image)
+        cv2.imwrite(os.path.join(self.dir_path, 'Initial_Image.png'), self.debug_image)
 
         self.steps_since_save = 0
         self.image_index = 0
@@ -78,7 +78,7 @@ class DebugImage:
 
         # If the buffer is sufficiently large save/display the image.
         if self.steps_since_save > self.steps_between_saves:
-            cv2.imwrite(self.dir_path + "Debug_Image" + str(self.image_index) + ".png", self.debug_image)
+            cv2.imwrite(os.path.join(self.dir_path, "Debug_Image" + str(self.image_index) + ".png"), self.debug_image)
             self.image_index += 1
             self.steps_since_save = 0
 
@@ -91,6 +91,6 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(self.dir_path + "Debug_Image" + str(self.image_index) + ".png", self.debug_image)
+        cv2.imwrite(os.path.join(self.dir_path, "Debug_Image" + str(self.image_index) + ".png"), self.debug_image)
         self.image_index += 1
         self.steps_since_save = 0
