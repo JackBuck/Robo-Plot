@@ -20,7 +20,12 @@ class Colour:
 
 
 class DebugImage:
-    def __init__(self, millimetres_per_step, bgimage_path=None):
+    steps_since_save = 0
+    image_index = 0
+    colour_index = 0
+    colour = Colour.Yellow
+
+    def __init__(self, millimetres_per_step, bgimage_path=None, pixels_per_mm=2):
         """
         Creates debug image.
 
@@ -28,6 +33,7 @@ class DebugImage:
             millimetres_per_step (float): The number of millimetres per step (used to compute the number of steps per
                                           save)
             bgimage_path (str): An optional path to a background image to use for the debugger output.
+            pixels_per_mm (float): This value should depend on the picture size chosen currently a 1:1 mappings
 
         """
 
@@ -42,26 +48,23 @@ class DebugImage:
         for file_name in file_list:
             os.remove(self.dir_path + "/" + file_name)
 
+        # Setup image dimensions
+        self.pixels_per_mm = pixels_per_mm
+        a4paper = (297, 210)
+        self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
+
         # Background image
         if bgimage_path is not None:
             self.debug_image = cv2.imread(bgimage_path)
-            cv2.resize(self.debug_image, (594, 420))
+            cv2.resize(self.debug_image, self._image_dimensions_pixels)
         else:
-            self.debug_image = np.zeros((594, 420, 3), np.uint8)
-
-        # This value should depend on the picture size chosen currently a 1:1 mappings
-        self.pixels_per_mm = 2
+            self.debug_image = np.zeros(self._image_dimensions_pixels + (3,), np.uint8)
 
         # Choose how often an image is saved.
         self.millimeters_between_saves = 20
         self.steps_between_saves = self.millimeters_between_saves / millimetres_per_step
 
         cv2.imwrite(os.path.join(self.dir_path, 'Initial_Image.png'), self.debug_image)
-
-        self.steps_since_save = 0
-        self.image_index = 0
-        self.colour_index = 0
-        self.colour = Colour.Yellow
 
     def add_point(self, point):
         """
