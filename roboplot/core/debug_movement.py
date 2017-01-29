@@ -76,7 +76,8 @@ class DebugImage:
 
         pixel = (int(round(point[0] * self.pixels_per_mm)), int(round(point[1] * self.pixels_per_mm)))
 
-        if pixel[0] >= 0 and pixel[1] >= 0:
+        if 0 <= pixel[0] < self._image_dimensions_pixels[0] and \
+           0 <= pixel[1] < self._image_dimensions_pixels[1]:
             self.debug_image[pixel] = self.colour
 
         self.steps_since_save += 1
