@@ -80,9 +80,7 @@ class DebugImage:
 
         # If the buffer is sufficiently large save/display the image.
         if self.steps_since_save > self.steps_between_saves:
-            cv2.imwrite(os.path.join(self.dir_path, "Debug_Image" + str(self.image_index) + ".png"), self.debug_image)
-            self.image_index += 1
-            self.steps_since_save = 0
+            self.save_image()
 
     def change_colour(self):
         """This function changes the colour of the pixels being added to the image."""
