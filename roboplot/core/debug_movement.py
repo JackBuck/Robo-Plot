@@ -10,6 +10,8 @@ import cv2
 import numpy as np
 import enum
 
+import roboplot.config as config
+
 
 class Colour:
     Yellow = (0, 255, 255)
@@ -24,7 +26,7 @@ class DebugImage:
         Creates debug image.
         """
 
-        self.dir_path = '../resources/DebugImages/'
+        self.dir_path = os.path.join(config.resources_dir, 'DebugImages')
 
         # Remove any existing debug files from folder
         file_list = os.listdir(self.dir_path)
@@ -36,8 +38,8 @@ class DebugImage:
         self.debug_image = np.zeros((594, 420, 3), np.uint8)
 
         # Background image that can be changed.
-        #self.debug_image = cv2.imread("resources/HackspacePath_Sample.jpg")
-        #cv2.resize(self.debug_image, (594, 420))
+        # self.debug_image = cv2.imread("resources/HackspacePath_Sample.jpg")
+        # cv2.resize(self.debug_image, (594, 420))
 
         # This value should depend on the picture size chosen currently a 1:1 mappings
         self.pixels_per_mm = 2
@@ -60,7 +62,7 @@ class DebugImage:
         :return:
         """
 
-        pixel = (int(round(point[0]*self.pixels_per_mm)), int(round(point[1]*self.pixels_per_mm)))
+        pixel = (int(round(point[0] * self.pixels_per_mm)), int(round(point[1] * self.pixels_per_mm)))
 
         if pixel[0] >= 0 and pixel[1] >= 0:
             self.debug_image[pixel] = self.colour
