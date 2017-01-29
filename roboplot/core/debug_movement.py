@@ -57,8 +57,9 @@ class DebugImage:
     def add_point(self, point):
         """
         This function adds the locations to a buffer and periodically adds them to the image and displays the result.
-        :param point: Point to be added to the buffer (in mm)
-        :return:
+
+        Args:
+            point: Point to be added to the buffer (in mm)
         """
 
         pixel = (int(round(point[0] * self.pixels_per_mm)), int(round(point[1] * self.pixels_per_mm)))
@@ -75,10 +76,7 @@ class DebugImage:
             self.steps_since_save = 0
 
     def change_colour(self):
-        """
-        This function changes the colour of the pixels being added to the image.
-        :return:
-        """
+        """This function changes the colour of the pixels being added to the image."""
 
         scan = [Colour.Yellow, Colour.Pink, Colour.Light_Blue, Colour.Purple]
 
