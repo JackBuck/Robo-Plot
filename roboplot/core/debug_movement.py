@@ -27,6 +27,10 @@ class DebugImage:
 
         self.dir_path = os.path.join(config.resources_dir, 'DebugImages')
 
+        # Create the directory if it doesn't exist
+        if not os.path.exists(self.dir_path):
+            os.mkdir(self.dir_path, 0o750)  # drwxr-x---
+
         # Remove any existing debug files from folder
         file_list = os.listdir(self.dir_path)
         for file_name in file_list:
