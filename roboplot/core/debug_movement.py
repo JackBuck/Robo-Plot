@@ -25,6 +25,8 @@ class DebugImage:
         Creates debug image.
 
         Args:
+            millimetres_per_step (float): The number of millimetres per step (used to compute the number of steps per
+                                          save)
             bgimage_path (str): An optional path to a background image to use for the debugger output.
 
         """
