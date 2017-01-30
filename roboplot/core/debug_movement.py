@@ -64,7 +64,7 @@ class DebugImage:
         self.millimeters_between_saves = 20
         self.steps_between_saves = self.millimeters_between_saves / millimetres_per_step
 
-        cv2.imwrite(os.path.join(self.dir_path, 'Initial_Image.png'), self.debug_image)
+        self.save_image()
 
     def add_point(self, point):
         """
@@ -95,6 +95,6 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(os.path.join(self.dir_path, "Debug_Image" + str(self.image_index) + ".png"), self.debug_image)
+        cv2.imwrite(os.path.join(self.dir_path, "DebugImage_{i:04}.png".format(i=self.image_index)), self.debug_image)
         self.image_index += 1
         self.steps_since_save = 0
