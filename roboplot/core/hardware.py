@@ -19,4 +19,8 @@ small_stepper_2 = stepper_motors.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
 # Higher level objects
 x_axis = stepper_control.Axis(x_axis_motor, lead=8)
 y_axis = stepper_control.Axis(y_axis_motor, lead=8)
-both_axes = stepper_control.AxisPair(x_axis, y_axis)
+
+if __debug__:
+    both_axes = stepper_control.AxisPairWithDebugImage(x_axis, y_axis)
+else:
+    both_axes = stepper_control.AxisPair(x_axis, y_axis)
