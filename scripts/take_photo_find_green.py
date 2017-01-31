@@ -1,11 +1,10 @@
+import context
 import cv2
 import argparse
 import roboplot.core.Camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.colour_detection as cd
-import roboplot.core.config as config
-import context
 import numpy as np
-config.init_()
+
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Take a photo and find the green in')
