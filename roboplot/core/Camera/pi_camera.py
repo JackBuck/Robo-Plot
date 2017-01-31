@@ -7,10 +7,8 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import time
-import config
 import cv2
 import numpy as np
-import dummy_camera0
 from picamera import PiCamera
 
 
