@@ -10,22 +10,16 @@ import time
 import config
 import cv2
 import numpy as np
-import camera_client
+import roboplot.core.Camera.camera_client
 
-
-
-class Camera:
+class RemoteCamera:
     def __init__(self):
-        with picamera.PiCamera() as camera:
-            camera.resolution = (200, 200)
-            camera.framerate = 24
 
         self._dir_path = '../resources/DebugImages/'
 
     def take_photo(self, camera_centre):
-        with picamera.PiCamera() as camera:
-            output = np.empty((112 * 128 * 3,), dtype=np.uint8)
-            camera.capture(output, 'bgr', use_video_port=True)
+
+            output = camera_client.take_remote_photo()
             output = output.reshape((112, 128, 3))
             output = output[:200, :200, :]
 

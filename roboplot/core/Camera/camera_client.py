@@ -6,72 +6,70 @@ import cv2
 import numpy as np
 
 
-# On robo_plot
-try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-except socket.error as msg:
-    print('Failed to create socket. Error code: ' + str(msg[0]) + ' , Error message : ' + msg[1])
-    sys.exit()
+def take_remote_photo():
+    # On robo_plot
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    except socket.error as msg:
+        print('Failed to create socket. Error code: ' + str(msg[0]) + ' , Error message : ' + msg[1])
+        sys.exit()
 
-print('Socket Created')
+    print('Socket Created')
 
-HOST = 'HH_RPi_01'
-PORT = 8888
+    HOST = 'HH_RPi_01'
+    PORT = 8888
 
-try:
-    remote_ip = socket.gethostbyname(HOST)
-except socket.oserror():
+    try:
+        remote_ip = socket.gethostbyname(HOST)
+    except socket.oserror():
+        print
+        'Hostname could not be resolved. Exiting'
+        sys.exit()
+
+    # Connect to remote server (other pi)
+    s.connect((remote_ip, PORT))
+
     print
-    'Hostname could not be resolved. Exiting'
-    sys.exit()
+    'Socket connected to ' + HOST + ' on ip ' + remote_ip
 
-# Connect to remote server (other pi)
-s.connect((remote_ip, PORT))
+    # Send request to remote pi
+    message = 'Take_Photo'
 
-print
-'Socket connected to ' + HOST + ' on ip ' + remote_ip
+    try:
+        s.sendall(bytes(message, 'UTF-8'))
+    except socket.error:
+        # Send failed
+        print('Send Failed')
+        sys.exit()
 
-# Send request to remote pi
-message = 'Take_Photo'
+    print('message sent successfully')
 
-try:
-    s.sendall(bytes(message, 'UTF-8'))
-except socket.error:
-    # Send failed
-    print('Send Failed')
-    sys.exit()
+    # Make a file-like object out of the connection
+    connection = s.makefile('rwb')
 
-print('message sent successfully')
+    # Now receive data
+    while True:
+        # Read the length of the image as a 32-bit unsigned int. If the
+        # length is zero, quit the loop
 
+        image_len = struct.unpack('<L', connection.read(struct.calcsize('<L')))[0]
+        if not image_len:
+            break
 
-# Make a file-like object out of the connection
-connection = s.makefile('rwb')
-
-# Now receive data
-while True:
-    # Read the length of the image as a 32-bit unsigned int. If the
-    # length is zero, quit the loop
-
-    image_len = struct.unpack('<L', connection.read(struct.calcsize('<L')))[0]
-    if not image_len:
-        break
-
-    # Construct a stream to hold the image data and read the image
-    # data from the connection
-    image_stream = io.BytesIO()
-    image_stream.write(connection.read(image_len))
+        # Construct a stream to hold the image data and read the image
+        # data from the connection
+        image_stream = io.BytesIO()
+        image_stream.write(connection.read(image_len))
 
 
-    # Rewind the stream, open it as an image with open cv and do some
-    # processing on it
-    image_stream.seek(0)
+        # Rewind the stream, open it as an image with open cv and do some
+        # processing on it
+        image_stream.seek(0)
 
-    # convert image into numpy array
-    data = np.fromstring(image_stream.getvalue(), dtype=np.uint8)
-    # turn the array into a cv2 image
-    image = cv2.imdecode(data, 1)
-    print('Image is %dx%d.%d' % image.shape)
-    cv2.imshow("Received Image", image)
-    cv2.imwrite("Image.jpeg", image)
+        # convert image into numpy array
+        data = np.fromstring(image_stream.getvalue(), dtype=np.uint8)
+        # turn the array into a cv2 image
+        image = cv2.imdecode(data, 1)
 
-s.close()
+        return image
+        s.close()
