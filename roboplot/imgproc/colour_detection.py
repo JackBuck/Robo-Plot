@@ -1,8 +1,6 @@
 # import the necessary packages
 import numpy as np
 import cv2
-import config
-
 
 def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     """
