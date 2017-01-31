@@ -1,34 +1,25 @@
 import context
-import sys
 import cv2
-import os
-
+import argparse
 import roboplot.imgproc.colour_detection as cd
 import roboplot.core.config as config
 
 config.init_()
-global debug
-debug = True
 
-# Arg version.
+# Commandline arguments
+parser = argparse.ArgumentParser(description='Find green in a given image')
+parser.add_argument('-f', '--file_path', type=str, required=True,
+                    help='the file path of the image to be analysed')
+parser.add_argument('-m', '--minsize', type=float, required=True,
+                    help='the minimum size of green to be detected')
 
-#os.getcwd()
-#inFile = os.getcwd() + "\\" + sys.argv[1]
-#print(inFile)
-#hsv_image = cv2.imread(inFile, cv2.COLORMAP_HSV)
-#(cX, cY) = cd.detect_green(hsv_image, sys.argv[2], False)
-#
-#print("Done")
-
-
-#Hardcoded version
-inFile = "C:/Users/Hannah/Documents/Hackspace/Robo-Plot_Clone/resources/Challenge_2_Test_Images/greentriangle.jpg"
-
-hsv_image = cv2.imread(inFile)
-
-cv2.imshow("Image", hsv_image)
-
-hsv_image = cv2.cvtColor(hsv_image, cv2.COLOR_BGR2HSV)
-(cX, cY) = cd.detect_green(hsv_image, 10, False)
-
-x=0
+args = parser.parse_args()
+inFile = args.file_path
+print(inFile)
+image = cv2.imread(inFile)
+hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+(cX, cY) = cd.detect_green(hsv_image, args.minsize, False)
+cv2.circle(image, (cX, cY), 20, (255, 10, 10), 10)
+cv2.imshow('Centre', cv2.resize(image, (500, 500)))
+cv2.waitKey(0)
+print("Done")

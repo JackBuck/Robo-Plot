@@ -1,7 +1,6 @@
 # import the necessary packages
 import numpy as np
 import cv2
-import config
 
 
 def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
@@ -28,8 +27,6 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
 
     """
 
-    global debug
-
     (lower, upper) = hsv_boundary
 
     # Convert boundaries to np arrays
@@ -52,15 +49,12 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     res = cv2.bitwise_and(hsv_image, hsv_image, mask=mask)
 
     # find contours in the masked image
-    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                            cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     colour_found = False
-
     cnts = cnts[1]
 
     # loop over the contours - We should only have one significant region.
-
     for c in cnts:
 
         # if the contour is not sufficiently large, ignore it - #This number will need to depend on image size.
@@ -75,19 +69,20 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
 
-            if debug:
+            if __debug__:
                 # draw the contour and center of the shape on the image
                 image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
-                cv2.drawContours(image, [c], -1, (255, 255, 10), 1)
+                cv2.drawContours(image, [c], -1, (255, 255, 10), 3)
                 cv2.circle(image, (cX, cY), 1, (255, 255, 10), -1)
 
                 output = cv2.bitwise_and(image, image, mask=mask)
                 lower_corner = (int(output.shape[1]), int(output.shape[0] - 1))
                 cv2.rectangle(output, (0, 0), lower_corner, (150, 150, 150), 1)
                 combined_image = np.hstack([image, output])
-                display_image = cv2.resize(combined_image, (0, 0), fx=1.0, fy=1.0)
+                display_image = cv2.resize(combined_image, (0, 0), fx=0.25, fy=0.25)
                 cv2.imshow('Colour Detection', display_image)
-                cv2.imwrite('Colour Detection.png', display_image)
+                cv2.imwrite('../resources/DebugImages/Colour_Detection.jpg', display_image)
+                cv2.waitKey(1)
 
             if change_to_white:
                 hsv_image[mask == 255] = [0, 0, 255]
@@ -95,7 +90,7 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     if colour_found:
         return cX, cY
     else:
-        return -1,-1
+        return -1, -1
 
 
 def detect_red(hsv_image, min_size, change_to_white):
@@ -119,7 +114,7 @@ def detect_red(hsv_image, min_size, change_to_white):
 
     """
 
-    hsv_boundary = ([165, 50, 50], [10, 255, 255])
+    hsv_boundary = ([165, 100, 100], [10, 255, 255])
 
     (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, True)
 
@@ -147,7 +142,7 @@ def detect_green(hsv_image, min_size, change_to_white):
 
     """
 
-    hsv_boundary = ([40, 50, 50], [80, 255, 255])
+    hsv_boundary = ([40, 100, 100], [80, 255, 255])
 
     (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, True)
 

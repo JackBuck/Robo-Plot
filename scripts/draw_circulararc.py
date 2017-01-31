@@ -2,9 +2,7 @@
 
 import argparse
 import time
-
 import numpy as np
-
 import context
 import roboplot.core.curves as curves
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper

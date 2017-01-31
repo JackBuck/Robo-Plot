@@ -24,7 +24,8 @@ class DebugImage:
         Creates debug image.
         """
 
-        self.dir_path = '../resources/DebugImages/'
+        self.dir_path = '../resources/Debug_Images/'
+        temp = os.getcwd()
 
         # Remove any existing debug files from folder
         file_list = os.listdir(self.dir_path)
@@ -33,13 +34,19 @@ class DebugImage:
 
         # Choose whether to start with blank image or background.
         # Blank image
-        self.debug_image = np.zeros((594, 420, 3), np.uint8)
+        #self.debug_image = np.zeros((420,594, 3), np.uint8)
 
         # Background image that can be changed.
-        #self.debug_image = cv2.imread("resources/HackspacePath_Sample.jpg")
-        #cv2.resize(self.debug_image, (594, 420))
 
-        # This value should depend on the picture size chosen currently a 1:1 mappings
+        file_path = '../resources/Challenge_2_Test_Images/HackspacePath_Sample.png'
+        self.debug_image = cv2.imread(file_path)
+
+        if self.debug_image is None:
+            self.debug_image = np.zeros((420, 594, 3), np.uint8)
+        else:
+            self.debug_image = cv2.resize(self.debug_image, (420, 594))
+
+        # This value should depend on the picture size chosen
         self.pixels_per_mm = 2
 
         # Choose how often an image is saved.
@@ -56,11 +63,12 @@ class DebugImage:
     def add_point(self, point):
         """
         This function adds the locations to a buffer and periodically adds them to the image and displays the result.
-        :param point: Point to be added to the buffer (in mm)
+        :param point: Point to be added
         :return:
         """
 
-        pixel = (int(round(point[0]*self.pixels_per_mm)), int(round(point[1]*self.pixels_per_mm)))
+        pixel = (self.debug_image.shape[0] - int(round(point[0])*self.pixels_per_mm) - 1,
+                  int(round(point[1]*self.pixels_per_mm)))
 
         if pixel[0] >= 0 and pixel[1] >= 0:
             self.debug_image[pixel] = self.colour
@@ -69,7 +77,7 @@ class DebugImage:
 
         # If the buffer is sufficiently large save/display the image.
         if self.steps_since_save > self.steps_between_saves:
-            cv2.imwrite(self.dir_path + "Debug_Image" + str(self.image_index) + ".png", self.debug_image)
+            cv2.imwrite(self.dir_path + "Debug_Movement" + str(self.image_index) + ".png", self.debug_image)
             self.image_index += 1
             self.steps_since_save = 0
 
@@ -85,6 +93,6 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(self.dir_path + "Debug_Image" + str(self.image_index) + ".png", self.debug_image)
+        cv2.imwrite(self.dir_path + "Debug_Movement" + str(self.image_index) + ".png", self.debug_image)
         self.image_index += 1
         self.steps_since_save = 0
