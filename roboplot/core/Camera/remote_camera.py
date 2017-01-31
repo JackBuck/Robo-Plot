@@ -1,7 +1,7 @@
 """
 Camera Control Module
 
-This module controls the camera for the plotter.
+This module controls the REMOTE camera for the plotter.
 
 All distances in the module are expressed in MILLIMETRES.
 
@@ -10,8 +10,8 @@ import time
 import config
 import cv2
 import numpy as np
-import dummy_camera0
-from picamera import PiCamera
+import camera_client
+
 
 
 class Camera:
