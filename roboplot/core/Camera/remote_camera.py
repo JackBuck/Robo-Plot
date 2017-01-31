@@ -16,15 +16,15 @@ class RemoteCamera:
     def __init__(self):
 
         self._dir_path = '../resources/DebugImages/'
+        self._photo_index = 0
 
     def take_photo(self, camera_centre):
 
             output = camera_client.take_remote_photo()
-            output = output.reshape((112, 128, 3))
             output = output[:200, :200, :]
 
             # Save photo.
-            cv2.imshow(self._dir_path + "Photo:" + self._photo_index + ".jpg", output)
+            cv2.imshow(self._dir_path + "Photo:" + str(self._photo_index) + ".jpg", output)
             self._photo_index += 1
 
             return output
