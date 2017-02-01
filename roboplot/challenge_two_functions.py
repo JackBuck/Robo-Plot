@@ -1,16 +1,19 @@
 # coding=utf-8
 import numpy as np
-import roboplot.imgproc.image_processing as IP
+import roboplot.imgproc.image_analysis as IP
 import cv2
 import math
 import roboplot.imgproc.colour_detection as CD
 import roboplot.core.Camera.camera_wrapper as camera_wrapper
+import roboplot.imgproc.perimeter_search as perimeter_search
+import roboplot.core.curves as curves
+import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
+import roboplot.core.hardware as hardware
 
-
-a_camera = camera_wrapper.camera()
+a_camera = camera_wrapper.Camera()
 
 if __debug__:
-    conversion_factor = 1.0
+    conversion_factor = 3.77
 else:
     # Converts from pixels in image to mm. (Based on an image 4cm x 4cm and 200 x 200 pixels)
     # This will need to be calibrated.
@@ -33,7 +36,7 @@ a4_width_x_mm = 210
 photo_size_mm = 40
 
 
-def find_green_triangle():
+def find_green_triangle(pen_speed, min_size):
     """Walks around the perimeter of the paper and finds the green triangle
         Args:
             None
@@ -42,7 +45,7 @@ def find_green_triangle():
         """
 
     # Calculate the list of positions photos need to be taken at to walk round the outside of the paper.
-    camera_positions = IP.compute_positions(a4_height_y_mm, a4_width_x_mm, photo_size_mm)
+    camera_positions = perimeter_search.compute_positions(a4_height_y_mm, a4_width_x_mm, photo_size_mm)
     green_found = False
 
     # Walk round to each position and analyse the photo taken at that position.
@@ -50,7 +53,7 @@ def find_green_triangle():
 
         camera_centre = camera_positions[i]
 
-        (displacement_x, displacement_y) = find_green_at_position(camera_centre)
+        (displacement_x, displacement_y) = find_green_at_position(camera_centre, pen_speed, min_size)
 
         # Check if any green was detected.
         if displacement_x != -1:
@@ -60,10 +63,10 @@ def find_green_triangle():
     if not green_found:
         raise AssertionError("No green was found along perimeter")
 
-    return camera_centre + displacement_x, camera_centre + displacement_y
+    return camera_centre[0] + displacement_x, camera_centre[1] + displacement_y
 
 
-def find_green_at_position(camera_centre):
+def find_green_at_position(camera_centre, pen_speed, min_size):
     """Finds the centre of any green artifacts in the photo taken at the given position.
         Args:
             co - ordinates in global mm of camera location for photo.
@@ -72,35 +75,41 @@ def find_green_at_position(camera_centre):
             This is returned as (-1, -1) if no green found.
     """
 
+    # Move to camera position
+    line_to_camera_position = curves.LineSegment(hardware.both_axes.current_location, camera_centre)
+    hardware.both_axes.follow(curve=line_to_camera_position, pen_speed=pen_speed)
     photo = a_camera.take_photo_at(camera_centre)
 
     # Create hsv version of image to analyse for colour detection.
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
 
     # Find the centre of the largest greed contour found on the image (if one exists)
-    (cX, cY) = CD.detect_green(hsv_image, 5, True)
+    (cX, cY) = CD.detect_green(hsv_image, min_size*conversion_factor, True)
 
     # Check if any green was detected.
     if cX != -1:
         # Change to global mm co-ordinates from co-ordinates within photo.
-        new_centre_x = (cX + camera_centre[0] - int(photo.shape[0] / 2)) * conversion_factor
-        new_centre_y = (cY + camera_centre[1] - int(photo.shape[1] / 2)) * conversion_factor
+        displacement_x = (cX - int(photo.shape[0] / 2))/conversion_factor
+        new_centre_x = displacement_x + camera_centre[0]
+
+        displacement_y = (cY - int(photo.shape[1] / 2))/conversion_factor
+        new_centre_y = displacement_y + camera_centre[1]
         return new_centre_x, new_centre_y
     else:
         return -1, -1
 
 
-def find_green_centre(initial_centre):
+def find_green_centre(initial_centre, pen_speed, min_size):
 
     error = 999999999
 
     camera_centre = initial_centre
 
     # While the new and old centres are not within 2 pixels of each other recheck the centre.
-    while error < 2/conversion_factor:
+    while error > 2/conversion_factor:
 
         # Find the centre of the largest green contour found on the image (if one exists)
-        new_centre = find_green_at_position(camera_centre)
+        new_centre = find_green_at_position(camera_centre, pen_speed, min_size)
 
         # Calculate the error between old centre and new centre
         error = math.sqrt((new_centre[0] - camera_centre[0])**2 + (new_centre[1] - camera_centre[1])**2)

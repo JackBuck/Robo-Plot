@@ -28,7 +28,7 @@ class DummyCamera:
         self._photo_size = 800
         self._photo_index = 0
 
-    def take_photo(self, camera_centre):
+    def take_photo_at(self, camera_centre):
         """ This function takes a sub-array representing a photo at the given co-ordinates.
                 Args:
                     np.ndarray: An 1x2 matrix representing the global co-ordinates of the picture needed.
@@ -38,8 +38,8 @@ class DummyCamera:
         dummy_photo = np.zeros((self._photo_size, self._photo_size, 3), np.uint8)
 
         # Convert the co-ordinates into pixel co-ordinates.
-        camera_centre[0] = int(camera_centre[0] / self._conversion_factor)
-        camera_centre[1] = int(camera_centre[1] / self._conversion_factor)
+        camera_centre = (int(camera_centre[0] / self._conversion_factor) ,
+                         int(camera_centre[1] / self._conversion_factor))
 
         # If the photo is near the edge of the paper so that part of the photo will lie outside of the photo this is
         # padded with black so centre is still correct.

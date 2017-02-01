@@ -24,7 +24,8 @@ class DebugImage:
         Creates debug image.
         """
 
-        self.dir_path = '../resources/DebugImages/'
+        self.dir_path = '../resources/Debug_Images/'
+        temp = os.getcwd()
 
         # Remove any existing debug files from folder
         file_list = os.listdir(self.dir_path)
@@ -33,13 +34,19 @@ class DebugImage:
 
         # Choose whether to start with blank image or background.
         # Blank image
-        self.debug_image = np.zeros((594, 420, 3), np.uint8)
+        #self.debug_image = np.zeros((594, 420, 3), np.uint8)
 
         # Background image that can be changed.
-        #self.debug_image = cv2.imread("resources/HackspacePath_Sample.jpg")
-        #cv2.resize(self.debug_image, (594, 420))
 
-        # This value should depend on the picture size chosen currently a 1:1 mappings
+        file_path = '../resources/Challenge_2_Test_Images/HackspacePath_Sample.png'
+        self.debug_image = cv2.imread(file_path)
+
+        if self.debug_image is None:
+            self.debug_image = np.zeros((594, 420, 3), np.uint8)
+        else:
+            self.debug_image = cv2.resize(self.debug_image, (594, 420))
+
+        # This value should depend on the picture size chosen
         self.pixels_per_mm = 2
 
         # Choose how often an image is saved.
