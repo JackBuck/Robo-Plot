@@ -17,7 +17,7 @@ import roboplot.core.hardware as hardware
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a stick figure constructed as a cubic Bezier curve.')
-    parser.add_argument('-r', '--resolution', type=float, default=10,
+    parser.add_argument('-r', '--resolution', type=float, default=1,
                         help='the resolution in millimetres to use when splitting the image into linear moves ('
                              'default: %(default)smm)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
@@ -65,7 +65,7 @@ try:
 
     distance_travelled = 0
     for path in paths:
-        svg_curve = curves.SVGPath(path)
+        svg_curve = curves.SVGPath(path, scale_factor)
         hardware.both_axes.follow(svg_curve, pen_speed=args.pen_millimetres_per_second, resolution=args.resolution)
         distance_travelled += svg_curve.total_millimetres
 
