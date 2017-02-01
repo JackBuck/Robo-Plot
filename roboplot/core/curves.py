@@ -100,11 +100,14 @@ class CircularArc(Curve):
         return abs(radians) * self.radius
 
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
-        arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
-        radians = arc_length / self.radius + deg2rad(self.start_degrees)
-        points = np.hstack((np.cos(radians), np.sin(radians)))
-        points = self.radius * points + self.centre
-        return points
+        if self.radius == 0:
+            return np.copy(self.centre)
+        else:
+            arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
+            radians = arc_length / self.radius + deg2rad(self.start_degrees)
+            points = np.hstack((np.cos(radians), np.sin(radians)))
+            points = self.radius * points + self.centre
+            return points
 
 
 class Circle(CircularArc):
