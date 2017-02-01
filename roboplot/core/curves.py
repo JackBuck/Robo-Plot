@@ -101,7 +101,7 @@ class CircularArc(Curve):
 
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
         if self.radius == 0:
-            return np.copy(self.centre)
+            return np.copy(self.centre.reshape(1,2))
         else:
             arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
             radians = arc_length / self.radius + deg2rad(self.start_degrees)
