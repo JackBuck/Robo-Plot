@@ -140,7 +140,9 @@ def rad2deg(radians):
 class SVGPath(Curve):
     """A curve which wraps an svgpathtools.Path object."""
 
-    def __init__(self, path: svg.Path, mm_per_unit: float = 1):
+    _evaluation_tolerance_mm = 0.01
+
+    def __init__(self, path: svg.Path, mm_per_unit):
         """
         Create a wrapper around an svgpathtools.Path.
 
@@ -159,7 +161,8 @@ class SVGPath(Curve):
 
     def evaluate_at(self, arc_length) -> np.ndarray:
         # First use ilength(...) to map path lengths to the built-in parameterisation
-        t_values = [self._path.ilength(s) for s in np.array(arc_length) / self._mm_per_unit]
+        tol = self._evaluation_tolerance_mm / self._mm_per_unit
+        t_values = [self._path.ilength(s, s_tol=tol) for s in np.array(arc_length) / self._mm_per_unit]
 
         # Then evaluate the curve at these points
         points_as_complex = np.array([self._path.point(t) for t in t_values]) * self._mm_per_unit
