@@ -81,7 +81,7 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
                 combined_image = np.hstack([image, output])
                 display_image = cv2.resize(combined_image, (0, 0), fx=0.25, fy=0.25)
                 cv2.imshow('Colour Detection', display_image)
-                cv2.imwrite('../resources/DebugImages/Colour Detection.jpg', display_image)
+                cv2.imwrite('../resources/DebugImages/Colour_Detection.jpg', display_image)
                 cv2.waitKey(1)
 
             if change_to_white:

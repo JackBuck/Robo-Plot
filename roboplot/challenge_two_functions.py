@@ -13,7 +13,7 @@ import roboplot.core.hardware as hardware
 a_camera = camera_wrapper.Camera()
 
 if __debug__:
-    conversion_factor = 3.77
+    conversion_factor = 0.05
 else:
     # Converts from pixels in image to mm. (Based on an image 4cm x 4cm and 200 x 200 pixels)
     # This will need to be calibrated.
@@ -63,7 +63,7 @@ def find_green_triangle(pen_speed, min_size):
     if not green_found:
         raise AssertionError("No green was found along perimeter")
 
-    return camera_centre[0] + displacement_x, camera_centre[1] + displacement_y
+    return camera_centre[0] + displacement_y, camera_centre[1] + displacement_x
 
 
 def find_green_at_position(camera_centre, pen_speed, min_size):
@@ -76,25 +76,26 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
     """
 
     # Move to camera position
-    line_to_camera_position = curves.LineSegment(hardware.both_axes.current_location, camera_centre)
-    hardware.both_axes.follow(curve=line_to_camera_position, pen_speed=pen_speed)
+
+    if not np.array_equal(hardware.both_axes.current_location, camera_centre):
+        line_to_camera_position = curves.LineSegment(hardware.both_axes.current_location, camera_centre)
+        hardware.both_axes.follow(curve=line_to_camera_position, pen_speed=pen_speed)
+
     photo = a_camera.take_photo_at(camera_centre)
 
     # Create hsv version of image to analyse for colour detection.
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
 
     # Find the centre of the largest greed contour found on the image (if one exists)
-    (cX, cY) = CD.detect_green(hsv_image, min_size*conversion_factor, True)
+    (cX, cY) = CD.detect_green(hsv_image, min_size/conversion_factor, True)
 
     # Check if any green was detected.
     if cX != -1:
         # Change to global mm co-ordinates from co-ordinates within photo.
-        displacement_x = (cX - int(photo.shape[0] / 2))/conversion_factor
-        new_centre_x = displacement_x + camera_centre[0]
+        displacement_x = (cX - int(photo.shape[0] / 2))*conversion_factor
+        displacement_y = (cY - int(photo.shape[1] / 2))*conversion_factor
 
-        displacement_y = (cY - int(photo.shape[1] / 2))/conversion_factor
-        new_centre_y = displacement_y + camera_centre[1]
-        return new_centre_x, new_centre_y
+        return displacement_x, displacement_y
     else:
         return -1, -1
 
@@ -109,7 +110,8 @@ def find_green_centre(initial_centre, pen_speed, min_size):
     while error > 2/conversion_factor:
 
         # Find the centre of the largest green contour found on the image (if one exists)
-        new_centre = find_green_at_position(camera_centre, pen_speed, min_size)
+        (displacement_x, displacement_y) = find_green_at_position(camera_centre, pen_speed, min_size)
+        new_centre = (camera_centre[0] + displacement_y, camera_centre[1] + displacement_x)
 
         # Calculate the error between old centre and new centre
         error = math.sqrt((new_centre[0] - camera_centre[0])**2 + (new_centre[1] - camera_centre[1])**2)

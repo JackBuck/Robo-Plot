@@ -92,6 +92,6 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(self.dir_path + "Debug_Image" + str(self.image_index) + ".png", self.debug_image)
+        cv2.imwrite(self.dir_path + "Debug_Movement" + str(self.image_index) + ".png", self.debug_image)
         self.image_index += 1
         self.steps_since_save = 0
