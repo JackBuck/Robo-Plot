@@ -9,6 +9,7 @@ import numpy as np
 import svgpathtools as svg
 
 import context
+import roboplot.config as config
 import roboplot.core.curves as curves
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
@@ -49,7 +50,7 @@ try:
 
 
     # Prep
-    filepath = os.path.join(context.resources_dir, 'StickFig_Bezier.svg')
+    filepath = os.path.join(config.resources_dir, 'StickFig_Bezier.svg')
     paths, attributes, svg_attributes = svg.svg2paths2(filepath)
 
     width = get_millimetres(svg_attributes['width'])
