@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 import enum
 import os
-import matplotlib
 import math
 import time
 

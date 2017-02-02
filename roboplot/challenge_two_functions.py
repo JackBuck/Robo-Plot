@@ -45,7 +45,7 @@ def find_green_triangle(pen_speed, min_size):
         """
 
     # Calculate the list of positions photos need to be taken at to walk round the outside of the paper.
-    camera_positions = perimeter_search.compute_positions(a4_height_y_mm, a4_width_x_mm, photo_size_mm)
+    camera_positions = perimeter_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
     green_found = False
 
     # Walk round to each position and analyse the photo taken at that position.
@@ -81,7 +81,7 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
         line_to_camera_position = curves.LineSegment(hardware.both_axes.current_location, camera_centre)
         hardware.both_axes.follow(curve=line_to_camera_position, pen_speed=pen_speed)
 
-    photo = a_camera.take_photo_at(camera_centre)
+    photo = a_camera.take_photo_at(hardware.both_axes.current_location)
 
     # Create hsv version of image to analyse for colour detection.
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)

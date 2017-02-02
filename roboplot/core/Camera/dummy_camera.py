@@ -38,8 +38,8 @@ class DummyCamera:
         dummy_photo = np.zeros((self._photo_size, self._photo_size, 3), np.uint8)
 
         # Convert the co-ordinates into pixel co-ordinates.
-        camera_centre = (int(camera_centre[0] / self._conversion_factor) ,
-                         int(camera_centre[1] / self._conversion_factor))
+        camera_centre = (self.debug_map.shape[0] - int(round(camera_centre[0]))/self._conversion_factor - 1,
+                          int(round(camera_centre[1]/self._conversion_factor)))
 
         # If the photo is near the edge of the paper so that part of the photo will lie outside of the photo this is
         # padded with black so centre is still correct.
@@ -90,7 +90,8 @@ class DummyCamera:
 
         # Save photo.
         cv2.imshow('Debug_Photo', dummy_photo)
-        cv2.imwrite(self._dir_path + "Debug_Photo:" + str(self._photo_index) + ".jpg", dummy_photo)
+        cv2.imwrite(self._dir_path + "Debug_Photo" + str(self._photo_index) + ".jpg", dummy_photo)
+        cv2.waitKey(1)
         self._photo_index += 1
 
         return dummy_photo
