@@ -105,7 +105,7 @@ class CircularArc(Curve):
         else:
             arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
             radians = arc_length / self.radius + deg2rad(self.start_degrees)
-            points = np.hstack((np.cos(radians), np.sin(radians)))
+            points = np.hstack((np.sin(radians), np.cos(radians)))  # (y,x)
             points = self.radius * points + self.centre
             return points
 
