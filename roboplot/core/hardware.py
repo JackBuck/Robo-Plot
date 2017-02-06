@@ -21,6 +21,6 @@ x_axis = stepper_control.Axis(x_axis_motor, lead=8)
 y_axis = stepper_control.Axis(y_axis_motor, lead=8)
 
 if __debug__:
-    both_axes = stepper_control.AxisPairWithDebugImage(x_axis, y_axis)
+    both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)
 else:
-    both_axes = stepper_control.AxisPair(x_axis, y_axis)
+    both_axes = stepper_control.AxisPair(y_axis, x_axis)

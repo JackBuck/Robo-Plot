@@ -58,7 +58,7 @@ class Axis:
 
 
 class AxisPair:
-    def __init__(self, x_axis: Axis, y_axis: Axis):
+    def __init__(self, y_axis: Axis, x_axis: Axis):
         self.x_axis = x_axis
         self.y_axis = y_axis
 
@@ -142,8 +142,8 @@ class AxisPair:
 
 
 class AxisPairWithDebugImage(AxisPair):
-    def __init__(self, x_axis: Axis, y_axis: Axis):
-        super().__init__(x_axis, y_axis)
+    def __init__(self, y_axis: Axis, x_axis: Axis):
+        super().__init__(y_axis, x_axis)
         self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step)
 
     @property
