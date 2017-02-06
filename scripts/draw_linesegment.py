@@ -13,10 +13,10 @@ import roboplot.core.hardware as hardware
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a line segment.')
-    parser.add_argument('-f', '--first-point', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
-                        help='the first point (x,y) of the line segment, in millimetres (default: %(default)smm)')
-    parser.add_argument('-l', '--last-point', metavar=('x', 'y'), nargs=2, type=float, required=True,
-                        help='the last point (x,y) of the line segment, in millimetres (required)')
+    parser.add_argument('-f', '--first-point', metavar=('y', 'x'), nargs=2, type=float, default=[0, 0],
+                        help='the first point (y,x) of the line segment, in millimetres (default: %(default)smm)')
+    parser.add_argument('-l', '--last-point', metavar=('y', 'x'), nargs=2, type=float, required=True,
+                        help='the last point (y,x) of the line segment, in millimetres (required)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
