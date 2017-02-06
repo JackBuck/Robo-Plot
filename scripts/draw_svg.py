@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 import time
 
 import context
-import roboplot.config as config
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
 import roboplot.svg.svg_parsing as svg
 
 try:
     # Commandline arguments
-    parser = argparse.ArgumentParser(description='Draw a stick figure constructed as a cubic Bezier curve.')
+    parser = argparse.ArgumentParser(description='Draw an svg file.')
     parser.add_argument('-r', '--resolution', type=float, default=1,
                         help='the resolution in millimetres to use when splitting the image into linear moves ('
                              'default: %(default)smm)')
@@ -20,12 +18,13 @@ try:
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
                         help='an initial sleep time in seconds (default: %(default)s)')
+    parser.add_argument('filepath', type=str,
+                        help='a (relative or absolute) path to the svg file')
 
     args = parser.parse_args()
 
     # Draw the svg
-    filepath = os.path.join(config.resources_dir, 'StickFig_Bezier.svg')
-    svg_curves = svg.parse(filepath)
+    svg_curves = svg.parse(args.filepath)
 
     time.sleep(args.wait)
     start_time = time.time()
