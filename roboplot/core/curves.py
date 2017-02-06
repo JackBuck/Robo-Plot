@@ -7,7 +7,7 @@ All distances in the module are expressed in MILLIMETRES.
 import numpy as np
 
 
-# TODO: Add functionality to chain curves
+# TODO: Add functionality to chain svg_curves
 class Curve:
     @property
     def total_millimetres(self):
@@ -29,12 +29,12 @@ class Curve:
         raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
 
     def to_series_of_points(self, interval_millimetres: float, include_last_point: bool = True) -> np.ndarray:
-        """Express the path by a series of points.
+        """Express the curve by a series of points.
 
         Args:
             interval_millimetres (float): The size of each interval (in MILLIMETRES)
             include_last_point (bool): If true then the series of points will include the last point on the curve.
-                                       Otherwise it will not, which is useful when chaining curves.
+                                       Otherwise it will not, which is useful when chaining svg_curves.
 
         Returns:
             np.ndarray: An nx2 matrix whose ith row is the ith point (in MILLIMETRES) to which to move the axes.

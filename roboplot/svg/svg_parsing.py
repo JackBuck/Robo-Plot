@@ -1,7 +1,55 @@
+import re
+import warnings
+
 import numpy as np
 import svgpathtools as svg
 
 from roboplot.core.curves import Curve
+
+
+def parse(filepath: str):
+    """
+    Parses an svg file to return an iterable of SVGPaths.
+
+    Args:
+        filepath (str): curve to the svg file.
+
+    Returns:
+        an iterable of SVGPath objects.
+
+    """
+    paths, _, svg_attributes = svg.svg2paths2(filepath)
+    scale_factor = _compute_scale_factor(svg_attributes)
+    return [SVGPath(path, scale_factor) for path in paths]
+
+
+def _compute_scale_factor(svg_attributes):
+    width = _get_millimetres(svg_attributes['width'])
+    height = _get_millimetres(svg_attributes['height'])
+    viewbox = ViewBox(svg_attributes['viewBox'])
+    scale_factors = (width / viewbox.width, height / viewbox.height)
+
+    tol = 0.001
+    if abs(scale_factors[1] - scale_factors[0]) > tol:
+        warnings.warn("x and y scale factors differ by more than the allowed tolerance ({:f})".format(tol))
+
+    return np.mean(scale_factors)
+
+
+class ViewBox:
+    def __init__(self, attribute):
+        dimensions = tuple(map(float, attribute.split()))
+        self.min_x = dimensions[0]
+        self.min_y = dimensions[1]
+        self.width = dimensions[2]
+        self.height = dimensions[3]
+
+
+def _get_millimetres(str):
+    """Extract a value in millimetres from a string formatted like '40mm'."""
+    match = re.match(r'^(?P<number>\d+)(?P<unit>[A-Za-z]*)$', str)
+    assert match.group('unit') == 'mm'  # For the moment, just throw if it's not millimetres
+    return float(match.group('number'))
 
 
 class SVGPath(Curve):
@@ -14,7 +62,7 @@ class SVGPath(Curve):
         Create a wrapper around an svgpathtools.Path.
 
         Args:
-            path (svg.Path): The svg path to wrap.
+            path (svg.Path): The svg curve to wrap.
             mm_per_unit (float): The scale factor for both axes. This should be such that a point (x,y) in user space
                                  maps to a point mm_per_unit*(x,y) in millimetres.
                                  Different scale factors for each axis is not supported.
@@ -27,7 +75,7 @@ class SVGPath(Curve):
         return self._path.length() * self._mm_per_unit
 
     def evaluate_at(self, arc_length) -> np.ndarray:
-        # First use ilength(...) to map path lengths to the built-in parameterisation
+        # First use ilength(...) to map curve lengths to the built-in parameterisation
         tol = self._evaluation_tolerance_mm / self._mm_per_unit
         t_values = [self._path.ilength(s, s_tol=tol) for s in np.array(arc_length) / self._mm_per_unit]
 

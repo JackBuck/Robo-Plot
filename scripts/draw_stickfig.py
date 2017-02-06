@@ -2,18 +2,13 @@
 
 import argparse
 import os
-import re
 import time
-
-import numpy as np
-import svgpathtools as svg
 
 import context
 import roboplot.config as config
-import roboplot.core.curves as curves
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
-import roboplot.svg.svg_parsing
+import roboplot.svg.svg_parsing as svg
 
 try:
     # Commandline arguments
@@ -28,47 +23,17 @@ try:
 
     args = parser.parse_args()
 
-    # Definitions
-    # TODO: Put scale factor stuff in the roboplot package
-    #  Note -- it isn't really supported by svgpathtools though, since there are ways to transform the paths using the
-    #  <g></g> 'grouping' tokens which I do not think are extracted by svgpathtools.
-    #  See: https://www.w3.org/TR/SVG11/coords.html#EstablishingANewUserSpace
-
-    class ViewBox:
-        def __init__(self, attribute):
-            dimensions = tuple(map(float, attribute.split()))
-            self.min_x = dimensions[0]
-            self.min_y = dimensions[1]
-            self.width = dimensions[2]
-            self.height = dimensions[3]
-
-
-    def get_millimetres(str):
-        """Extract a value in millimetres from a string formatted like '40mm'."""
-        match = re.match(r'^(?P<number>\d+)(?P<unit>[A-Za-z]*)$', str)
-        assert match.group('unit') == 'mm'  # For the moment, just throw if it's not millimetres
-        return float(match.group('number'))
-
-
-    # Prep
+    # Draw the svg
     filepath = os.path.join(config.resources_dir, 'StickFig_Bezier.svg')
-    paths, attributes, svg_attributes = svg.svg2paths2(filepath)
+    svg_curves = svg.parse(filepath)
 
-    width = get_millimetres(svg_attributes['width'])
-    height = get_millimetres(svg_attributes['height'])
-    viewbox = ViewBox(svg_attributes['viewBox'])
-    scale_factors = (width / viewbox.width, height / viewbox.height)
-    scale_factor = np.mean(scale_factors)
-
-    # Draw
     time.sleep(args.wait)
     start_time = time.time()
 
     distance_travelled = 0
-    for path in paths:
-        svg_curve = roboplot.svg.svg_parsing.SVGPath(path, scale_factor)
-        hardware.both_axes.follow(svg_curve, pen_speed=args.pen_millimetres_per_second, resolution=args.resolution)
-        distance_travelled += svg_curve.total_millimetres
+    for curve in svg_curves:
+        hardware.both_axes.follow(curve, pen_speed=args.pen_millimetres_per_second, resolution=args.resolution)
+        distance_travelled += curve.total_millimetres
 
     end_time = time.time()
 
