@@ -13,6 +13,7 @@ import roboplot.config as config
 import roboplot.core.curves as curves
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
+import roboplot.svg.svg_parsing
 
 try:
     # Commandline arguments
@@ -65,7 +66,7 @@ try:
 
     distance_travelled = 0
     for path in paths:
-        svg_curve = curves.SVGPath(path, scale_factor)
+        svg_curve = roboplot.svg.svg_parsing.SVGPath(path, scale_factor)
         hardware.both_axes.follow(svg_curve, pen_speed=args.pen_millimetres_per_second, resolution=args.resolution)
         distance_travelled += svg_curve.total_millimetres
 
