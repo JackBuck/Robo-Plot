@@ -24,6 +24,20 @@ def parse(filepath: str):
 
 
 def _compute_scale_factor(svg_attributes):
+    """
+    Extracts the scale factor from millimetres to document units.
+
+    This method
+      - raises an exception if the height and width of the document are not expressed in millimetres,
+      - raises a warning if the scale factors for the two axes are not sufficiently similar.
+
+    Args:
+        svg_attributes: the attributes from the svg element of the document.
+
+    Returns:
+        the scale factor, s, such that for a point p in document units, s*p is in millimetres.
+
+    """
     width = _get_millimetres(svg_attributes['width'])
     height = _get_millimetres(svg_attributes['height'])
     viewbox = ViewBox(svg_attributes['viewBox'])
@@ -37,6 +51,7 @@ def _compute_scale_factor(svg_attributes):
 
 
 class ViewBox:
+    """Represents the viewBox attribute of the 'svg' element in the document."""
     def __init__(self, attribute):
         dimensions = tuple(map(float, attribute.split()))
         self.min_x = dimensions[0]
