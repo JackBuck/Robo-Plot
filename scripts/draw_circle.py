@@ -13,8 +13,8 @@ import roboplot.core.hardware as hardware
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a circle.')
-    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
-                        help='the centre (x,y) of the circle in millimetres (default: %(default)smm)')
+    parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[0, 0],
+                        help='the centre (y,x) of the circle in millimetres (default: %(default)smm)')
     parser.add_argument('-r', '--radius', type=float, required=True,
                         help='the radius of the circle in millimetres')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,

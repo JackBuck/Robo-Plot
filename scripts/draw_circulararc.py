@@ -12,9 +12,12 @@ import roboplot.core.hardware as hardware
 
 try:
     # Commandline arguments
-    parser = argparse.ArgumentParser(description='Draw a circular arc.')
-    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
-                        help='the centre (x,y) of the circle in millimetres (default: %(default)smm)')
+    parser = argparse.ArgumentParser(description='Draw a circular arc.'
+                                                 'Note that the circle is drawn in a clockwise direction beginning at'
+                                                 'the point with greatest x value. This is consistent with our left '
+                                                 'handed coordinate system where positive y points down the page.')
+    parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[0, 0],
+                        help='the centre (y,x) of the circle in millimetres (default: %(default)smm)')
     parser.add_argument('-r', '--radius', type=float, required=True,
                         help='the radius of the circle in millimetres')
     parser.add_argument('-i', '--interval-degrees', metavar=('start', 'end'), nargs=2, type=float, default=[0, 360],

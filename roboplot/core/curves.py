@@ -68,8 +68,10 @@ class LineSegment(Curve):
         return np.linalg.norm(self.end - self.start)
 
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
-        arc_length = arc_length.reshape(-1, 1)  # Make it a column vector
-        t = arc_length / self.total_millimetres
+        arc_length = np.reshape(arc_length, (-1, 1))  # Make it a column vector
+        with np.errstate(divide='ignore', invalid='ignore'):
+            t = arc_length / self.total_millimetres
+            t[np.isnan(t)] = 0
         return (1 - t) * self.start + t * self.end
 
 
@@ -98,11 +100,14 @@ class CircularArc(Curve):
         return abs(radians) * self.radius
 
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
-        arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
-        radians = arc_length / self.radius + deg2rad(self.start_degrees)
-        points = np.hstack((np.cos(radians), np.sin(radians)))
-        points = self.radius * points + self.centre
-        return points
+        if self.radius == 0:
+            return np.copy(self.centre.reshape(1,2))
+        else:
+            arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
+            radians = arc_length / self.radius + deg2rad(self.start_degrees)
+            points = np.hstack((np.sin(radians), np.cos(radians)))  # (y,x)
+            points = self.radius * points + self.centre
+            return points
 
 
 class Circle(CircularArc):
