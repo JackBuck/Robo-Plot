@@ -9,13 +9,15 @@ import time
 
 # Each set of tests can be in their own class, but it must derive from unnit.TestCase
 class MotorTest(unittest.TestCase):
+
+    def tearDown(self):
+        GPIO.cleanup()
+
     # Each test has its own function here. There are lots of different functions to use in tests
     def testPass(self):
         self.assertTrue(True)
 
     def testStepLarge(self):
-        GPIO.cleanup()
-
         # Define and construct x axis motor
         input_pins = (22, 23, 24, 25)
         sequence = [[1, 0, 1, 0], [0, 1, 1, 0], [0, 1, 0, 1], [1, 0, 0, 1]]
