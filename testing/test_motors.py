@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import context
 import unittest
 import cv2
@@ -5,6 +7,9 @@ import roboplot.core.stepper_motors as stepper_motors
 import roboplot.core.hardware as hardware
 from roboplot.core.gpio.gpio_wrapper import GPIO
 import time
+
+# noinspection PyUnresolvedReferences
+import test_runner
 
 
 # Each set of tests can be in their own class, but it must derive from unnit.TestCase
@@ -45,7 +50,7 @@ class MotorTest(unittest.TestCase):
 
 # Running this runs all the tests and outputs their results.
 def main():
-    unittest.main()
+    unittest.main(testRunner=test_runner.CustomTestRunner())
 
 
 if __name__ == '__main__':
