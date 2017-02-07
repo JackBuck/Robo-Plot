@@ -19,39 +19,69 @@ def parse(filepath: str):
 
     """
     paths, _, svg_attributes = svg.svg2paths2(filepath)
-    scale_factor = _compute_scale_factor(svg_attributes)
-    return [SVGPath(path, scale_factor) for path in paths]
+    svg_attributes = SvgAttributes(svg_attributes)
+    if svg_attributes.is_portrait:
+        return [SVGPath(path, svg_attributes.scale_factor) for path in paths]
+    else:
+        return [SVGPathRotatedBy90Degrees(path, svg_attributes.scale_factor, svg_attributes.height) for path in paths]
 
 
-def _compute_scale_factor(svg_attributes):
-    """
-    Extracts the scale factor from millimetres to document units.
+class SvgAttributes:
+    """Extracts information from a dictionary of attributes on the svg element of an svg document."""
 
-    This method
-      - raises an exception if the height and width of the document are not expressed in millimetres,
-      - raises a warning if the scale factors for the two axes are not sufficiently similar.
+    def __init__(self, svg_attributes):
+        """
+        Initialise the attributes object.
 
-    Args:
-        svg_attributes: the attributes from the svg element of the document.
+        This method
+          - raises an exception if the height and width of the document are not expressed in millimetres,
+          - raises a warning if the scale factors for the two axes are not sufficiently similar.
 
-    Returns:
-        the scale factor, s, such that for a point p in document units, s*p is in millimetres.
+        Args:
+            svg_attributes (dict): a dictionary of svg attributes, including the 'width', 'height' and 'viewBox'
+        """
+        self.width = self._get_millimetres(svg_attributes['width'])
+        self.height = self._get_millimetres(svg_attributes['height'])
+        self.viewbox = ViewBox(svg_attributes['viewBox'])
 
-    """
-    width = _get_millimetres(svg_attributes['width'])
-    height = _get_millimetres(svg_attributes['height'])
-    viewbox = ViewBox(svg_attributes['viewBox'])
-    scale_factors = (width / viewbox.width, height / viewbox.height)
+        self._warn_if_scale_factors_not_equal()
 
-    tol = 0.001
-    if abs(scale_factors[1] - scale_factors[0]) > tol:
-        warnings.warn("x and y scale factors differ by more than the allowed tolerance ({:f})".format(tol))
+    @staticmethod
+    def _get_millimetres(string):
+        """Extract a value in millimetres from a string formatted like '40mm'."""
+        match = re.match(r'^(?P<number>\d+)(?P<unit>[A-Za-z]*)$', string)
+        assert match.group('unit') == 'mm'  # For the moment, just throw if it's not millimetres
+        return float(match.group('number'))
 
-    return np.mean(scale_factors)
+    def _warn_if_scale_factors_not_equal(self):
+        tol = 0.001
+        scale_factors = self._scale_factors
+        if abs(scale_factors[1] - scale_factors[0]) > tol:
+            warnings.warn("x and y scale factors differ by more than the allowed tolerance ({:f})".format(tol))
+
+    @property
+    def _scale_factors(self):
+        scale_width = self.width / self.viewbox.width
+        scale_height = self.height / self.viewbox.height
+        return scale_width, scale_height
+
+    @property
+    def scale_factor(self):
+        """
+        The scale factor for the document.
+
+        That is, the number the scale factor, s, such that for a point p in document units, s*p is in millimetres.
+        """
+        return np.mean(self._scale_factors)
+
+    @property
+    def is_portrait(self):
+        return self.height >= self.width
 
 
 class ViewBox:
     """Represents the viewBox attribute of the 'svg' element in the document."""
+
     def __init__(self, attribute):
         dimensions = tuple(map(float, attribute.split()))
         self.min_x = dimensions[0]
@@ -60,19 +90,12 @@ class ViewBox:
         self.height = dimensions[3]
 
 
-def _get_millimetres(str):
-    """Extract a value in millimetres from a string formatted like '40mm'."""
-    match = re.match(r'^(?P<number>\d+)(?P<unit>[A-Za-z]*)$', str)
-    assert match.group('unit') == 'mm'  # For the moment, just throw if it's not millimetres
-    return float(match.group('number'))
-
-
 class SVGPath(Curve):
     """A curve which wraps an svgpathtools.Path object."""
 
     _evaluation_tolerance_mm = 0.01
 
-    def __init__(self, path: svg.Path, mm_per_unit):
+    def __init__(self, path: svg.Path, mm_per_unit: float):
         """
         Create a wrapper around an svgpathtools.Path.
 
@@ -96,4 +119,20 @@ class SVGPath(Curve):
 
         # Then evaluate the curve at these points
         points_as_complex = np.array([self._path.point(t) for t in t_values]) * self._mm_per_unit
-        return np.column_stack([np.imag(points_as_complex), np.real(points_as_complex)])  # (y,x)
+        return np.column_stack(self._complex_to_yx(points_as_complex))
+
+    @staticmethod
+    def _complex_to_yx(points_as_complex):
+        return np.imag(points_as_complex), np.real(points_as_complex)
+
+
+class SVGPathRotatedBy90Degrees(SVGPath):
+    """A curve which wraps an svgpathtools.Path object, which has been rotated by 90 degrees."""
+
+    def __init__(self, path: svg.Path, mm_per_unit: float, document_original_height: float):
+        super().__init__(path, mm_per_unit)
+        self._original_height = document_original_height
+
+    def _complex_to_yx(self, points_as_complex):
+        unrotated = SVGPath._complex_to_yx(points_as_complex)
+        return unrotated[1], self._original_height - unrotated[0]
