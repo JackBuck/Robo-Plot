@@ -44,7 +44,7 @@ class DebugImage:
             os.mkdir(self.dir_path, 0o750)  # drwxr-x---
 
         # Remove any existing debug files from folder
-        file_list = os.listdir(self.dir_path)
+        file_list = [f for f in os.listdir(self.dir_path) if os.path.isfile(f)]
         for file_name in file_list:
             os.remove(self.dir_path + "/" + file_name)
 
