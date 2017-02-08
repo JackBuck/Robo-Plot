@@ -11,6 +11,7 @@ import time
 import numpy as np
 
 import roboplot.core.debug_movement as debug_movement
+import roboplot.core.limit_switches as limit_switches
 from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
 
@@ -18,16 +19,18 @@ from roboplot.core.curves import Curve
 class Axis:
     current_location = 0
 
-    def __init__(self, motor: StepperMotor, lead: float):
+    def __init__(self, motor: StepperMotor, lead: float, limit_switch_pair):
         """
         Creates an Axis.
 
         Args:
             motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
+            limit_switch_pair (iterable of LimitSwitch): The pair of limit switches at each end of the axis.
         """
         self._motor = motor
         self._lead = lead
+        self._limit_switches = limit_switch_pair
 
     @property
     def millimetres_per_step(self):
@@ -48,6 +51,9 @@ class Axis:
             self.current_location -= self.millimetres_per_step
 
     def step(self):
+        if any(switch.is_pressed for switch in self._limit_switches):
+            raise limit_switches.UnexpectedLimitSwitchError(message='Cannot step motor when limit switch is pressed!')
+
         self._motor.step()
         self._advance_current_location()
 
