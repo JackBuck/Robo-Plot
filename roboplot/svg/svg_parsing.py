@@ -1,3 +1,4 @@
+import itertools
 import re
 import warnings
 
@@ -19,6 +20,9 @@ def parse(filepath: str):
 
     """
     paths, _, svg_attributes = svg.svg2paths2(filepath)
+    setsofsubpaths = [p.continuous_subpaths() for p in paths]
+    paths = itertools.chain.from_iterable(setsofsubpaths)
+
     svg_attributes = SvgAttributes(svg_attributes)
     if svg_attributes.is_portrait:
         return [SVGPath(path, svg_attributes.scale_factor) for path in paths]
