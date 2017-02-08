@@ -18,6 +18,7 @@ from roboplot.core.curves import Curve
 
 class Axis:
     current_location = 0
+    _backing_off = False
 
     def __init__(self, motor: StepperMotor, lead: float, limit_switch_pair):
         """
@@ -51,11 +52,45 @@ class Axis:
             self.current_location -= self.millimetres_per_step
 
     def step(self):
-        if any(switch.is_pressed for switch in self._limit_switches):
+        if (not self._backing_off) and any(switch.is_pressed for switch in self._limit_switches):
+            self._back_off()
             raise limit_switches.UnexpectedLimitSwitchError(message='Cannot step motor when limit switch is pressed!')
 
         self._motor.step()
         self._advance_current_location()
+
+    def _back_off(self, millimetres=5):
+        """
+        Reverse a specified distance.
+
+        Args:
+            millimetres: The distance to reverse.
+        """
+        assert millimetres >= 0
+
+        self._backing_off = True
+        try:
+            self.move(millimetres=-abs(millimetres))
+        finally:
+            self._backing_off = False
+
+    def move(self, millimetres):
+        """
+        Move a specified distance in the current direction.
+
+        Args:
+            millimetres: The displacement to move. A positive value indicates moving in the current direction,
+                         as specified by the self.forwards property.
+        """
+        originally_forwards = self.forwards
+        try:
+            self.forwards &= millimetres >= 0
+            initial_location = self.current_location
+            while abs(initial_location - self.current_location) < abs(millimetres):
+                self.step()
+
+        finally:
+            self.forwards = originally_forwards
 
     def nearest_reachable_location(self, target_location):
         target_displacement = target_location - self.current_location
