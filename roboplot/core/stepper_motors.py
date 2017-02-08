@@ -7,6 +7,7 @@ Authors:
 
 import time
 
+import roboplot.config as config
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
 
@@ -19,7 +20,7 @@ class StepperMotor:
     _minimum_seconds_between_steps = 0.001
     _earliest_next_step = time.time()
 
-    def __init__(self, pins, sequence, steps_per_revolution, minimum_seconds_between_steps=0.001):
+    def __init__(self, pins, sequence, steps_per_revolution, minimum_seconds_between_steps=_minimum_seconds_between_steps):
         """
         Initialises the Motor class.
 
