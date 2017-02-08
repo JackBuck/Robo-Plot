@@ -11,7 +11,9 @@ variables available:
 
 import os
 
-is_emulator = os.environ.get('ROBOPLOT', 0) == 0
+import roboplot.config as config
+
+is_emulator = not config.real_hardware
 
 if is_emulator:
     from roboplot.core.gpio.EmulatorGUI import GPIO, app
