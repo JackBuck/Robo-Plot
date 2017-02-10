@@ -25,6 +25,29 @@ class AxisTest(unittest.TestCase):
             with self.assertRaises(UnexpectedLimitSwitchError):
                 self._axis.step()
 
+    def test_advances_no_further_when_a_limit_switch_is_pressed(self):
+        # To be used later
+        def assert_not_clockwise():
+                self.assertFalse(self._mock_motor.clockwise,
+                                 msg="Shouldn't be stepping clockwise!")
+
+        # Start moving clockwise
+        self._mock_motor.clockwise = True
+        for i in range(10):
+            self._axis.step()
+
+        # Trigger a limit switch
+        self._mock_limit_switches[0].is_pressed = True
+        self._mock_motor.step.side_effect = assert_not_clockwise
+
+        # Test that we do not step further
+        try:
+            for i in range(10):
+                self._axis.step()
+        except UnexpectedLimitSwitchError:
+            # We expect this error!
+            pass
+
     def _reset_switches(self):
         for switch in self._mock_limit_switches:
             switch.is_pressed = False
