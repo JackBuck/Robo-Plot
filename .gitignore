@@ -96,6 +96,8 @@ ENV/
 .idea/misc.xml
 .idea/modules.xml
 .idea/Robo-Plot.iml
+.idea/Robo-Plot_Clone.iml
+.idea/Robo-Plot_Clone_2.iml
 .idea/inspectionProfiles/
 .idea/markdown-navigator/
 .idea/vcs.xml
