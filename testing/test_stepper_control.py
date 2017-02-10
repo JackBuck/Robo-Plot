@@ -28,6 +28,10 @@ class AxisTest(unittest.TestCase):
             with self.assertRaises(UnexpectedLimitSwitchError):
                 self._axis.step()
 
+    def _reset_switches(self):
+        for switch in self._mock_limit_switches:
+            switch.is_pressed = False
+
     def test_advances_no_further_when_a_limit_switch_is_pressed(self):
         # To be used later
         def assert_not_clockwise():
@@ -71,10 +75,6 @@ class AxisTest(unittest.TestCase):
 
         self.assertAlmostEqual(self._axis.current_location, expected_backoff_location,
                                delta=self._axis.millimetres_per_step)
-
-    def _reset_switches(self):
-        for switch in self._mock_limit_switches:
-            switch.is_pressed = False
 
 
 if __name__ == '__main__':
