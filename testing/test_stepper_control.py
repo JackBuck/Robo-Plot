@@ -5,9 +5,12 @@ import roboplot.core.stepper_control as stepper_control
 from roboplot.core.limit_switches import LimitSwitch, UnexpectedLimitSwitchError
 from roboplot.core.stepper_motors import StepperMotor
 
+import context
+# noinspection PyUnresolvedReferences
+import test_runner
+
 
 class AxisTest(unittest.TestCase):
-
     def setUp(self):
         self._mock_limit_switches = (MagicMock(name='switch_1', spec_set=LimitSwitch, is_pressed=False),
                                      MagicMock(name='switch_2', spec_set=LimitSwitch, is_pressed=False))
@@ -28,8 +31,8 @@ class AxisTest(unittest.TestCase):
     def test_advances_no_further_when_a_limit_switch_is_pressed(self):
         # To be used later
         def assert_not_clockwise():
-                self.assertFalse(self._mock_motor.clockwise,
-                                 msg="Shouldn't be stepping clockwise!")
+            self.assertFalse(self._mock_motor.clockwise,
+                             msg="Shouldn't be stepping clockwise!")
 
         # Start moving clockwise
         self._mock_motor.clockwise = True
@@ -75,4 +78,4 @@ class AxisTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(testRunner=test_runner.CustomTestRunner())
