@@ -76,6 +76,10 @@ class AxisTest(unittest.TestCase):
         self.assertAlmostEqual(self._axis.current_location, expected_backoff_location,
                                delta=self._axis.millimetres_per_step)
 
+    def test_overriding_limit_switches_prevents_raise(self):
+        self._axis.override_limit_switches = True
+        self._mock_limit_switches[0].is_pressed = True
+        self._axis.step()
 
 if __name__ == '__main__':
     unittest.main(testRunner=test_runner.CustomTestRunner())
