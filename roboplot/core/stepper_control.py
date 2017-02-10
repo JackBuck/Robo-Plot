@@ -18,6 +18,8 @@ from roboplot.core.curves import Curve
 
 class Axis:
     current_location = 0
+
+    __back_off_millimetres = 5
     _backing_off = False
 
     def __init__(self, motor: StepperMotor, lead: float, limit_switch_pair):
@@ -32,6 +34,16 @@ class Axis:
         self._motor = motor
         self._lead = lead
         self._limit_switches = limit_switch_pair
+
+    @property
+    def back_off_millimetres(self):
+        return self.__back_off_millimetres
+
+    @back_off_millimetres.setter
+    def back_off_millimetres(self, value):
+        if value < 0:
+            raise ValueError
+        self.__back_off_millimetres = value
 
     @property
     def millimetres_per_step(self):
@@ -59,18 +71,13 @@ class Axis:
         self._motor.step()
         self._advance_current_location()
 
-    def _back_off(self, millimetres=5):
+    def _back_off(self):
         """
-        Reverse a specified distance.
-
-        Args:
-            millimetres: The distance to reverse.
+        Reverse by the configured backoff distance.
         """
-        assert millimetres >= 0
-
         self._backing_off = True
         try:
-            self.move(millimetres=-abs(millimetres))
+            self.move(millimetres=-self.back_off_millimetres)
         finally:
             self._backing_off = False
 
