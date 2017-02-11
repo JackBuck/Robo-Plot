@@ -108,7 +108,7 @@ class Axis:
         """
         originally_forwards = self.forwards
         try:
-            self.forwards != millimetres >= 0
+            self.forwards = self.forwards != millimetres >= 0
             initial_location = self.current_location
             while abs(initial_location - self.current_location) < abs(millimetres):
                 self.step()
