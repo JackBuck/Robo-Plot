@@ -18,6 +18,7 @@ from roboplot.core.curves import Curve
 
 class Axis:
     current_location = 0
+    override_limit_switches = False
 
     __back_off_millimetres = 5
     _backing_off = False
@@ -66,7 +67,10 @@ class Axis:
     def step(self):
         if (not self._backing_off) and any(switch.is_pressed for switch in self._limit_switches):
             self._back_off()
-            raise limit_switches.UnexpectedLimitSwitchError(message='Cannot step motor when limit switch is pressed!')
+            if self.override_limit_switches:
+                return
+            else:
+                raise limit_switches.UnexpectedLimitSwitchError(message='Cannot step motor when limit switch is pressed!')
 
         self._motor.step()
         self._advance_current_location()
