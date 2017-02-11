@@ -56,15 +56,25 @@ class Axis:
 
 
     def step(self):
-        if (not self._backing_off) and any(switch.is_pressed for switch in self._limit_switches):
-            self._back_off()
-            if self.override_limit_switches:
-                return
-            else:
-                raise limit_switches.UnexpectedLimitSwitchError(message='Cannot step motor when limit switch is pressed!')
+        if self._backing_off:
+            self._motor.step()
+            self._advance_current_location()
+            return
 
-        self._motor.step()
-        self._advance_current_location()
+        if any(switch.is_pressed for switch in self._limit_switches):
+            a_switch_was_pressed = True
+        else:
+            a_switch_was_pressed = False
+            self._motor.step()
+            self._advance_current_location()
+
+            if any(switch.is_pressed for switch in self._limit_switches):
+                a_switch_was_pressed = True
+                self._back_off()
+
+        if a_switch_was_pressed and not self.override_limit_switches:
+            raise limit_switches.UnexpectedLimitSwitchError(
+                message='Cannot step motor when limit switch is pressed!')
 
         # TODO: Add a test for the possibility of changing direction between the step which presses the switch and
         # the step which triggers the backoff... (since then backoff will be in the wrong direction)
@@ -98,7 +108,7 @@ class Axis:
         """
         originally_forwards = self.forwards
         try:
-            self.forwards &= millimetres >= 0
+            self.forwards != millimetres >= 0
             initial_location = self.current_location
             while abs(initial_location - self.current_location) < abs(millimetres):
                 self.step()
