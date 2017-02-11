@@ -20,7 +20,8 @@ class Axis:
     current_location = 0
     override_limit_switches = False
 
-    __back_off_millimetres = 5
+    # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
+    __back_off_millimetres = 2
     _backing_off = False
 
     def __init__(self, motor: StepperMotor, lead: float, limit_switch_pair):
@@ -39,12 +40,6 @@ class Axis:
     @property
     def back_off_millimetres(self):
         return self.__back_off_millimetres
-
-    @back_off_millimetres.setter
-    def back_off_millimetres(self, value):
-        if value < 0:
-            raise ValueError
-        self.__back_off_millimetres = value
 
     @property
     def millimetres_per_step(self):

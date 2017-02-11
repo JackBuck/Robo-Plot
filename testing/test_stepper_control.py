@@ -55,17 +55,17 @@ class AxisTest(unittest.TestCase):
             # We expect this error!
             pass
 
-    def test_current_location_shows_backoff_after_a_limit_switch_is_pressed(self):
-        self._axis.back_off_millimetres = 5
-
+    def test_current_location_shows_2mm_backoff_after_a_limit_switch_is_pressed(self):
+        """We test for a 2mm backoff since then if we go the wrong way, we have not gone through the whole travel of
+        the switch."""
         for i in range(10):
             self._axis.step()
 
         collision_location = self._axis.current_location
         if self._axis.forwards:
-            expected_backoff_location = collision_location - 5
+            expected_backoff_location = collision_location - 2
         else:
-            expected_backoff_location = collision_location + 5
+            expected_backoff_location = collision_location + 2
         self._mock_limit_switches[0].is_pressed = True
 
         try:
