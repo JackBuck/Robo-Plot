@@ -76,14 +76,14 @@ class Axis:
         """
         self._backing_off = True
         try:
-            self.move(millimetres=-self.back_off_millimetres)
+            self._move(millimetres=-self.back_off_millimetres)
         finally:
             self._backing_off = False
 
         if any(switch.is_pressed for switch in self._limit_switches):
             raise limit_switches.UnexpectedLimitSwitchError(message='Limit switch is still pressed after backoff!')
 
-    def move(self, millimetres):
+    def _move(self, millimetres):
         """
         Move a specified distance in the current direction.
 
