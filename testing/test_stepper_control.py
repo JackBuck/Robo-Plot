@@ -10,7 +10,7 @@ import context
 import test_runner
 
 
-class AxisTest(unittest.TestCase):
+class AxisLimitSwitchTest(unittest.TestCase):
     def setUp(self):
         self._mock_limit_switches = (MagicMock(name='switch_1', spec_set=LimitSwitch, is_pressed=False),
                                      MagicMock(name='switch_2', spec_set=LimitSwitch, is_pressed=False))
@@ -77,9 +77,24 @@ class AxisTest(unittest.TestCase):
                                delta=self._axis.millimetres_per_step)
 
     def test_overriding_limit_switches_prevents_raise(self):
+        initial_location = self._axis.current_location
+
+        def reset_switch_if_current_location_is_less_than_initial_location():
+            if self._axis.current_location < initial_location:
+                self._mock_limit_switches[0].is_pressed = False
+
+        self._axis.forwards = True
+        self._mock_motor.step.side_effect = reset_switch_if_current_location_is_less_than_initial_location
+
         self._axis.override_limit_switches = True
         self._mock_limit_switches[0].is_pressed = True
         self._axis.step()
+
+    def test_raises_even_when_overridden_if_switch_is_still_pressed_after_backoff(self):
+        self._axis.override_limit_switches = True
+        self._mock_limit_switches[0].is_pressed = True
+        with self.assertRaises(UnexpectedLimitSwitchError):
+            self._axis.step()
 
 if __name__ == '__main__':
     unittest.main(testRunner=test_runner.CustomTestRunner())

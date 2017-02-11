@@ -80,6 +80,9 @@ class Axis:
         finally:
             self._backing_off = False
 
+        if any(switch.is_pressed for switch in self._limit_switches):
+            raise limit_switches.UnexpectedLimitSwitchError(message='Limit switch is still pressed after backoff!')
+
     def move(self, millimetres):
         """
         Move a specified distance in the current direction.
