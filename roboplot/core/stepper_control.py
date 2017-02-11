@@ -53,11 +53,7 @@ class Axis:
     def forwards(self, value):
         self._motor.clockwise = value
 
-    def _advance_current_location(self):
-        if self.forwards:
-            self.current_location += self.millimetres_per_step
-        else:
-            self.current_location -= self.millimetres_per_step
+
 
     def step(self):
         if (not self._backing_off) and any(switch.is_pressed for switch in self._limit_switches):
@@ -69,6 +65,15 @@ class Axis:
 
         self._motor.step()
         self._advance_current_location()
+
+        # TODO: Add a test for the possibility of changing direction between the step which presses the switch and
+        # the step which triggers the backoff... (since then backoff will be in the wrong direction)
+
+    def _advance_current_location(self):
+        if self.forwards:
+            self.current_location += self.millimetres_per_step
+        else:
+            self.current_location -= self.millimetres_per_step
 
     def _back_off(self):
         """
