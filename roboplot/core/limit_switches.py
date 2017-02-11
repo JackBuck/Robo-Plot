@@ -4,6 +4,9 @@ This module defines the class(es) interfacing the limit switches.
 
 
 class LimitSwitch:
+    def __init__(self):
+        raise NotImplementedError()
+
     @property
     def is_pressed(self):
         raise NotImplementedError()
