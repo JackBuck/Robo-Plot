@@ -1,7 +1,6 @@
 # import the necessary packages
 import numpy as np
 import cv2
-import config
 
 
 def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
@@ -28,8 +27,6 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
 
     """
 
-    global debug
-
     (lower, upper) = hsv_boundary
 
     # Convert boundaries to np arrays
@@ -52,15 +49,12 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     res = cv2.bitwise_and(hsv_image, hsv_image, mask=mask)
 
     # find contours in the masked image
-    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                            cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     colour_found = False
-
     cnts = cnts[1]
 
     # loop over the contours - We should only have one significant region.
-
     for c in cnts:
 
         # if the contour is not sufficiently large, ignore it - #This number will need to depend on image size.
@@ -75,7 +69,7 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
 
-            if debug:
+            if __debug__:
                 # draw the contour and center of the shape on the image
                 image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
                 cv2.drawContours(image, [c], -1, (255, 55, 255), int(image.shape[0]/80))
@@ -88,7 +82,7 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     if colour_found:
         return cX, cY
     else:
-        return -1,-1
+        return -1, -1
 
 
 def detect_red(hsv_image, min_size, change_to_white):
@@ -112,7 +106,7 @@ def detect_red(hsv_image, min_size, change_to_white):
 
     """
 
-    hsv_boundary = ([165, 50, 50], [10, 255, 255])
+    hsv_boundary = ([165, 100, 100], [10, 255, 255])
 
     (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, True)
 
@@ -140,7 +134,7 @@ def detect_green(hsv_image, min_size, change_to_white):
 
     """
 
-    hsv_boundary = ([40, 50, 50], [80, 255, 255])
+    hsv_boundary = ([40, 100, 100], [80, 255, 255])
 
     (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, True)
 
