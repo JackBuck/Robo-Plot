@@ -8,17 +8,15 @@ class DummyCamera:
 
     def __init__(self):
         self._dir_path = '../resources/Debug_Images/'
-        file_path = '../resources/Challenge_2_Test_Images/HackspacePath_Sample3.png'
+        file_path = '../resources/Challenge_2_Test_Images/HackspacePath_Sample.png'
         self._map = cv2.imread(file_path)
 
         if self._map is None:
             raise TypeError
 
         # Resize to make it A4 ratio with 40mm = 200 pixels
-        self._map = cv2.resize(self._map, (5940, 4200))
-        self.debug_map = self._map.copy()
-        # cv2.imshow('Map', cv2.resize(self._map, (594, 420)))
-        cv2.waitKey(0)
+        self._map = cv2.resize(self._map, (4200, 5940))
+        self._debug_map = self._map.copy()
 
         # Get width and height. (Should be the same as given above).
         self._map_width = self._map.shape[0]
@@ -88,6 +86,7 @@ class DummyCamera:
         dummy_photo[image_x_min_placement:image_x_max_placement, image_y_min_placement:image_y_max_placement] = \
              self._map[image_x_min:image_x_max, image_y_min:image_y_max]
 
+        if __debug__:
             # Show where photos were taken.
             cv2.rectangle(self._debug_map, (image_y_min, image_x_min), (image_y_max, image_x_max), (200, 10, 255), 40)
             cv2.imwrite(self._dir_path + "Photo_Positions_Debug.jpg", self._debug_map)
