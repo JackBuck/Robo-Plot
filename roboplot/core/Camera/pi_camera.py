@@ -20,7 +20,7 @@ class Camera:
             camera.resolution = (200, 200)
             camera.framerate = 24
 
-        self._dir_path = '../resources/DebugImages/'
+        self._dir_path = '../resources/Debug_Images/'
 
     def take_photo(self, camera_centre):
         with picamera.PiCamera() as camera:
