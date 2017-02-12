@@ -39,7 +39,15 @@ class DebugImage:
         #self.debug_image = cv2.imread("resources/HackspacePath_Sample.jpg")
         #cv2.resize(self.debug_image, (594, 420))
 
-        # This value should depend on the picture size chosen currently a 1:1 mappings
+        file_path = '../resources/Challenge_2_Test_Images/HackspacePath_Sample3.png'
+        self.debug_image = cv2.imread(file_path)
+
+        if self.debug_image is None:
+            self.debug_image = np.zeros((420, 594, 3), np.uint8)
+        else:
+            self.debug_image = cv2.resize(self.debug_image, (420, 594))
+
+        # This value should depend on the picture size chosen
         self.pixels_per_mm = 2
 
         # Choose how often an image is saved.
@@ -69,7 +77,7 @@ class DebugImage:
 
         # If the buffer is sufficiently large save/display the image.
         if self.steps_since_save > self.steps_between_saves:
-            cv2.imwrite(self.dir_path + "Debug_Image" + str(self.image_index) + ".png", self.debug_image)
+            cv2.imwrite(self.dir_path + "Movement_Debug" + str(self.image_index) + ".jpg", self.debug_image)
             self.image_index += 1
             self.steps_since_save = 0
 
@@ -85,6 +93,6 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(self.dir_path + "Debug_Image" + str(self.image_index) + ".png", self.debug_image)
+        cv2.imwrite(self.dir_path + "Movement_Debug" + str(self.image_index) + ".jpg", self.debug_image)
         self.image_index += 1
         self.steps_since_save = 0

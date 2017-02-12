@@ -7,10 +7,14 @@ class DummyCamera:
     """This class holds the functions required to mimic the behavior of the plotter when taking photos."""
 
     def __init__(self):
-        file_path = '../../resources/Challenge_2_Test_Images/HackspacePath_Sample.png'
+        self._dir_path = '../resources/Debug_Images/'
+        file_path = '../resources/Challenge_2_Test_Images/HackspacePath_Sample3.png'
         self._map = cv2.imread(file_path)
 
-        #Resize to make it A4 ratio with 40mm = 200 pixels
+        if self._map is None:
+            raise TypeError
+
+        # Resize to make it A4 ratio with 40mm = 200 pixels
         self._map = cv2.resize(self._map, (5940, 4200))
         self.debug_map = self._map.copy()
 
@@ -31,7 +35,8 @@ class DummyCamera:
         dummy_photo = np.zeros((self._photo_size, self._photo_size, 3), np.uint8)
 
         # Convert the co-ordinates into pixel co-ordinates.
-        camera_centre *= self._conversion_factor
+        camera_centre = (int(camera_centre[0] / self._conversion_factor),
+                         int(camera_centre[1] / self._conversion_factor))
 
         # If the photo is near the edge of the paper so that part of the photo will lie outside of the photo this is
         # padded with black so centre is still correct.
@@ -76,6 +81,10 @@ class DummyCamera:
         # Get dummy photo as sub array of the map.
         dummy_photo[image_y_min_placement:image_y_max_placement, image_x_min_placement:image_x_max_placement] = \
             self._map[image_y_min:image_y_max, image_x_min:image_x_max]
+
+            # Show where photos were taken.
+            cv2.rectangle(self._debug_map, (image_y_min, image_x_min), (image_y_max, image_x_max), (200, 10, 255), 40)
+            cv2.imwrite(self._dir_path + "Photo_Positions_Debug.jpg", self._debug_map)
 
         return dummy_photo
 

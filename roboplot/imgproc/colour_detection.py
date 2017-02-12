@@ -78,17 +78,10 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
             if debug:
                 # draw the contour and center of the shape on the image
                 image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
-                cv2.drawContours(image, [c], -1, (255, 255, 10), 1)
-                cv2.circle(image, (cX, cY), 1, (255, 255, 10), -1)
-
-                output = cv2.bitwise_and(image, image, mask=mask)
-                lower_corner = (int(output.shape[1]), int(output.shape[0] - 1))
-                cv2.rectangle(output, (0, 0), lower_corner, (150, 150, 150), 1)
-                combined_image = np.hstack([image, output])
-                display_image = cv2.resize(combined_image, (0, 0), fx=1.0, fy=1.0)
-                cv2.imshow('Colour Detection', display_image)
-                cv2.imwrite('Colour Detection.png', display_image)
-
+                cv2.drawContours(image, [c], -1, (255, 55, 255), int(image.shape[0]/80))
+                cv2.circle(image, (cX, cY), 1, (255, 55, 255), int(image.shape[0]/80))
+                image = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
+                cv2.imwrite('../resources/Debug_Images/Colour_Detection.jpg', image)
             if change_to_white:
                 hsv_image[mask == 255] = [0, 0, 255]
 
