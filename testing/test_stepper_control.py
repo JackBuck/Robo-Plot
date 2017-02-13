@@ -145,6 +145,12 @@ class AxisHomingTest(BaseTestCases.Axis):
         self.assertAlmostEqual(self._axis.current_location, true_motor_location_mm,
                                delta=self._axis.millimetres_per_step / 2)
 
+    def test_is_homed_property_is_initially_false(self):
+        self.assertFalse(self._axis.is_homed)
+
+    def test_is_homed_property_is_true_after_home(self):
+        self._axis.home()
+        self.assertTrue(self._axis.is_homed)
 
 if __name__ == '__main__':
     unittest.main(testRunner=test_runner.CustomTestRunner())

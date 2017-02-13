@@ -27,6 +27,7 @@ class HomePosition:
 
 class Axis:
     current_location = 0
+    _is_homed = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
     __back_off_millimetres = 2
@@ -65,6 +66,10 @@ class Axis:
     def forwards(self, value):
         self._motor.clockwise = value
 
+    @property
+    def is_homed(self):
+        return self._is_homed
+
     def home(self) -> None:
         """
         Home the axis by driving into the limit switch and setting the current_location upon reaching it.
@@ -82,6 +87,8 @@ class Axis:
 
         distance_moved_since_switch_pressed = self.current_location - hit_location
         self.current_location = self._home_position.location + distance_moved_since_switch_pressed
+
+        self._is_homed = True
 
     def _step_expecting_limit_switch(self):
         """
