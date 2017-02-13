@@ -16,15 +16,26 @@ from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
 
 
+class HomePosition:
+    forwards = False
+    location = 0
+
+    def __init__(self, forwards=forwards, location=location):
+        self.forwards = forwards
+        self.location = location
+
+
 class Axis:
     current_location = 0
-    override_limit_switches = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
     __back_off_millimetres = 2
-    _backing_off = False
 
-    def __init__(self, motor: StepperMotor, lead: float, limit_switch_pair):
+    def __init__(self,
+                 motor: StepperMotor,
+                 lead: float,
+                 limit_switch_pair,
+                 home_position: HomePosition = HomePosition()):
         """
         Creates an Axis.
 
@@ -36,6 +47,7 @@ class Axis:
         self._motor = motor
         self._lead = lead
         self._limit_switches = limit_switch_pair
+        self._home_position = home_position
 
     @property
     def back_off_millimetres(self):
@@ -53,68 +65,82 @@ class Axis:
     def forwards(self, value):
         self._motor.clockwise = value
 
+    def home(self) -> None:
+        """
+        Home the axis by driving into the limit switch and setting the current_location upon reaching it.
 
+        The home_position argument to Axis.__init__ controls the direction in which to home as well as the value set
+        upon reaching it.
+        """
+        self.forwards = self._home_position.forwards
+        if any([switch.is_pressed for switch in self._limit_switches]):
+            raise limit_switches.UnexpectedLimitSwitchError("Cannot home if switch is already pressed!")
 
-    def step(self):
-        if self._backing_off:
-            self._motor.step()
-            self._advance_current_location()
-            return
+        hit_location = self._step_expecting_limit_switch()
+        while hit_location is None:
+            hit_location = self._step_expecting_limit_switch()
 
-        if any(switch.is_pressed for switch in self._limit_switches):
-            a_switch_was_pressed = True
-        else:
-            a_switch_was_pressed = False
-            self._motor.step()
-            self._advance_current_location()
+        distance_moved_since_switch_pressed = self.current_location - hit_location
+        self.current_location = self._home_position.location + distance_moved_since_switch_pressed
 
-            if any(switch.is_pressed for switch in self._limit_switches):
-                a_switch_was_pressed = True
-                self._back_off()
+    def _step_expecting_limit_switch(self):
+        """
+        Step if there is no current limit switch press.
+        Instead of raising on a switch press, back off and return the location of the collision.
 
-        if a_switch_was_pressed and not self.override_limit_switches:
+        Returns:
+            The current_location when the switch press occurred.
+        """
+        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        if not a_switch_is_pressed:
+            self._step_unsafe()
+            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+
+        if a_switch_is_pressed:
+            hit_location = self.current_location
+            self._back_off()
+            return hit_location
+
+    def step(self) -> None:
+        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        if not a_switch_is_pressed:
+            self._step_unsafe()
+            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+
+        if a_switch_is_pressed:
+            self._back_off()
             raise limit_switches.UnexpectedLimitSwitchError(
                 message='Cannot step motor when limit switch is pressed!')
 
-        # TODO: Add a test for the possibility of changing direction between the step which presses the switch and
-        # the step which triggers the backoff... (since then backoff will be in the wrong direction)
+    def _back_off(self):
+        """
+        Reverse by the configured backoff distance.
+        """
+        originally_forwards = self.forwards
+        try:
+            self.forwards = not self.forwards
+            # TODO: When you introduce the encoders, be sure to use the stepper motor internal value here,
+            # at least if possible - since else if the encoder breaks for some reason you will not stop backing off
+            # and risk crashing.
+            initial_location = self.current_location
+            while abs(initial_location - self.current_location) < abs(self.back_off_millimetres):
+                self._step_unsafe()
+        finally:
+            self.forwards = originally_forwards
+
+        if any(switch.is_pressed for switch in self._limit_switches):
+            raise limit_switches.UnexpectedLimitSwitchError(message='Limit switch is still pressed after backoff!')
+
+    def _step_unsafe(self):
+        """Step without paying attention to the limit switches."""
+        self._motor.step()
+        self._advance_current_location()
 
     def _advance_current_location(self):
         if self.forwards:
             self.current_location += self.millimetres_per_step
         else:
             self.current_location -= self.millimetres_per_step
-
-    def _back_off(self):
-        """
-        Reverse by the configured backoff distance.
-        """
-        self._backing_off = True
-        try:
-            self._move(millimetres=-self.back_off_millimetres)
-        finally:
-            self._backing_off = False
-
-        if any(switch.is_pressed for switch in self._limit_switches):
-            raise limit_switches.UnexpectedLimitSwitchError(message='Limit switch is still pressed after backoff!')
-
-    def _move(self, millimetres):
-        """
-        Move a specified distance in the current direction.
-
-        Args:
-            millimetres: The displacement to move. A positive value indicates moving in the current direction,
-                         as specified by the self.forwards property.
-        """
-        originally_forwards = self.forwards
-        try:
-            self.forwards = self.forwards != millimetres >= 0
-            initial_location = self.current_location
-            while abs(initial_location - self.current_location) < abs(millimetres):
-                self.step()
-
-        finally:
-            self.forwards = originally_forwards
 
     def nearest_reachable_location(self, target_location):
         target_displacement = target_location - self.current_location
