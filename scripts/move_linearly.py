@@ -6,8 +6,8 @@ import time
 import numpy as np
 
 import context
-import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
 try:
     # Commandline arguments
@@ -40,4 +40,4 @@ try:
     print(target_duration)
 
 finally:
-    gpio_wrapper.clean_up()
+    GPIO.cleanup()

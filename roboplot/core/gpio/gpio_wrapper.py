@@ -14,13 +14,8 @@ import os
 is_emulator = os.environ.get('ROBOPLOT', 0) == 0
 
 if is_emulator:
-    from roboplot.core.gpio.EmulatorGUI import GPIO, app
+    from roboplot.core.gpio.EmulatorGUI import GPIO
 else:
     import RPi.GPIO as GPIO  # For use on the pi
 
 GPIO.setmode(GPIO.BCM)
-
-
-# TODO: Look into using the atexit modue instead of calling directly in scripts? I'm not sure whether this will execute on exceptions though...
-def clean_up():
-    GPIO.cleanup()
