@@ -10,12 +10,10 @@ For more information see unittest documentation.
 import glob
 import unittest
 
-# noinspection PyUnresolvedReferences
-from test_runner import CustomTestRunner
 
 test_files = glob.glob('test_*.py')
 module_strings = [test_file[0:len(test_file) - 3] for test_file in test_files]
 suites = [unittest.defaultTestLoader.loadTestsFromName(test_file) for test_file in module_strings]
 test_suite = unittest.TestSuite(suites)
-test_runner = CustomTestRunner()
+test_runner = unittest.TextTestRunner(verbosity=2)
 result = test_runner.run(test_suite)
