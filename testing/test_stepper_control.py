@@ -152,5 +152,35 @@ class AxisHomingTest(BaseTestCases.Axis):
         self._axis.home()
         self.assertTrue(self._axis.is_homed)
 
+
+class AxisPairHomingTest(unittest.TestCase):
+    def setUp(self):
+        self._mock_x_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False)
+        self._mock_y_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False)
+        self._both_axes = stepper_control.AxisPair(y_axis=self._mock_y_axis, x_axis=self._mock_x_axis)
+
+        def home_x():
+            self._mock_x_axis.is_homed = True
+
+        self._mock_x_axis.home.side_effect = home_x
+
+        def home_y():
+            self._mock_y_axis.is_homed = True
+
+        self._mock_y_axis.home.side_effect = home_y
+
+    def test_both_axes_homed(self):
+        self._both_axes.home()
+        self.assertTrue(self._mock_x_axis.home.called)
+        self.assertTrue(self._mock_y_axis.home.called)
+
+    def test_is_homed_property_is_initially_false(self):
+        self.assertFalse(self._both_axes.is_homed)
+
+    def test_is_homed_property_is_true_after_home(self):
+        self._both_axes.home()
+        self.assertTrue(self._both_axes.is_homed)
+
+
 if __name__ == '__main__':
     unittest.main(testRunner=test_runner.CustomTestRunner())
