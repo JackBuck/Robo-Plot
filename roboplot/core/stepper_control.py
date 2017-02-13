@@ -7,6 +7,7 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import time
+import warnings
 
 import numpy as np
 
@@ -169,6 +170,14 @@ class AxisPair:
         self.y_axis.current_location = value[0]
         self.x_axis.current_location = value[1]
 
+    def home(self):
+        self.x_axis.home()
+        self.y_axis.home()
+
+    @property
+    def is_homed(self):
+        return self.x_axis.is_homed and self.y_axis.is_homed
+
     def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1) -> None:
         """
         Step the motors so as to follow a curve.
@@ -182,12 +191,14 @@ class AxisPair:
             None
 
         """
+        if not self.is_homed:
+            warnings.warn("Attempting to follow curve without having been homed!!")
+
         points = curve.to_series_of_points(resolution)
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
 
-        self.current_location = points[0]  # Temporary until we can lift up the pen
         for pt, target_time in zip(points[1:], target_times):
             self.move_linearly(pt, target_time)
 
