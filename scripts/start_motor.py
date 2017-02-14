@@ -1,11 +1,27 @@
 #!/usr/bin/env python3
 
+import argparse
+import time
+
 import context
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 from roboplot.core.hardware import x_axis_motor
 
 try:
-    x_axis_motor.start(duration=60, rps=0.01)
+    # Commandline arguments
+    parser = argparse.ArgumentParser(description='Run the x-axis motor for a certain period of time.')
+    parser.add_argument('-t', '--time', type=float, default=5,
+                        help='the duration, in seconds, for which to run (default: %(default)smm/s)')
+    parser.add_argument('-s', '--speed', metavar='SPEED', dest='revolutions_per_second', type=float, default=2,
+                        help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
+    parser.add_argument('-w', '--wait', type=float, default=0,
+                        help='an initial sleep time in seconds (default: %(default)s)')
+
+    args = parser.parse_args()
+
+    # Script body
+    time.sleep(args.wait)
+    x_axis_motor.start(duration=5, rps=args.revolutions_per_second)
 
 finally:
     gpio_wrapper.clean_up()
