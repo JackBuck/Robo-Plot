@@ -348,11 +348,13 @@ class GPIO:
     setModeDone = False
 
     # Extra functions
+    @staticmethod
     def checkModeValidator():
         if GPIO.setModeDone == False:
             raise Exception('Setup your gpio mode. Must be set to BCM')
 
     # gpio LIBRARY Functions
+    @staticmethod
     @typeassert(int)
     def setmode(mode):
         time.sleep(1)
@@ -361,10 +363,12 @@ class GPIO:
         else:
             GPIO.setModeDone = False
 
+    @staticmethod
     @typeassert(bool)
     def setwarnings(flag):
         pass
 
+    @staticmethod
     @typeassert(int, int, int, int)
     def setup(channel, state, initial=-1, pull_up_down=-1):
         global dictionaryPins
@@ -404,6 +408,7 @@ class GPIO:
             drawBindUpdateButtonIn(str(channel), objTemp.In)
             dictionaryPins[str(channel)] = objTemp
 
+    @staticmethod
     @typeassert(int, int)
     def output(channel, outmode):
         global dictionaryPins
@@ -431,6 +436,7 @@ class GPIO:
 
         drawGPIOOut(channel)
 
+    @staticmethod
     @typeassert(int)
     def input(channel):
         global dictionaryPins
