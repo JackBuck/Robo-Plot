@@ -13,7 +13,7 @@ dictionaryPins = {}
 dictionaryPinsTkinter = {}
 
 GPIONames = ["14", "15", "18", "23", "24", "25", "8", "7", "12", "16", "20", "21", "2", "3", "4", "17", "27", "22",
-             "10", "9", "11", "5", "6", "13", "19", "26"]
+             "10", "9", "11", "5", "6", "13", "19", "26", "0", "1"]
 
 
 class App(threading.Thread):
@@ -323,14 +323,17 @@ def drawGPIOOut(gpioID):
 
 
 def drawBindUpdateButtonIn(gpioID, In):
-    objBtn = dictionaryPinsTkinter[gpioID]
-    objBtn.configure(background='gainsboro')
-    objBtn.configure(activebackground='gainsboro')
-    objBtn.configure(relief='raised')
-    objBtn.configure(bd="1px")
-    objBtn["text"] = "gpio" + str(gpioID) + "\nIN=" + str(In)
-    objBtn.bind("<Button-1>", buttonClick)
-    objBtn.bind("<ButtonRelease-1>", buttonClickRelease)
+    if gpioID in ("0", "1"):
+        return
+    else:
+        objBtn = dictionaryPinsTkinter[gpioID]
+        objBtn.configure(background='gainsboro')
+        objBtn.configure(activebackground='gainsboro')
+        objBtn.configure(relief='raised')
+        objBtn.configure(bd="1px")
+        objBtn["text"] = "gpio" + str(gpioID) + "\nIN=" + str(In)
+        objBtn.bind("<Button-1>", buttonClick)
+        objBtn.bind("<ButtonRelease-1>", buttonClickRelease)
 
 
 class GPIO:
