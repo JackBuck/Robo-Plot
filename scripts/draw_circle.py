@@ -7,14 +7,14 @@ import numpy as np
 
 import context
 import roboplot.core.curves as curves
-import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a circle.')
-    parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[0, 0],
-                        help='the centre (x,y) of the circle in millimetres (default: %(default)smm)')
+    parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[0, 0],
+                        help='the centre (y,x) of the circle in millimetres (default: %(default)smm)')
     parser.add_argument('-r', '--radius', type=float, required=True,
                         help='the radius of the circle in millimetres')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
@@ -40,4 +40,4 @@ try:
     print(2 * np.pi * args.radius / args.pen_millimetres_per_second)
 
 finally:
-    gpio_wrapper.clean_up()
+    GPIO.cleanup()

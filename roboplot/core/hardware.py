@@ -15,9 +15,10 @@ import warnings
 import roboplot.core.encoders as encoders
 import roboplot.core.stepper_motors as stepper_motors
 import roboplot.core.stepper_control as stepper_control
+import roboplot.config as config
 
 # Decide how much real hardware to use
-use_real_encoders = os.environ.get('ROBOPLOT', 0) != 0
+use_real_encoders = config.real_hardware
 if use_real_encoders:
     warnings.warn("Manually disabling encoders dispite ROBOPLOT environment variable.")
     use_real_encoders = False
@@ -45,4 +46,8 @@ else:
 # Higher level objects
 x_axis = stepper_control.Axis(x_axis_motor, x_axis_encoder, lead=8)
 y_axis = stepper_control.Axis(y_axis_motor, y_axis_encoder, lead=8)
-both_axes = stepper_control.AxisPair(x_axis, y_axis)
+
+if __debug__:
+    both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)
+else:
+    both_axes = stepper_control.AxisPair(y_axis, x_axis)
