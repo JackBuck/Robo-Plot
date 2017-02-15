@@ -18,28 +18,36 @@ from roboplot.core.curves import Curve
 class Axis:
     current_location = 0
 
-    def __init__(self, motor: StepperMotor, lead: float):
+    def __init__(self,
+                 motor: StepperMotor,
+                 lead: float,
+                 invert_axis: bool = False):
         """
         Creates an Axis.
 
         Args:
             motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
+            invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
+        assert lead > 0, "The lead specified must be positive!"
+        assert isinstance(invert_axis, bool)
+
         self._motor = motor
         self._lead = lead
+        self._invert_axis = invert_axis
 
     @property
     def millimetres_per_step(self):
         return self._lead / self._motor.steps_per_revolution
 
     @property
-    def forwards(self):
-        return self._motor.clockwise
+    def forwards(self) -> bool:
+        return self._motor.clockwise != self._invert_axis
 
     @forwards.setter
-    def forwards(self, value):
-        self._motor.clockwise = value
+    def forwards(self, value: bool) -> None:
+        self._motor.clockwise = value != self._invert_axis
 
     def _advance_current_location(self):
         if self.forwards:
