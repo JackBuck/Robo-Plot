@@ -19,11 +19,11 @@ def parse(filepath: str):
         an iterable of SVGPath objects.
 
     """
-    paths, _, svg_attributes = svg.svg2paths2(filepath)
+    paths, _, svg_attributes_dict = svg.svg2paths2(filepath)
     setsofsubpaths = [p.continuous_subpaths() for p in paths]
     paths = itertools.chain.from_iterable(setsofsubpaths)
 
-    svg_attributes = SvgAttributes(svg_attributes)
+    svg_attributes = SvgAttributes(svg_attributes_dict)
     if svg_attributes.is_portrait:
         return [SVGPath(path, svg_attributes.scale_factor) for path in paths]
     else:
