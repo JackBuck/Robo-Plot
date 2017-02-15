@@ -6,12 +6,8 @@ import cv2
 import numpy as np
 
 import context
-import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
 import roboplot.svg.svg_parsing as svg
-
-
-
 
 # noinspection PyUnresolvedReferences
 # import test_runner
@@ -36,18 +32,16 @@ class SVGTest(unittest.TestCase):
                 total_points += np.ndarray.tolist(points)
             except:
                 pass
-            
-            
-            
+                  
         total_points_array = np.asarray(total_points)
         
-        # Save point to 3 decimal points, this stops most small numerical changes from causing the 
+        # Save point to 5 decimal points, this stops most small numerical changes from causing the 
         # tests to fail. This line should be commented out except for when generating the expected
         # test data.
-        #np.savetxt(self.file_path + 'expected_' + filename +'.txt', total_points, fmt='%.3f')
-        expected_line = np.loadtxt(self.file_path + 'expected_' + filename +'.txt')
+        np.savetxt(self.file_path + 'expected_' + filename +'.txt', total_points_array, fmt='%.5f')
+        expected_path = np.loadtxt(self.file_path + 'expected_' + filename +'.txt')
         
-        self.assertTrue((total_points==expected_line).all())
+        self.assertTrue(np.allclose(total_points_array,expected_path, atol=1e-3))
         
     def test_ArcToPath(self):
         self.svgToPathTest('arc')
