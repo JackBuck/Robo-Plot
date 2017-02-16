@@ -23,7 +23,7 @@ y_limit_switches = (limit_switches.LimitSwitch(),
 
 # Higher level objects
 x_axis = stepper_control.Axis(motor=x_axis_motor, lead=8, limit_switch_pair = x_limit_switches)
-y_axis = stepper_control.Axis(motor=y_axis_motor, lead=8, limit_switch_pair = y_limit_switches)
+y_axis = stepper_control.Axis(motor=y_axis_motor, lead=8, limit_switch_pair = y_limit_switches, invert_axis=True)
 
 if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)

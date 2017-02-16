@@ -1,13 +1,10 @@
 import unittest
 from unittest.mock import MagicMock
 
+import context
 import roboplot.core.stepper_control as stepper_control
 from roboplot.core.limit_switches import LimitSwitch, UnexpectedLimitSwitchError
 from roboplot.core.stepper_motors import StepperMotor
-
-import context
-# noinspection PyUnresolvedReferences
-import test_runner
 
 
 class BaseTestCases:
