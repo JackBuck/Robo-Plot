@@ -19,7 +19,7 @@ class App(threading.Thread):
 
         
     def __init__(self):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self, daemon=True)
         self.start()
 
         
