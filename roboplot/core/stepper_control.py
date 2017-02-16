@@ -38,7 +38,8 @@ class Axis:
                  motor: StepperMotor,
                  lead: float,
                  limit_switch_pair,
-                 home_position: HomePosition = HomePosition()):
+                 home_position: HomePosition = HomePosition(),
+                 invert_axis: bool = False):
         """
         Creates an Axis.
 
@@ -46,11 +47,16 @@ class Axis:
             motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
             limit_switch_pair (iterable of LimitSwitch): The pair of limit switches at each end of the axis.
+            invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
+        assert lead > 0, "The lead specified must be positive!"
+        assert isinstance(invert_axis, bool)
+
         self._motor = motor
         self._lead = lead
         self._limit_switches = limit_switch_pair
         self._home_position = home_position
+        self._invert_axis = invert_axis
 
     @property
     def back_off_millimetres(self):
@@ -61,12 +67,12 @@ class Axis:
         return self._lead / self._motor.steps_per_revolution
 
     @property
-    def forwards(self):
-        return self._motor.clockwise
+    def forwards(self) -> bool:
+        return self._motor.clockwise != self._invert_axis
 
     @forwards.setter
-    def forwards(self, value):
-        self._motor.clockwise = value
+    def forwards(self, value: bool) -> None:
+        self._motor.clockwise = value != self._invert_axis
 
     @property
     def is_homed(self):
