@@ -45,7 +45,7 @@ else:
 
 # Higher level objects
 x_axis = stepper_control.Axis(x_axis_motor, x_axis_encoder, lead=8)
-y_axis = stepper_control.Axis(y_axis_motor, y_axis_encoder, lead=8)
+y_axis = stepper_control.Axis(y_axis_motor, y_axis_encoder, lead=8, invert_axis=True)
 
 if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)
