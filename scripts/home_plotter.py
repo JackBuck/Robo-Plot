@@ -3,6 +3,7 @@
 import threading
 import time
 
+import context
 import roboplot.core.hardware as hardware
 
 axes = hardware.both_axes
