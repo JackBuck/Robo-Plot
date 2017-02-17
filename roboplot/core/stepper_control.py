@@ -203,8 +203,8 @@ class AxisPair:
 
     @property
     def _millimetres_per_encoder_mark(self):
-        return np.array(self.y_axis.millimetres_per_encoder_mark,
-                        self.x_axis.millimetres_per_encoder_mark)
+        return np.array([self.y_axis.millimetres_per_encoder_mark,
+                        self.x_axis.millimetres_per_encoder_mark])
 
     def _set_axis_directions_for(self, target_location):
         self.y_axis.forwards = target_location[0] >= self.current_location[0]
