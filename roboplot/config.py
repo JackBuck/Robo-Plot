@@ -13,3 +13,8 @@ resources_dir = os.path.normpath(os.path.join(roboplot_directory, '..', 'resourc
 
 # Environment variables
 real_hardware = os.environ.get('ROBOPLOT', 0) != 0
+
+
+# Debugging image paths
+debug_image_file_path = resources_dir + '/Challenge_2_Test_Images/HackspacePath_Sample.png'
+debug_output_folder = resources_dir + '/DebugImages/'

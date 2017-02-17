@@ -37,16 +37,14 @@ class DebugImage:
 
         """
 
-        self.dir_path = os.path.join(config.resources_dir, 'DebugImages')
-
         # Create the directory if it doesn't exist
-        if not os.path.exists(self.dir_path):
-            os.mkdir(self.dir_path, 0o750)  # drwxr-x---
+        if not os.path.exists(config.debug_output_folder):
+            os.mkdir(config.debug_output_folder, 0o750)  # drwxr-x---
 
         # Remove any existing debug files from folder
-        file_list = os.listdir(self.dir_path)
+        file_list = os.listdir(config.debug_output_folder)
         for file_name in file_list:
-            os.remove(self.dir_path + "/" + file_name)
+            os.remove(config.debug_output_folder + "/" + file_name)
 
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
@@ -95,6 +93,6 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(os.path.join(self.dir_path, "DebugImage_{i:04}.png".format(i=self.image_index)), self.debug_image)
+        cv2.imwrite(os.path.join(config.debug_output_folder, "DebugImage_{i:04}.jpg".format(i=self.image_index)), self.debug_image)
         self.image_index += 1
         self.steps_since_save = 0

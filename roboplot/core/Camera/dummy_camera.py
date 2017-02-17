@@ -1,15 +1,14 @@
 # coding=utf-8
 import numpy as np
 import cv2
+import roboplot.config as config
 
 
 class DummyCamera:
     """This class holds the functions required to mimic the behavior of the plotter when taking photos."""
 
     def __init__(self):
-        self._dir_path = '../resources/Debug_Images/'
-        file_path = '../resources/Challenge_2_Test_Images/HackspacePath_Sample.png'
-        self._map = cv2.imread(file_path)
+        self._map = cv2.imread(config.debug_image_file_path)
 
         if self._map is None:
             raise TypeError
@@ -89,7 +88,7 @@ class DummyCamera:
         if __debug__:
             # Show where photos were taken.
             cv2.rectangle(self._debug_map, (image_y_min, image_x_min), (image_y_max, image_x_max), (200, 10, 255), 40)
-            cv2.imwrite(self._dir_path + "Photo_Positions_Debug.jpg", self._debug_map)
+            cv2.imwrite(config.debug_output_folder + "Photo_Positions_Debug.jpg", self._debug_map)
 
         return dummy_photo
 

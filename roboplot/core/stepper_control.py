@@ -14,6 +14,7 @@ import numpy as np
 import roboplot.core.debug_movement as debug_movement
 from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
+import roboplot.config as config
 
 
 class Axis:
@@ -175,7 +176,7 @@ class AxisPair:
 class AxisPairWithDebugImage(AxisPair):
     def __init__(self, y_axis: Axis, x_axis: Axis):
         super().__init__(y_axis, x_axis)
-        self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step)
+        self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step, config.debug_image_file_path)
 
     @property
     def current_location(self):
