@@ -4,9 +4,9 @@ import argparse
 import time
 
 import context
-import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
 import roboplot.svg.svg_parsing as svg
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
 try:
     # Commandline arguments
@@ -43,4 +43,4 @@ try:
     print(distance_travelled / args.pen_millimetres_per_second)
 
 finally:
-    gpio_wrapper.clean_up()
+    GPIO.cleanup()
