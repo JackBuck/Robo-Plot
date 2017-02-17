@@ -2,14 +2,20 @@
 This module defines the class(es) interfacing the limit switches.
 """
 
+from roboplot.core.gpio.gpio_wrapper import GPIO
+
 
 class LimitSwitch:
-    def __init__(self):
-        raise NotImplementedError()
+    def __init__(self, gpio_pin):
+        self._gpio_pin = gpio_pin
+        GPIO.setup(self._gpio_pin, GPIO.IN)
 
     @property
     def is_pressed(self):
-        raise NotImplementedError()
+        if GPIO.input(self._gpio_pin) == 0:
+            return True
+        else:
+            return False
 
 
 class UnexpectedLimitSwitchError(Exception):
