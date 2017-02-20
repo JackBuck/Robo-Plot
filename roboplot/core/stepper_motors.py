@@ -18,7 +18,7 @@ class StepperMotor:
     clockwise = True
     cumulative_step_count = 0
     _next_step = 0
-    _minimum_seconds_between_steps = 0.001 if config.real_hardware else 0.0
+    _minimum_seconds_between_steps = 0.002 if config.real_hardware else 0.0
     _earliest_next_step = time.time()
 
     def __init__(self, pins, sequence, steps_per_revolution, minimum_seconds_between_steps=_minimum_seconds_between_steps):
