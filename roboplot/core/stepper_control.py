@@ -97,7 +97,6 @@ class AxisPair:
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
 
-        self.current_location = points[0]  # Temporary until we can lift up the pen
         for pt, target_time in zip(points[1:], target_times):
             self.move_linearly(pt, target_time)
 
