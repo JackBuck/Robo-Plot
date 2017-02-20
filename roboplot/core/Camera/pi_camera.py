@@ -9,8 +9,8 @@ All distances in the module are expressed in MILLIMETRES.
 import time
 import cv2
 import numpy as np
-from picamera import PiCamera
-
+import picamera
+import picamera.array
 
 class Camera:
     def __init__(self):
@@ -19,18 +19,16 @@ class Camera:
             camera.framerate = 24
 
         self._dir_path = '../resources/DebugImages/'
+        self._photo_index = 0
 
-    def take_photo(self, camera_centre):
+    def take_photo_at(self, camera_centre):
         with picamera.PiCamera() as camera:
-            output = np.empty((112 * 128 * 3,), dtype=np.uint8)
-            camera.capture(output, 'bgr', use_video_port=True)
-            output = output.reshape((112, 128, 3))
-            output = output[:200, :200, :]
+            with picamera.array.PiRGBArray(camera) as output: 
+                camera.capture(output, 'bgr', use_video_port=True)
+                outputarray = output.array
 
             # Save photo.
-            cv2.imshow(self._dir_path + "Photo:" + self._photo_index + ".jpg", output)
+            cv2.imshow(self._dir_path + "Photo:" + str(self._photo_index) + ".jpg", outputarray)
             self._photo_index += 1
 
-            return output
-
-
+            return outputarray

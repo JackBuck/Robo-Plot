@@ -24,7 +24,7 @@ hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
 (cX, cY) = cd.detect_green(hsv_image, args.minsize, False)
 
 if cX != -1:
-    cv2.circle(photo, (cX, cY), 5, (255, 10, 10), 2)
+    cv2.circle(photo, (cX, cY), 20, (255, 10, 10), 10)
     cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
     cv2.waitKey(0)
     print("Done: Green Found")
