@@ -44,7 +44,7 @@ class DebugImage:
             os.mkdir(self.dir_path, 0o750)  # drwxr-x---
 
         # Remove any existing debug files from folder
-        file_list = [f for f in os.listdir(self.dir_path) if os.path.isfile(f)]
+        file_list = [f for f in os.listdir(self.dir_path) if os.path.isfile(os.path.join(self.dir_path, f))]
         for file_name in file_list:
             os.remove(self.dir_path + "/" + file_name)
 
@@ -77,7 +77,7 @@ class DebugImage:
         pixel = (int(round(point[0] * self.pixels_per_mm)), int(round(point[1] * self.pixels_per_mm)))
 
         if 0 <= pixel[0] < self._image_dimensions_pixels[0] and \
-           0 <= pixel[1] < self._image_dimensions_pixels[1]:
+                                0 <= pixel[1] < self._image_dimensions_pixels[1]:
             self.debug_image[pixel] = self.colour
 
         self.steps_since_save += 1
