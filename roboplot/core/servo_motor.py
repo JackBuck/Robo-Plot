@@ -66,15 +66,18 @@ class ServoMotor:
         Args:
             degrees: the angle in degrees to which to turn the servo
         """
+        assert self.angle_is_in_range(degrees), "Requested angle is outside the servo motor's range!"
+
         degrees_range = self._max_position.degrees - self._min_position.degrees
         proportion = (degrees - self._min_position.degrees) / degrees_range
-
-        assert 0 <= proportion <= 1
 
         pwm_range = self._max_position.pwm_output - self._min_position.pwm_output
         required_output = self._min_position.pwm_output + proportion * pwm_range
 
         wiringpi.pwmWrite(self._gpio_pin, required_output)
+
+    def angle_is_in_range(self, degrees):
+        return self.min_degrees <= degrees <= self.max_degrees
 
     def disengage(self):
         # TODO: Does this method work? Or does our servo still retain its position?
