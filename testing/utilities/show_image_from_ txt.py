@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+
 import numpy as np
 import cv2
 
@@ -8,7 +9,7 @@ import cv2
 parser = argparse.ArgumentParser(description='Display image saved as txt file')
 
 parser.add_argument('filepath', type=str,
-                help='a (relative or absolute) path to the text file')
+                    help='a (relative or absolute) path to the text file')
                 
 args = parser.parse_args()
 
