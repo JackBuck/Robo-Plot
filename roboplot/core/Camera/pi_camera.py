@@ -28,7 +28,7 @@ class Camera:
                 outputarray = output.array
 
             # Save photo.
-            cv2.imshow(self._dir_path + "Photo:" + str(self._photo_index) + ".jpg", outputarray)
+            cv2.imwrite(self._dir_path + "Photo:" + str(self._photo_index) + ".jpg", outputarray)
             self._photo_index += 1
 
             return outputarray
