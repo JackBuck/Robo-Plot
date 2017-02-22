@@ -3,7 +3,7 @@ import cv2
 import argparse
 import numpy as np
 
-import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
+from roboplot.core.gpio.gpio_wrapper import GPIO
 import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.colour_detection as cd
 import roboplot.challenge_two_functions as challenge2
@@ -25,7 +25,7 @@ try:
     
     centre = challenge2.find_green_centre(centre, args.pen_millimetres_per_second, args.minsize)
 finally:
-    gpio_wrapper.clean_up()
+    GPIO.cleanup()
 
 print("Done")
 
