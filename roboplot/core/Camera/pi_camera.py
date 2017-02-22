@@ -18,7 +18,6 @@ class Camera:
             camera.resolution = (200, 200)
             camera.framerate = 24
 
-        self._dir_path = '../resources/DebugImages/'
         self._photo_index = 0
 
     def take_photo_at(self, camera_centre):
@@ -28,7 +27,7 @@ class Camera:
                 outputarray = output.array
 
             # Save photo.
-            cv2.imwrite(self._dir_path + "Photo:" + str(self._photo_index) + ".jpg", outputarray)
+            cv2.imwrite(config.debug_output_folder + "Photo:" + str(self._photo_index) + ".jpg", outputarray)
             self._photo_index += 1
 
             return outputarray
