@@ -2,6 +2,8 @@
 import numpy as np
 import cv2
 
+import roboplot.config as config
+
 
 def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     """
