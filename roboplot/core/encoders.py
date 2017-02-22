@@ -73,6 +73,34 @@ class Encoder(threading.Thread):
         with self._lock:
             self._exit_requested = True  # TODO: Is there any point in locking here? We do not lock when we read it...
 
+    def encoder_loop(self):
+        """
+        Loop to update the encoder count until an exit is requested.
+
+        Returns:
+            None
+        """
+
+        current_section = self._compute_current_section()
+
+        # Infinite while loop until program ends, at which point a flag can be set from another thread
+        while not self._exit_requested:
+            previous_section = current_section
+            current_section = self._compute_current_section()
+
+            # Sections are modulo 4; hopefully the change is 0,1, or -1 modulo 4
+            count_change = _get_modular_representative(current_section - previous_section)
+
+            # But if it is not...
+            if count_change == 2:
+                warnings.warn("Encoder moved more than one step")
+                count_change = 0  # We do not know whether we gained two or lost two steps - so do nothing!
+
+            # Use a lock to make count variable thread safe
+            if count_change != 0:
+                with self._lock:
+                    self._count += count_change
+
     def _compute_current_section(self):
         """
         Returns a number modulo 4 to indicate the current reading from the encoder.
@@ -106,34 +134,6 @@ class Encoder(threading.Thread):
             return 3
         else:
             assert False, "GPIO input pins returned unexpected values!"
-
-    def encoder_loop(self):
-        """
-        Loop to update the encoder count until an exit is requested.
-
-        Returns:
-            None
-        """
-
-        current_section = self._compute_current_section()
-
-        # Infinite while loop until program ends, at which point a flag can be set from another thread
-        while not self._exit_requested:
-            previous_section = current_section
-            current_section = self._compute_current_section()
-
-            # Sections are modulo 4; hopefully the change is 0,1, or -1 modulo 4
-            count_change = _get_modular_representative(current_section - previous_section)
-
-            # But if it is not...
-            if count_change == 2:
-                warnings.warn("Encoder moved more than one step")
-                count_change = 0  # We do not know whether we gained two or lost two steps - so do nothing!
-
-            # Use a lock to make count variable thread safe
-            if count_change != 0:
-                with self._lock:
-                    self._count += count_change
 
 
 def _get_modular_representative(value, min, modulus):
