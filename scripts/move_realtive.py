@@ -31,7 +31,7 @@ try:
     time.sleep(args.wait)
 
     start_time = time.time()
-    hardware.both_axes.current_location = [0, 0]
+    hardware.both_axes.current_location = [0, 0]  # So that the move is relative
     hardware.both_axes.move_linearly(target_location=[args.y_millimetres, args.x_millimetres],
                                      target_completion_time=start_time + target_duration)
     end_time = time.time()
