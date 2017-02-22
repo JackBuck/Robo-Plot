@@ -9,7 +9,7 @@ All distances in the module are expressed in MILLIMETRES.
 import time
 import cv2
 import numpy as np
-import roboplot.core.Camera.camera_client as camera_client
+import roboplot.core.camera.camera_client as camera_client
 
 
 class RemoteCamera:
