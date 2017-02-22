@@ -89,7 +89,7 @@ class Encoder(threading.Thread):
             current_section = self._compute_current_section()
 
             # Sections are modulo 4; hopefully the change is 0,1, or -1 modulo 4
-            count_change = _get_modular_representative(current_section - previous_section)
+            count_change = _get_modular_representative(current_section - previous_section, min=-1, modulus=4)
 
             # But if it is not...
             if count_change == 2:
