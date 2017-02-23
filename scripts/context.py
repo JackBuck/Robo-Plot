@@ -22,6 +22,7 @@ References: https://docs.python.org/3.4/tutorial/modules.html#the-module-search-
 import sys
 import os
 
+
 _script_dir = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 _roboplot_parentdir = os.path.normpath(os.path.join(_script_dir, '..'))
 sys.path.insert(0, _roboplot_parentdir)

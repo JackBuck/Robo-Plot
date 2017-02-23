@@ -50,7 +50,7 @@ class SVGTest(unittest.TestCase):
         total_points_array = np.asarray(total_points)
 
         expected_results_file = os.path.join(self.path_to_test_data, 'expected_' + filename_without_extension + '.txt')
-        # self._overwrite_expected_results_file(expected_results_file, total_points_array)
+        # self._overwrite_expected_results_file(expected_results_file, total_points_array)  # For creating test data
         expected_points = np.loadtxt(expected_results_file)
 
         self.assertTrue(np.allclose(total_points_array, expected_points, atol=1e-3))

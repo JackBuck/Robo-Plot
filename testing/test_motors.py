@@ -4,7 +4,6 @@ import context
 import unittest
 import cv2
 import roboplot.core.stepper_motors as stepper_motors
-import roboplot.core.hardware as hardware
 from roboplot.core.gpio.gpio_wrapper import GPIO
 import time
 
