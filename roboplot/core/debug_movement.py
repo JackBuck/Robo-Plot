@@ -25,7 +25,7 @@ class DebugImage:
     colour_index = 0
     colour = Colour.Yellow
 
-    def __init__(self, millimetres_per_step, bgimage_path=None, pixels_per_mm=2):
+    def __init__(self, millimetres_per_step, bgimage_path=None, pixels_per_mm=3):
         """
         Creates debug image.
 
@@ -48,13 +48,13 @@ class DebugImage:
 
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
-        a4paper = (297, 210)
+        a4paper = (210, 297)  # (x then y as tuple)
         self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
 
         # Background image
         if bgimage_path is not None:
             self.debug_image = cv2.imread(bgimage_path)
-            cv2.resize(self.debug_image, self._image_dimensions_pixels)
+            self.debug_image = cv2.resize(self.debug_image, self._image_dimensions_pixels)
         else:
             self.debug_image = np.zeros(self._image_dimensions_pixels + (3,), np.uint8)
 
@@ -62,6 +62,7 @@ class DebugImage:
         self.millimeters_between_saves = 20
         self.steps_between_saves = self.millimeters_between_saves / millimetres_per_step
 
+        print(self.debug_image.shape)
         self.save_image()
 
     def add_point(self, point):
@@ -72,11 +73,15 @@ class DebugImage:
             point: Point to be added to the buffer (in mm)
         """
 
-        pixel = (int(round(point[0] * self.pixels_per_mm)), int(round(point[1] * self.pixels_per_mm)))
+                
+        pixel = tuple(int(round(i * self.pixels_per_mm)) for i in point)
 
-        if 0 <= pixel[0] < self._image_dimensions_pixels[0] and \
-           0 <= pixel[1] < self._image_dimensions_pixels[1]:
+        if 0 <= pixel[0] < self._image_dimensions_pixels[1] and \
+           0 <= pixel[1] < self._image_dimensions_pixels[0]:
             self.debug_image[pixel] = self.colour
+        else:
+            print('Warning: Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
+            raise Exception
 
         self.steps_since_save += 1
 
