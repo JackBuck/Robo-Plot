@@ -4,7 +4,7 @@ import roboplot.imgproc.image_analysis as IP
 import cv2
 import math
 import roboplot.imgproc.colour_detection as CD
-import roboplot.core.Camera.camera_wrapper as camera_wrapper
+import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.perimeter_search as perimeter_search
 import roboplot.core.curves as curves
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper

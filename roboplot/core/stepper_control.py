@@ -72,9 +72,6 @@ class AxisPair:
         self.x_axis = x_axis
         self.y_axis = y_axis
 
-        if __debug__:
-            self.debug = debug_movement.DebugImage(self.x_axis.millimetres_per_step)
-
     @property
     def current_location(self):
         return np.array([self.y_axis.current_location, self.x_axis.current_location])
@@ -83,10 +80,6 @@ class AxisPair:
     def current_location(self, value):
         self.y_axis.current_location = value[0]
         self.x_axis.current_location = value[1]
-
-        if __debug__:
-            self.debug.add_point(value)
-            self.debug.change_colour()
 
     def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1) -> None:
         """
@@ -102,9 +95,6 @@ class AxisPair:
 
         """
 
-        if __debug__:
-            self.debug.change_colour()
-
         points = curve.to_series_of_points(resolution)
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)
@@ -118,9 +108,6 @@ class AxisPair:
 
         for pt, target_time in zip(points[1:], target_times):
             self.move_linearly(pt, target_time)
-
-        if __debug__:
-            self.debug.save_image()
 
     def move_linearly(self, target_location: np.ndarray, target_completion_time: float) -> None:
         """
@@ -148,9 +135,6 @@ class AxisPair:
 
         while any(current_distances < target_distances):
             self._step_the_axis_which_is_behind(current_distances, target_distances)
-
-            if __debug__:
-                self.debug.add_point(self.current_location)
 
             current_distances = abs(self.current_location - start_location)
             time_of_next_step = start_time + total_seconds * sum(current_distances) / sum(target_distances)

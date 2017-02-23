@@ -9,13 +9,12 @@ All distances in the module are expressed in MILLIMETRES.
 import time
 import cv2
 import numpy as np
-import roboplot.core.Camera.camera_client as camera_client
+import roboplot.core.camera.camera_client as camera_client
 
 
 class RemoteCamera:
     def __init__(self):
 
-        self._dir_path = '../resources/DebugImages/'
         self._photo_index = 0
 
     def take_photo_at(self, camera_centre):
@@ -24,7 +23,7 @@ class RemoteCamera:
             output = output[:200, :200, :]
 
             # Save photo.
-            cv2.imwrite(self._dir_path + "Photo:" + str(self._photo_index) + ".jpg", output)
+            cv2.imwrite(config.debug_output_folder + "Photo:" + str(self._photo_index) + ".jpg", output)
             self._photo_index += 1
 
             return output

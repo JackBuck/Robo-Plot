@@ -1,6 +1,9 @@
 # import the necessary packages
 import numpy as np
 import cv2
+import os
+
+import roboplot.config as config
 
 
 def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
@@ -75,7 +78,8 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
                 cv2.drawContours(image, [c], -1, (255, 55, 255), int(image.shape[0]/80))
                 cv2.circle(image, (cX, cY), 1, (255, 55, 255), int(image.shape[0]/80))
                 image = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
-                cv2.imwrite('../resources/Debug_Images/Colour_Detection.jpg', image)
+                cv2.imwrite(os.path.normpath(os.path.join(config.debug_output_folder, 'Colour_Detection.jpg')), image)
+                
             if change_to_white:
                 hsv_image[mask == 255] = [0, 0, 255]
 
