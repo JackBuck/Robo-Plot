@@ -7,20 +7,37 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import time
+import warnings
 
 import numpy as np
 
 import roboplot.core.debug_movement as debug_movement
+import roboplot.core.limit_switches as limit_switches
 from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
 
 
+class HomePosition:
+    forwards = False
+    location = 0
+
+    def __init__(self, forwards=forwards, location=location):
+        self.forwards = forwards
+        self.location = location
+
+
 class Axis:
     current_location = 0
+    _is_homed = False
+
+    # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
+    __back_off_millimetres = 2
 
     def __init__(self,
                  motor: StepperMotor,
                  lead: float,
+                 limit_switch_pair,
+                 home_position: HomePosition = HomePosition(),
                  invert_axis: bool = False):
         """
         Creates an Axis.
@@ -28,6 +45,7 @@ class Axis:
         Args:
             motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
+            limit_switch_pair (iterable of LimitSwitch): The pair of limit switches at each end of the axis.
             invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
         assert lead > 0, "The lead specified must be positive!"
@@ -35,7 +53,13 @@ class Axis:
 
         self._motor = motor
         self._lead = lead
+        self._limit_switches = limit_switch_pair
+        self._home_position = home_position
         self._invert_axis = invert_axis
+
+    @property
+    def back_off_millimetres(self):
+        return self.__back_off_millimetres
 
     @property
     def millimetres_per_step(self):
@@ -49,15 +73,93 @@ class Axis:
     def forwards(self, value: bool) -> None:
         self._motor.clockwise = value != self._invert_axis
 
+    @property
+    def is_homed(self):
+        return self._is_homed
+
+    def home(self) -> None:
+        """
+        Home the axis by driving into the limit switch and setting the current_location upon reaching it.
+
+        The home_position argument to Axis.__init__ controls the direction in which to home as well as the value set
+        upon reaching it.
+        """
+        self.forwards = self._home_position.forwards
+
+        # Check that a limit switch is not currently pressed
+        if any([switch.is_pressed for switch in self._limit_switches]):
+            raise limit_switches.UnexpectedLimitSwitchError("Cannot home if switch is already pressed!")
+
+        # Step until a switch is hit
+        hit_location = self._step_expecting_limit_switch()
+        while hit_location is None:
+            hit_location = self._step_expecting_limit_switch()
+
+        # Set the current location to the home position at the point where the limit switch is hit
+        # Note that we back-calculate to account for any backoff.
+        distance_moved_since_switch_pressed = self.current_location - hit_location
+        self.current_location = self._home_position.location + distance_moved_since_switch_pressed
+
+        self._is_homed = True
+
+    def _step_expecting_limit_switch(self):
+        """
+        Step if there is no current limit switch press.
+        Instead of raising on a switch press, back off and return the location of the collision.
+
+        Returns:
+            The current_location when the switch press occurred.
+        """
+        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        if not a_switch_is_pressed:
+            self._step_unsafe()
+            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+
+        if a_switch_is_pressed:
+            hit_location = self.current_location
+            self._back_off()  # Force a back off for safety
+            return hit_location  # Allow the caller the make use of the hit location, e.g. for homing
+
+    def step(self) -> None:
+        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        if not a_switch_is_pressed:
+            self._step_unsafe()
+            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+
+        if a_switch_is_pressed:
+            self._back_off()
+            raise limit_switches.UnexpectedLimitSwitchError(
+                message='Cannot step motor when limit switch is pressed!')
+
+    def _back_off(self):
+        """
+        Reverse by the configured backoff distance.
+        """
+        originally_forwards = self.forwards
+        try:
+            self.forwards = not self.forwards
+            # TODO: When you introduce the encoders, be sure to use the stepper motor internal value here,
+            # at least if possible - since else if the encoder breaks for some reason you will not stop backing off
+            # and risk crashing.
+            initial_location = self.current_location
+            while abs(initial_location - self.current_location) < abs(self.back_off_millimetres):
+                self._step_unsafe()
+        finally:
+            self.forwards = originally_forwards
+
+        if any(switch.is_pressed for switch in self._limit_switches):
+            raise limit_switches.UnexpectedLimitSwitchError(message='Limit switch is still pressed after backoff!')
+
+    def _step_unsafe(self):
+        """Step without paying attention to the limit switches."""
+        self._motor.step()
+        self._advance_current_location()
+
     def _advance_current_location(self):
         if self.forwards:
             self.current_location += self.millimetres_per_step
         else:
             self.current_location -= self.millimetres_per_step
-
-    def step(self):
-        self._motor.step()
-        self._advance_current_location()
 
     def nearest_reachable_location(self, target_location):
         target_displacement = target_location - self.current_location
@@ -79,6 +181,14 @@ class AxisPair:
         self.y_axis.current_location = value[0]
         self.x_axis.current_location = value[1]
 
+    def home(self):
+        self.x_axis.home()
+        self.y_axis.home()
+
+    @property
+    def is_homed(self):
+        return self.x_axis.is_homed and self.y_axis.is_homed
+
     def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1) -> None:
         """
         Step the motors so as to follow a curve.
@@ -92,6 +202,9 @@ class AxisPair:
             None
 
         """
+        if not self.is_homed:
+            warnings.warn("Attempting to follow curve without having been homed!!")
+
         points = curve.to_series_of_points(resolution)
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)

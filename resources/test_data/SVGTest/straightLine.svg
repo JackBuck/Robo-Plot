@@ -22,13 +22,10 @@
       </cc:Work>
     </rdf:RDF>
   </metadata>
-  <defs
+    <defs
      id="defs4" />
 
-<path d="M100,100
-         L150,100
-         a50,25 0 0,0 150,100
-         q50,-50 70,-170
-         Z"
-      style="stroke: #006666; fill: none;"/>
+    <path d="M50,50
+             L50,200"
+          style="stroke:#660000; fill:none;"/>
 </svg>
