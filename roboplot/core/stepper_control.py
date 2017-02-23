@@ -86,13 +86,18 @@ class Axis:
         upon reaching it.
         """
         self.forwards = self._home_position.forwards
+
+        # Check that a limit switch is not currently pressed
         if any([switch.is_pressed for switch in self._limit_switches]):
             raise limit_switches.UnexpectedLimitSwitchError("Cannot home if switch is already pressed!")
 
+        # Step until a switch is hit
         hit_location = self._step_expecting_limit_switch()
         while hit_location is None:
             hit_location = self._step_expecting_limit_switch()
 
+        # Set the current location to the home position at the point where the limit switch is hit
+        # Note that we back-calculate to account for any backoff.
         distance_moved_since_switch_pressed = self.current_location - hit_location
         self.current_location = self._home_position.location + distance_moved_since_switch_pressed
 
@@ -113,8 +118,8 @@ class Axis:
 
         if a_switch_is_pressed:
             hit_location = self.current_location
-            self._back_off()
-            return hit_location
+            self._back_off()  # Force a back off for safety
+            return hit_location  # Allow the caller the make use of the hit location, e.g. for homing
 
     def step(self) -> None:
         a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)

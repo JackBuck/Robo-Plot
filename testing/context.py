@@ -1,5 +1,5 @@
 """
-Adds the location of the 'roboplot' module to sys.path for use by scripts in the 'scripts' directory.
+Adds the location of the 'roboplot' module to sys.path for use by tests in the 'testing' directory.
 
 When a script attempts to import the 'roboplot' module, the interpreter searches for
  - a module already imported with that name,

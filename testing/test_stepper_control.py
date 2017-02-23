@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import unittest
 from unittest.mock import MagicMock
 
@@ -54,33 +56,30 @@ class AxisStepTests(BaseTestCases.Axis):
     def test_current_location_shows_2mm_backoff_after_a_limit_switch_is_pressed(self):
         """Only 2mm since then if we go the wrong way, we have not gone through the whole travel of the switch."""
 
-        def press_limit_switch():
-            self._mock_limit_switches[0].is_pressed = True
-
+        # Step the axis for a bit
         for i in range(10):
             self._axis.step()
 
+        # Then trigger a limit switch press
         collision_location = self._axis.current_location
         if self._axis.forwards:
             expected_backoff_location = collision_location - 2
         else:
             expected_backoff_location = collision_location + 2
 
-        self._mock_motor.step.side_effect = press_limit_switch
+        self._trigger_limit_switch_on_next_step()
 
         try:
             self._axis.step()
         except UnexpectedLimitSwitchError:
             pass
 
+        # Verify that we backed off
         self.assertAlmostEqual(self._axis.current_location, expected_backoff_location,
                                delta=self._axis.millimetres_per_step)
 
     def test_raises_even_when_overridden_if_switch_is_still_pressed_after_backoff(self):
-        def press_limit_switch():
-            self._mock_limit_switches[0].is_pressed = True
-
-        self._mock_motor.step.side_effect = press_limit_switch
+        self._trigger_limit_switch_on_next_step()
         self._axis.override_limit_switches = True
         with self.assertRaises(UnexpectedLimitSwitchError):
             self._axis.step()
@@ -88,14 +87,16 @@ class AxisStepTests(BaseTestCases.Axis):
     def test_stepping_raises_when_a_limit_switch_is_pressed(self):
         for i in 0, 1:
             self._reset_switches()
-
-            def press_limit_switch():
-                self._mock_limit_switches[i].is_pressed = True
-
-            self._mock_motor.step.side_effect = press_limit_switch
+            self._trigger_limit_switch_on_next_step(switch_index=i)
 
             with self.assertRaises(UnexpectedLimitSwitchError):
                 self._axis.step()
+
+    def _trigger_limit_switch_on_next_step(self, switch_index=0):
+        def press_limit_switch():
+            self._mock_limit_switches[switch_index].is_pressed = True
+
+        self._mock_motor.step.side_effect = press_limit_switch
 
     def _reset_switches(self):
         for switch in self._mock_limit_switches:
@@ -180,4 +181,4 @@ class AxisPairHomingTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main(testRunner=test_runner.CustomTestRunner())
+    unittest.main()
