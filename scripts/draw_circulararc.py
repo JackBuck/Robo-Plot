@@ -14,11 +14,11 @@ try:
                                                  'Note that the circle is drawn in a clockwise direction beginning at'
                                                  'the point with greatest x value. This is consistent with our left '
                                                  'handed coordinate system where positive y points down the page.')
-    parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[150, 100],
+    parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[100, 100],
                         help='the centre (y,x) of the circle in millimetres (default: %(default)smm)')
-    parser.add_argument('-r', '--radius', type=float, required=True,
-                        help='the radius of the circle in millimetres')
-    parser.add_argument('-i', '--interval-degrees', metavar=('start', 'end'), nargs=2, type=float, default=[0, 360],
+    parser.add_argument('-r', '--radius', type=float, default=50,
+                        help='the radius of the circle in millimetres (default: %(default)smm)')
+    parser.add_argument('-i', '--interval-degrees', metavar=('start', 'end'), nargs=2, type=float, default=[0, 180],
                         help='the interval to draw in degrees (default: %(default)smm)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
@@ -39,7 +39,8 @@ try:
     line_to_start = curves.LineSegment(hardware.both_axes.current_location, arc.get_start_point())
     hardware.both_axes.follow(curve=line_to_start, pen_speed=args.pen_millimetres_per_second)
 
-    # Draw path.
+    hardware.both_axes.home()
+    start_time = time.time()
     hardware.both_axes.follow(curve=arc, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()
 
