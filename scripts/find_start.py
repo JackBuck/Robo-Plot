@@ -20,7 +20,9 @@ try:
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     
     args = parser.parse_args()
-    
+
+
+
     centre = challenge2.find_green_triangle(args.pen_millimetres_per_second, args.minsize)
     
     centre = challenge2.find_green_centre(centre, args.pen_millimetres_per_second, args.minsize)

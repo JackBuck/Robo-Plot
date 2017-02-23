@@ -42,7 +42,7 @@ class DebugImage:
             os.mkdir(config.debug_output_folder, 0o750)  # drwxr-x---
 
         # Remove any existing debug files from folder
-        file_list = [f for f in os.listdir(self.dir_path) if os.path.isfile(os.path.join(self.dir_path, f))]
+        file_list = [f for f in os.listdir(config.debug_output_folder) if os.path.isfile(os.path.join(config.debug_output_folder, f))]
         for file_name in file_list:
             os.remove(config.debug_output_folder + "/" + file_name)
 
@@ -73,7 +73,6 @@ class DebugImage:
             point: Point to be added to the buffer (in mm)
         """
 
-                
         pixel = tuple(int(round(i * self.pixels_per_mm)) for i in point)
 
         if 0 <= pixel[0] < self._image_dimensions_pixels[1] and \

@@ -37,12 +37,19 @@ photo_size_mm = 40
 
 
 def find_green_triangle(pen_speed, min_size):
-    """Walks around the perimeter of the paper and finds the green triangle
-        Args:
-            None
-        Returns:
-            np.ndarray: An 1x2 matrix representing the global co-ordinates of the centre of the green triangle.
-        """
+    """
+
+    Args:
+        pen_speed: speed to move
+        min_size: minimum size of artifact to recognise
+
+    Returns:
+        global co-ordinates of centre of the green artifact recognise
+
+    """
+
+    # Home axes.
+    hardware.both_axes.home()
 
     # Calculate the list of positions photos need to be taken at to walk round the outside of the paper.
     camera_positions = perimeter_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)

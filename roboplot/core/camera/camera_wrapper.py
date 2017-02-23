@@ -18,4 +18,4 @@ if is_emulator:
     from roboplot.core.camera.dummy_camera import DummyCamera as Camera
 else:
     from roboplot.core.camera.pi_camera import Camera
-    # from roboplot.core.Camera.remote_camera import RemoteCamera as Camera
+    # from roboplot.core.camera.remote_camera import RemoteCamera as camera
