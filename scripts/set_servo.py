@@ -3,6 +3,10 @@
 import argparse
 
 import context
+
+import roboplot.config
+roboplot.config.real_hardware = True
+
 import roboplot.core.hardware as hardware
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
