@@ -47,9 +47,9 @@ if not config.real_hardware:
 
 # Higher level objects
 x_axis = stepper_control.Axis(
-    motor=x_axis_motor, lead=8, limit_switch_pair=x_limit_switches, home_position=x_home_position)
+    motor=x_axis_motor, lead=8, limit_switch_pair=x_limit_switches, home_position=x_home_position, invert_axis=True)
 y_axis = stepper_control.Axis(
-    motor=y_axis_motor, lead=8, limit_switch_pair=y_limit_switches, home_position=y_home_position, invert_axis=True)
+    motor=y_axis_motor, lead=8, limit_switch_pair=y_limit_switches, home_position=y_home_position, invert_axis=False)
 
 # Post initialisation actions when not running real hardware
 if not config.real_hardware:
