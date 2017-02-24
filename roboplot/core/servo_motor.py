@@ -11,7 +11,8 @@ wiringpi.wiringPiSetupGpio()  # Setup wiringpi
 #       be a singleton and claim unique access to the wiringpi pwm?
 # TODO: Ask Luke to explain these three lines...
 wiringpi.pwmSetMode(wiringpi.PWM_MODE_MS)  # Set PWM mode as mark space (as opposed to balanced - the default)
-wiringpi.pwmSetRange(500)  # Set PWM range (range of duty cycles)
+PWM_RANGE = 500
+wiringpi.pwmSetRange(PWM_RANGE)  # Set PWM range (range of duty cycles)
 wiringpi.pwmSetClock(765)  # Set PWM clock divisor
 
 
@@ -72,7 +73,7 @@ class ServoMotor:
         proportion = (degrees - self._min_position.degrees) / degrees_range
 
         pwm_range = self._max_position.pwm_output - self._min_position.pwm_output
-        required_output = int(self._min_position.pwm_output + proportion * pwm_range)
+        required_output = int((self._min_position.pwm_output + proportion * pwm_range) * PWM_RANGE)
 
         print(required_output)
         wiringpi.pwmWrite(self._gpio_pin, required_output)
