@@ -1,4 +1,4 @@
-# Working range is from 0.028 to 0.13
+# Working range is from 0.028 to 0.12
 
 # Note: Command line syntax for this module
 # Servo.py 0.5
