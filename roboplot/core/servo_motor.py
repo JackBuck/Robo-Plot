@@ -74,6 +74,7 @@ class ServoMotor:
         pwm_range = self._max_position.pwm_output - self._min_position.pwm_output
         required_output = int(self._min_position.pwm_output + proportion * pwm_range)
 
+        print(required_output)
         wiringpi.pwmWrite(self._gpio_pin, required_output)
 
     def angle_is_in_range(self, degrees):
