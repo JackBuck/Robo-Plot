@@ -72,7 +72,7 @@ class ServoMotor:
         proportion = (degrees - self._min_position.degrees) / degrees_range
 
         pwm_range = self._max_position.pwm_output - self._min_position.pwm_output
-        required_output = self._min_position.pwm_output + proportion * pwm_range
+        required_output = int(self._min_position.pwm_output + proportion * pwm_range)
 
         wiringpi.pwmWrite(self._gpio_pin, required_output)
 
