@@ -85,6 +85,7 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
     # Move to camera position
 
     if not np.array_equal(hardware.both_axes.current_location, camera_centre):
+        print(camera_centre)
         line_to_camera_position = curves.LineSegment(hardware.both_axes.current_location, camera_centre)
         hardware.both_axes.follow(curve=line_to_camera_position, pen_speed=pen_speed)
 

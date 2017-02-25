@@ -212,12 +212,6 @@ class AxisPair:
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
 
-        # Check we are at the start point throw if not (1mm tolerance)
-        dist = math.hypot(points[0][0] - self.current_location[0], points[0][1] - self.current_location[1])
-
-        if abs(dist) > 1.0:
-            raise ValueError('The current location of the axis does not match the start point of the curve')
-
         for pt, target_time in zip(points[1:], target_times):
             self.move_linearly(pt, target_time)
 
