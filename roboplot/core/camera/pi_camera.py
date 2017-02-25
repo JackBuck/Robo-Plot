@@ -6,6 +6,7 @@ This module controls the camera for the plotter.
 All distances in the module are expressed in MILLIMETRES.
 
 """
+import os
 import time
 
 import cv2
@@ -28,7 +29,8 @@ class Camera:
                 outputarray = output.array
 
             # Save photo.
-            cv2.imwrite(config.debug_output_folder + "Photo:" + str(self._photo_index) + ".jpg", outputarray)
+            cv2.imwrite(os.path.join(config.debug_output_folder, "Photo_" + str(self._photo_index) + ".jpg"),
+                        outputarray)
             self._photo_index += 1
 
             return outputarray
