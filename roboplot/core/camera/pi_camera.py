@@ -15,17 +15,15 @@ import picamera.array
 
 import roboplot.config as config
 
-class Camera:
-    def __init__(self):
-        with picamera.PiCamera() as camera:
-            camera.resolution = (200, 200)
-            camera.framerate = 24
 
-        self._photo_index = 0
+class Camera:
+    _photo_index = 0
 
     def take_photo_at(self, camera_centre):
         with picamera.PiCamera() as camera:
-            with picamera.array.PiRGBArray(camera) as output: 
+            camera.resolution = (200, 200)
+            camera.framerate = 24
+            with picamera.array.PiRGBArray(camera) as output:
                 camera.capture(output, 'bgr', use_video_port=True)
                 outputarray = output.array
 
