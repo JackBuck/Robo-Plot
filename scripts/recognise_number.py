@@ -4,9 +4,7 @@ import argparse
 import PIL.Image as Image
 
 import cv2
-import numpy as np
 import pytesseract
-import pytesseract.pytesseract
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Recognise a supplied number.')
