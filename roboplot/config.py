@@ -13,7 +13,7 @@ resources_dir = os.path.normpath(os.path.join(roboplot_directory, '..', 'resourc
 test_data_dir = os.path.join(resources_dir, 'test_data')
 
 # Environment variables
-real_hardware = os.environ.get('ROBOPLOT', 0) != 0
+real_hardware = os.environ.get('ROBOPLOT', '0') != '0'
 if real_hardware:
     print("Using real hardware")
 else:
