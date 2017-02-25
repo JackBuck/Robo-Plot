@@ -7,10 +7,13 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import time
+
 import cv2
 import numpy as np
 import picamera
 import picamera.array
+
+import roboplot.config as config
 
 class Camera:
     def __init__(self):
