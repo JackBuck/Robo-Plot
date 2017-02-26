@@ -193,11 +193,11 @@ class Axis:
         originally_forwards = self.forwards
         try:
             self.forwards = not self.forwards
-            # TODO: When you introduce the encoders, be sure to use the stepper motor internal value here,
-            # at least if possible - since else if the encoder breaks for some reason you will not stop backing off
-            # and risk crashing.
-            initial_location = self.current_location
-            while abs(initial_location - self.current_location) < abs(self.back_off_millimetres):
+
+            # We use the expected location here, since if the encoders stop working, we REALLY don't want to keep
+            # stepping!! The backoff is a convenience feature after all.
+            initial_location = self.expected_location
+            while abs(initial_location - self.expected_location) < abs(self.back_off_millimetres):
                 self._step_unsafe()
         finally:
             self.forwards = originally_forwards

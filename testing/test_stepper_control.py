@@ -55,7 +55,8 @@ class BaseTestCases:
             self._mock_encoder = MagicMock(name='encoder', spec_set=Encoder, resolution=1 / 200, revolutions=0)
             _add_side_effect(self._mock_encoder.reset_position, self._reset_encoder_count)
 
-            self._mock_motor = MagicMock(name='motor', spec_set=StepperMotor, steps_per_revolution=200, clockwise=True)
+            self._mock_motor = MagicMock(name='motor', spec_set=StepperMotor, steps_per_revolution=200, clockwise=True,
+                                         cumulative_step_count=0)
             self._add_to_motor_step_side_effect(self._increment_encoder_count, self._increment_motor_count)
 
             self._axis = stepper_control.Axis(motor=self._mock_motor,
