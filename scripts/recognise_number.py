@@ -2,6 +2,7 @@
 
 import argparse
 import PIL.Image as Image
+import re
 
 import cv2
 import numpy as np
@@ -30,6 +31,14 @@ def recognise_number(img):
     # digits => use the digits config file supplied with the software
     recognised_text = pytesseract.image_to_string(img, config='-psm 8 digits')
     return recognised_text
+
+
+def text_to_number(recognised_text: str) -> int:
+    match = re.match(r'(\d+)\.?$', recognised_text)
+    if match is None:
+        return None
+    else:
+        return int(match.group(1))
 
 
 def extract_spot(img: np.ndarray) -> cv2.KeyPoint:
@@ -61,6 +70,8 @@ if __name__ == '__main__':
 
     recognised_text = recognise_number(img)
     print("Recognised text: {!r}".format(recognised_text), end='\n')
+    recognised_number = text_to_number(recognised_text)
+    print("Interpreted as: {!r}".format(recognised_number), end='\n\n')
 
     possible_spot_locations = extract_spot(img)
     print("{} possible location(s) found for the spot:".format(len(possible_spot_locations)))
