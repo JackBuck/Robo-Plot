@@ -24,6 +24,44 @@ def clean_image(img):
     return img
 
 
+def recognise_number_using_rotation_search(img, num_rotations):
+    """
+    Try recognising the number at a given number of equally spaced rotations of the image.
+
+    Args:
+        img: the image on which to perform recognition
+        num_rotations: the number of rotations to try
+
+    Returns:
+        list: a list of possibilities for the number
+    """
+    rows, cols = img.shape
+    possibilities = []
+    for angle in np.linspace(0, 360, num_rotations, endpoint=False):
+        rotation_matrix = cv2.getRotationMatrix2D(center=(cols/2, rows/2), angle=angle, scale=1)
+        rotated_image = cv2.warpAffine(img, rotation_matrix, (cols, rows))
+
+        # Assume that the image is square and crop it to the new size
+        ang = np.deg2rad(angle % 90)
+        new_img_width = img.shape[0] / (np.cos(ang) + np.sin(ang))
+        # Crop out the thin remaining border...
+        new_img_width = 2 * int((img.shape[0] + new_img_width) / 2 - 1) - img.shape[0]
+        rotated_image = rotated_image[
+                        (img.shape[0] - new_img_width) / 2 : (img.shape[0] + new_img_width) / 2,
+                        (img.shape[0] - new_img_width) / 2 : (img.shape[0] + new_img_width) / 2]
+
+        # cv2.imshow("Rotated image", rotated_image)
+        # cv2.waitKey(0)
+
+        number_as_text = recognise_number(rotated_image)
+        # print(number_as_text)
+        number = text_to_number(number_as_text)
+        if number is not None:  # and number not in possibilities:
+            possibilities.append(number)
+
+    return possibilities
+
+
 def recognise_number(img):
     img = Image.fromarray(img)
 
@@ -34,7 +72,7 @@ def recognise_number(img):
 
 
 def text_to_number(recognised_text: str) -> int:
-    match = re.match(r'(\d+)\.?$', recognised_text)
+    match = re.match(r'(\d+)\.$', recognised_text)
     if match is None:
         return None
     else:
@@ -72,6 +110,9 @@ if __name__ == '__main__':
     print("Recognised text: {!r}".format(recognised_text), end='\n')
     recognised_number = text_to_number(recognised_text)
     print("Interpreted as: {!r}".format(recognised_number), end='\n\n')
+
+    possibilities_from_rotation_search = recognise_number_using_rotation_search(img, num_rotations=8)
+    print("Possible numbers from rotation search: {}".format(", ".join(map(str, possibilities_from_rotation_search))))
 
     possible_spot_locations = extract_spot(img)
     print("{} possible location(s) found for the spot:".format(len(possible_spot_locations)))
