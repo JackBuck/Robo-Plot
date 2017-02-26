@@ -12,7 +12,7 @@ def read_image(file_path):
     if img is not None:
         return img
     else:
-        raise TypeError("Could not open image file!")
+        raise TypeError("Could not open image file: {}".format(file_path))
 
 
 def clean_image(img):
