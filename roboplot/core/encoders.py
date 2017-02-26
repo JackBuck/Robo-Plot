@@ -34,7 +34,7 @@ class Encoder(threading.Thread):
         """
 
         # Initialise thread object (base class initialiser)
-        threading.Thread.__init__(self, group=None, target=self.encoder_loop, name=thread_name)
+        threading.Thread.__init__(self, group=None, target=self._encoder_loop, name=thread_name)
 
         # In python, class members appear to be created when you refer to them
         self._positions_per_revolution = positions_per_revolution
@@ -73,7 +73,7 @@ class Encoder(threading.Thread):
         with self._lock:
             self._exit_requested = True  # TODO: Is there any point in locking here? We do not lock when we read it...
 
-    def encoder_loop(self):
+    def _encoder_loop(self):
         """
         Loop to update the encoder count until an exit is requested.
 
