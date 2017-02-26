@@ -20,11 +20,6 @@ import roboplot.core.limit_switches as limit_switches
 import roboplot.core.stepper_motors as stepper_motors
 import roboplot.core.stepper_control as stepper_control
 
-# Decide how much real hardware to use
-use_real_encoders = config.real_hardware
-if use_real_encoders:
-    warnings.warn("Manually disabling encoders dispite ROBOPLOT environment variable.")
-    use_real_encoders = False
 
 # Direct GPIO connections
 x_axis_motor = stepper_motors.large_stepper_motor(gpio_pins=(22, 23, 24, 25))
@@ -38,23 +33,17 @@ x_limit_switches = (limit_switches.LimitSwitch(gpio_pin=8),  # Motor side
 y_limit_switches = (limit_switches.LimitSwitch(gpio_pin=9),  # Motor side
                     limit_switches.LimitSwitch(gpio_pin=11))  # Encoder side
 
-_real_x_axis_encoder = encoders.Encoder(gpio_pins=(0, 1), positions_per_revolution=96, thread_name="x axis encoder")
-_real_y_axis_encoder = encoders.Encoder(gpio_pins=(14, 15), positions_per_revolution=96, thread_name="y axis encoder")
+x_axis_encoder = encoders.Encoder(gpio_pins=(0, 1), positions_per_revolution=96, thread_name="x axis encoder")
+y_axis_encoder = encoders.Encoder(gpio_pins=(14, 15), positions_per_revolution=96, thread_name="y axis encoder")
 
 x_home_position = stepper_control.HomePosition()
 y_home_position = stepper_control.HomePosition()
 
 # Swap in dummy objects if requested
-if use_real_encoders:
-    x_axis_encoder = _real_x_axis_encoder
+if config.real_hardware:
     x_axis_encoder.start()
-    y_axis_encoder = _real_y_axis_encoder
     y_axis_encoder.start()
 else:
-    x_axis_encoder = encoders.PretendEncoder(x_axis_motor)
-    y_axis_encoder = encoders.PretendEncoder(y_axis_motor)
-
-if not config.real_hardware:
     def _define_pretend_limit_switches(home_position, separation):
         assert separation > 0
 
@@ -68,6 +57,9 @@ if not config.real_hardware:
 
     x_limit_switches = _define_pretend_limit_switches(x_home_position, 220)
     y_limit_switches = _define_pretend_limit_switches(y_home_position, 350)
+
+    x_axis_encoder = encoders.PretendEncoder(x_axis_motor)
+    y_axis_encoder = encoders.PretendEncoder(y_axis_motor)
 
 # Higher level objects
 x_axis = stepper_control.Axis(
