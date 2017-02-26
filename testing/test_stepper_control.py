@@ -7,6 +7,36 @@ import context
 import roboplot.core.stepper_control as stepper_control
 from roboplot.core.limit_switches import LimitSwitch, UnexpectedLimitSwitchError
 from roboplot.core.stepper_motors import StepperMotor
+from roboplot.core.encoders import Encoder
+
+
+def _add_side_effect(mock, *extra_effects):
+    old_effect = mock.side_effect
+
+    def new_side_effect():
+        if old_effect is not None:
+            old_effect()
+        for effect in extra_effects:
+            effect()
+
+    mock.side_effect = new_side_effect
+
+
+class OneTimeSideEffect:
+    """
+    A callable class which only does anything the first time it is called.
+
+    It is intended to be used to add a side effect which only has an effect the first time the mock is called.
+    """
+
+    def __init__(self, effect):
+        self._effect = effect
+        self._has_been_called = False
+
+    def __call__(self, *args, **kwargs):
+        if not self._has_been_called:
+            self._has_been_called = True
+            self._effect()
 
 
 class BaseTestCases:
@@ -21,11 +51,35 @@ class BaseTestCases:
         def setUp(self):
             self._mock_limit_switches = (MagicMock(name='switch_1', spec_set=LimitSwitch, is_pressed=False),
                                          MagicMock(name='switch_2', spec_set=LimitSwitch, is_pressed=False))
+
+            self._mock_encoder = MagicMock(name='encoder', spec_set=Encoder, resolution=1 / 200, revolutions=0)
+            _add_side_effect(self._mock_encoder.reset_position, self._reset_encoder_count)
+
             self._mock_motor = MagicMock(name='motor', spec_set=StepperMotor, steps_per_revolution=200, clockwise=True)
+            self._add_to_motor_step_side_effect(self._increment_encoder_count, self._increment_motor_count)
+
             self._axis = stepper_control.Axis(motor=self._mock_motor,
-                                              encoder=,
+                                              encoder=self._mock_encoder,
                                               lead=8,
                                               limit_switch_pair=self._mock_limit_switches)
+
+        def _add_to_motor_step_side_effect(self, *extra_effects):
+            _add_side_effect(self._mock_motor.step, *extra_effects)
+
+        def _increment_encoder_count(self):
+            if self._mock_motor.clockwise:
+                self._mock_encoder.revolutions += self._mock_encoder.resolution
+            else:
+                self._mock_encoder.revolutions -= self._mock_encoder.resolution
+
+        def _increment_motor_count(self):
+            if self._mock_motor.clockwise:
+                self._mock_motor.cumulative_step_count += 1
+            else:
+                self._mock_motor.cumulative_step_count -= 1
+
+        def _reset_encoder_count(self):
+            self._mock_encoder.revolutions = 0
 
 
 class AxisStepTests(BaseTestCases.Axis):
@@ -41,14 +95,19 @@ class AxisStepTests(BaseTestCases.Axis):
             self._axis.step()
 
         # Set-up limit switch to be triggered
-        def press_switch_on_first_step_then_assert_anticlockwise():
-            self._mock_limit_switches[0].is_pressed = True
-            self._mock_motor.step.side_effect = lambda: self.assertFalse(self._mock_motor.clockwise,
-                                                                         msg="Shouldn't be stepping clockwise!")
+        self._trigger_limit_switch_on_next_step()
 
-        self._mock_motor.step.side_effect = press_switch_on_first_step_then_assert_anticlockwise
+        # Add a side effect to check that we have at most one future clockwise step
+        # NB: the step which triggers the switch press is a clockwise step
+        self._mock_motor.step.reset_mock()
 
-        # Test that we do not step further
+        def assert_no_more_than_one_clockwise_step():
+            if len(self._mock_motor.step.mock_calls) > 1:
+                self.assertFalse(self._mock_motor.clockwise, msg="Shouldn't be stepping clockwise!")
+
+        self._add_to_motor_step_side_effect(assert_no_more_than_one_clockwise_step)
+
+        # Try stepping
         try:
             for i in range(10):
                 self._axis.step()
@@ -56,20 +115,15 @@ class AxisStepTests(BaseTestCases.Axis):
             # We expect this error!
             pass
 
-    def test_current_location_shows_2mm_backoff_after_a_limit_switch_is_pressed(self):
+    def test_current_location_shows_2mm_backoff_according_to_stepper_after_a_limit_switch_is_pressed(self):
         """Only 2mm since then if we go the wrong way, we have not gone through the whole travel of the switch."""
 
         # Step the axis for a bit
         for i in range(10):
             self._axis.step()
 
-        # Then trigger a limit switch press
-        collision_location = self._axis.current_location
-        if self._axis.forwards:
-            expected_backoff_location = collision_location - 2
-        else:
-            expected_backoff_location = collision_location + 2
-
+        # Then trigger a limit switch press and compute where we expect to back off to
+        self._mock_motor.step.reset_mock()
         self._trigger_limit_switch_on_next_step()
 
         try:
@@ -77,15 +131,10 @@ class AxisStepTests(BaseTestCases.Axis):
         except UnexpectedLimitSwitchError:
             pass
 
-        # Verify that we backed off
-        self.assertAlmostEqual(self._axis.current_location, expected_backoff_location,
-                               delta=self._axis.millimetres_per_step)
-
-    def test_raises_even_when_overridden_if_switch_is_still_pressed_after_backoff(self):
-        self._trigger_limit_switch_on_next_step()
-        self._axis.override_limit_switches = True
-        with self.assertRaises(UnexpectedLimitSwitchError):
-            self._axis.step()
+        # Verify that we backed off the correct number of steps
+        steps_in_2mm = 2 / self._axis.millimetres_per_step
+        self.assertEqual(self._mock_motor.step.call_count,
+                         steps_in_2mm+1)  # NB the first step is forwards since it's the one which triggers the switch!
 
     def test_stepping_raises_when_a_limit_switch_is_pressed(self):
         for i in 0, 1:
@@ -99,7 +148,8 @@ class AxisStepTests(BaseTestCases.Axis):
         def press_limit_switch():
             self._mock_limit_switches[switch_index].is_pressed = True
 
-        self._mock_motor.step.side_effect = press_limit_switch
+        press_limit_switch_once = OneTimeSideEffect(press_limit_switch)
+        self._add_to_motor_step_side_effect(press_limit_switch_once)
 
     def _reset_switches(self):
         for switch in self._mock_limit_switches:
@@ -112,27 +162,20 @@ class AxisHomingTest(BaseTestCases.Axis):
     def setUp(self):
         super().setUp()
         self.true_motor_location_in_steps = 20  # Some non-zero start location
-        self._mock_motor.step.side_effect = self._default_motor_side_effect
+        self._add_to_motor_step_side_effect(self._increment_true_step_count, self._update_limit_switches)
 
-    def _default_motor_side_effect(self):
-        # Advance the 'real' location (in steps)
+    def _increment_true_step_count(self):
         if self._mock_motor.clockwise:
             self.true_motor_location_in_steps += 1
         else:
             self.true_motor_location_in_steps -= 1
 
-        # Check for limit switch press
-        if 0 < self.true_motor_location_in_steps < 200:
-            self._mock_limit_switches[0].is_pressed = False
-        else:
-            self._mock_limit_switches[0].is_pressed = True
+    def _update_limit_switches(self):
+        self._mock_limit_switches[0].is_pressed = self.true_motor_location_in_steps <= 0
+        self._mock_limit_switches[1].is_pressed = self.true_motor_location_in_steps >= 200
 
     def test_doesnt_advance_past_limit_switch(self):
-        def new_motor_side_effect():
-            self._default_motor_side_effect()
-            self.assertTrue(0 <= self.true_motor_location_in_steps <= 200)
-
-        self._mock_motor.step.side_effect = new_motor_side_effect
+        self._add_to_motor_step_side_effect(lambda: self.assertTrue(0 <= self.true_motor_location_in_steps <= 200))
         self._axis.home()
 
     def test_ends_2mm_behind_limit_switch(self):
