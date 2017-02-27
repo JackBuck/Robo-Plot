@@ -42,13 +42,35 @@ class PreProcessing:
         return processed_image
     
     def erosion(self, img):
-        kernel = np.ones((5,5),np.uint8)
-        processed_image = cv2.erode(img,kernel,iterations = 1)
+        #kernel = np.ones((5,5),np.uint8)
+        kernel = np.array([[0, 0, 1, 0, 0],
+                           [0, 1, 1, 1, 0],
+                           [1, 1, 1, 1, 1],
+                           [0, 1, 1, 1, 0],
+                           [0, 0, 1, 0, 0]], np.uint8)
+
+        processed_image = cv2.erode(img,kernel,iterations = 10)
         
         if __debug__:
             cv2.imwrite(config.debug_output_folder + 'ErodedProcessedImage_' + str(self._processed_image_index) + '.jpg', processed_image)
             self._processed_image_index += 1
             
+        return processed_image
+
+    def dilation(self, img):
+        kernel = np.array([[0, 0, 1, 0, 0],
+                           [0, 1, 1, 1, 0],
+                           [1, 1, 1, 1, 1],
+                           [0, 1, 1, 1, 0],
+                           [0, 0, 1, 0, 0]], np.uint8)
+        processed_image = cv2.dilate(img, kernel, iterations=10)
+
+        if __debug__:
+            cv2.imwrite(
+                config.debug_output_folder + 'DilationProcessedImage_' + str(self._processed_image_index) + '.jpg',
+                processed_image)
+            self._processed_image_index += 1
+
         return processed_image
         
         

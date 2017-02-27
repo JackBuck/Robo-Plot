@@ -16,14 +16,18 @@ try:
     parser.add_argument('-f', '--file_path', type=str, required=True,
                     help='the file path of the image to be eroded')
 
-
     args = parser.parse_args()
-    img = cv2.imread(args.file_path)
+    img = cv2.imread(args.file_path, cv2.IMREAD_GRAYSCALE)
+    img = cv2.resize(img, (200, 200))
+
+    if img is None:
+        raise TypeError
 
     # Erode image
     
     a_pre_processor = pre_processing.PreProcessing()
     img = a_pre_processor.global_threshold(img)
+
     eroded_image = a_pre_processor.erosion(img)
     
     images = [img, eroded_image]
