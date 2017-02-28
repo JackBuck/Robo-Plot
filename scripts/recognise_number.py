@@ -118,11 +118,11 @@ def extract_spot(img: np.ndarray):
     params.filterByArea = True
     params.minArea = 20  # The dot in 20pt font has area of about 30
     params.filterByCircularity = True
-    params.minCircularity = 0.8
+    params.minCircularity = 0.7
     params.filterByConvexity = True
     params.minConvexity = 0.8
     params.filterByInertia = True
-    params.minInertiaRatio = 0.8
+    params.minInertiaRatio = 0.6
 
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(img)
