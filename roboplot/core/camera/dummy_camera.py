@@ -81,12 +81,16 @@ class DummyCamera:
             image_y_max_placement = int(self._photo_size)
 
         # Get dummy photo as sub array of the map.
-        temp = dummy_photo[image_y_min_placement:image_y_max_placement, image_x_min_placement:image_x_max_placement]
-        temp2 = self._map[image_y_min:image_y_max, image_x_min:image_x_max]
         dummy_photo[image_x_min_placement:image_x_max_placement, image_y_min_placement:image_y_max_placement] = \
-             self._map[image_x_min:image_x_max, image_y_min:image_y_max]
+            self._map[image_x_min:image_x_max, image_y_min:image_y_max]
 
         if __debug__:
+            # Save photo.
+            cv2.imwrite(os.path.join(config.debug_output_folder, "Photo_" + str(self._photo_index) + ".jpg"),
+                        dummy_photo)
+
+            self._photo_index += 1
+
             # Show where photos were taken.
             cv2.rectangle(self._debug_map, (image_y_min, image_x_min), (image_y_max, image_x_max), (200, 10, 255), 40)
             cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_Positions_Debug.jpg'), self._debug_map)
