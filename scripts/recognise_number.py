@@ -32,7 +32,7 @@ def recognise_rotated_number(img):
         raise ValueError("Could not find a spot in the image")
 
     elif len(possible_spots) > 1:
-        warnings.warn("Multiple possible spots found - using the first")
+        warnings.warn("{} possible spots found - using the first".format(len(possible_spots)))
 
     spot_x, spot_y = possible_spots[0].pt
     spot_size = possible_spots[0].size
@@ -155,7 +155,7 @@ if __name__ == '__main__':
         recognised_number = recognise_rotated_number(img)
     except ValueError:
         recognised_number = "No spot!!"
-    print("Recognised number: {!r}".format(recognised_number))
+    print("Recognised number after rotation search: {!r}".format(recognised_number))
 
     # recognised_text = recognise_number(img)
     # print("Recognised text: {!r}".format(recognised_text), end='\n')
