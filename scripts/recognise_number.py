@@ -115,7 +115,14 @@ def text_to_number(recognised_text: str) -> int:
 
 def extract_spot(img: np.ndarray):
     params = cv2.SimpleBlobDetector_Params()
+    params.filterByArea = True
     params.minArea = 20  # The dot in 20pt font has area of about 30
+    params.filterByCircularity = True
+    params.minCircularity = 0.8
+    params.filterByConvexity = True
+    params.minConvexity = 0.8
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.8
 
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(img)
