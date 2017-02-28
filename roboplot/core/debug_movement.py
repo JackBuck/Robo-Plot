@@ -48,7 +48,7 @@ class DebugImage:
 
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
-        a4paper = (210, 297)  # (x then y as tuple)
+        a4paper = (210, 297)  # (x then y as numpy arrays take shape as width then height  (num columns, num rows).
         self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
 
         # Background image
@@ -62,7 +62,6 @@ class DebugImage:
         self.millimeters_between_saves = 20
         self.steps_between_saves = self.millimeters_between_saves / millimetres_per_step
 
-        print(self.debug_image.shape)
         self.save_image()
 
     def add_point(self, point):
