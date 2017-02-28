@@ -3,6 +3,7 @@
 import argparse
 import PIL.Image as Image
 import re
+import warnings
 
 import cv2
 import numpy as np
@@ -24,42 +25,75 @@ def clean_image(img):
     return img
 
 
-def recognise_number_using_rotation_search(img, num_rotations):
-    """
-    Try recognising the number at a given number of equally spaced rotations of the image.
+def recognise_rotated_number(img):
+    possible_spots = extract_spot(img)
 
-    Args:
-        img: the image on which to perform recognition
-        num_rotations: the number of rotations to try
+    if len(possible_spots) == 0:
+        raise ValueError("Could not find a spot in the image")
 
-    Returns:
-        list: a list of possibilities for the number
-    """
+    elif len(possible_spots) > 1:
+        warnings.warn("Multiple possible spots found - using the first")
+
+    spot_x, spot_y = possible_spots[0].pt
+    spot_size = possible_spots[0].size
+    neighbourhood_of_spot, spot_local = crop_about(img, centre=(spot_y, spot_x), new_side_length=20 * spot_size)
+
+    total_intensity = np.sum(255 - neighbourhood_of_spot)
+    centroid_y = np.sum(
+        np.arange(neighbourhood_of_spot.shape[0]).reshape(-1, 1) * (255 - neighbourhood_of_spot)) / total_intensity
+    centroid_x = np.sum(
+        np.arange(neighbourhood_of_spot.shape[1]).reshape(1, -1) * (255 - neighbourhood_of_spot)) / total_intensity
+
+    # cv2.imshow("Key Points", cv2.drawKeypoints(neighbourhood_of_spot,
+    #                                            keypoints=(cv2.KeyPoint(centroid_x, centroid_y, 8.0, 0, 1, 0, 0),
+    #                                                       cv2.KeyPoint(spot_local[1], spot_local[0], 8.0, 0, 1, 0, 0)),
+    #                                            outImage=np.array([]),
+    #                                            color=(0, 0, 255),
+    #                                            flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS))
+
+    # print("Centroid: ", centroid_x, centroid_y)
+    # print("Spot local: ", spot_local[1], spot_local[0])
+    current_angle = np.rad2deg(np.arctan2(-(spot_local[0] - centroid_y),
+                                          spot_local[1] - centroid_x))
+    # print("Current angle: ", current_angle)
+    desired_angle = -30  # a guess! You may want to make this more negative to deal with the case of single digit
+    # numbers? At any rate, it will be preferable to have the dot lower than the number...
+
     rows, cols = img.shape
-    possibilities = []
-    for angle in np.linspace(0, 360, num_rotations, endpoint=False):
-        rotation_matrix = cv2.getRotationMatrix2D(center=(cols/2, rows/2), angle=angle, scale=1)
-        rotated_image = cv2.warpAffine(img, rotation_matrix, (cols, rows))
+    rotation_matrix = cv2.getRotationMatrix2D(center=(cols / 2, rows / 2), angle=desired_angle - current_angle, scale=1)
+    rotated_image = cv2.warpAffine(img, rotation_matrix, (cols, rows))
+    # cv2.imshow("Rotated Image", rotated_image)
+    # cv2.waitKey(1)
 
-        # Assume that the image is square and crop it to the new size
-        ang = np.deg2rad(angle % 90)
-        new_img_width = img.shape[0] / (np.cos(ang) + np.sin(ang))
-        # Crop out the thin remaining border...
-        new_img_width = 2 * int((img.shape[0] + new_img_width) / 2 - 1) - img.shape[0]
-        rotated_image = rotated_image[
-                        (img.shape[0] - new_img_width) / 2 : (img.shape[0] + new_img_width) / 2,
-                        (img.shape[0] - new_img_width) / 2 : (img.shape[0] + new_img_width) / 2]
+    rotated_radians_mod_half_pi = np.deg2rad((desired_angle - current_angle) % 90)
+    new_img_width = img.shape[0] / (np.cos(rotated_radians_mod_half_pi) + np.sin(rotated_radians_mod_half_pi))
+    # Crop out the thin remaining border...
+    new_img_width = 2 * int((img.shape[0] + new_img_width) / 2 - 1) - img.shape[0]
+    rows, cols = rotated_image.shape
+    rotated_image, _ = crop_about(rotated_image, centre=(cols / 2, rows / 2), new_side_length=new_img_width)
+    # cv2.imshow("Rotated Image", rotated_image)
 
-        # cv2.imshow("Rotated image", rotated_image)
-        # cv2.waitKey(0)
+    number_as_text = recognise_number(rotated_image)
+    # print("Recognised text: ", number_as_text)
+    number = text_to_number(number_as_text)
+    # print("Recognised number: ", number)
 
-        number_as_text = recognise_number(rotated_image)
-        # print(number_as_text)
-        number = text_to_number(number_as_text)
-        if number is not None:  # and number not in possibilities:
-            possibilities.append(number)
+    # cv2.waitKey(0)
 
-    return possibilities
+    return number
+
+
+def crop_about(img, centre, new_side_length):
+    new_side_length = 2 * int(new_side_length / 2)
+
+    cropped_img = img[
+                  centre[0] - new_side_length / 2: centre[0] + new_side_length / 2 + 1,
+                  centre[1] - new_side_length / 2: centre[1] + new_side_length / 2 + 1]
+
+    new_centre = (min(centre[0], new_side_length / 2),
+                  min(centre[1], new_side_length / 2))
+
+    return cropped_img, new_centre
 
 
 def recognise_number(img):
@@ -67,7 +101,7 @@ def recognise_number(img):
 
     # psm 8 => single word;
     # digits => use the digits config file supplied with the software
-    recognised_text = pytesseract.image_to_string(img, config='-psm 8 digits')
+    recognised_text = pytesseract.image_to_string(img, config='-psm 8, digits')
     return recognised_text
 
 
@@ -79,7 +113,7 @@ def text_to_number(recognised_text: str) -> int:
         return int(match.group(1))
 
 
-def extract_spot(img: np.ndarray) -> cv2.KeyPoint:
+def extract_spot(img: np.ndarray):
     params = cv2.SimpleBlobDetector_Params()
     params.minArea = 20  # The dot in 20pt font has area of about 30
 
@@ -96,6 +130,10 @@ def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints
     cv2.imshow(window_title, img_with_keypoints)
     cv2.waitKey(0)
 
+# The following bash script shows you some output
+# for i in ../Resources/NumberRecognition/*deg.jpg; do echo `basename $i .jpg`; scripts/recognise_number.py $i ;done
+# The results are promising where we could find the spot!
+
 if __name__ == '__main__':
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Recognise a supplied number.')
@@ -106,17 +144,20 @@ if __name__ == '__main__':
     img = read_image(args.input_file)
     img = clean_image(img)
 
-    recognised_text = recognise_number(img)
-    print("Recognised text: {!r}".format(recognised_text), end='\n')
-    recognised_number = text_to_number(recognised_text)
-    print("Interpreted as: {!r}".format(recognised_number), end='\n\n')
+    try:
+        recognised_number = recognise_rotated_number(img)
+    except ValueError:
+        recognised_number = "No spot!!"
+    print("Recognised number: {!r}".format(recognised_number))
 
-    possibilities_from_rotation_search = recognise_number_using_rotation_search(img, num_rotations=8)
-    print("Possible numbers from rotation search: {}".format(", ".join(map(str, possibilities_from_rotation_search))))
-
-    possible_spot_locations = extract_spot(img)
-    print("{} possible location(s) found for the spot:".format(len(possible_spot_locations)))
-    for keypoint in possible_spot_locations:
-        print("size: {}".format(keypoint.size),
-              "location: {}".format(keypoint.pt),
-              sep=", ")
+    # recognised_text = recognise_number(img)
+    # print("Recognised text: {!r}".format(recognised_text), end='\n')
+    # recognised_number = text_to_number(recognised_text)
+    # print("Interpreted as: {!r}".format(recognised_number), end='\n\n')
+    #
+    # possible_spot_locations = extract_spot(img)
+    # print("{} possible location(s) found for the spot:".format(len(possible_spot_locations)))
+    # for keypoint in possible_spot_locations:
+    #     print("size: {}".format(keypoint.size),
+    #           "location: {}".format(keypoint.pt),
+    #           sep=", ")
