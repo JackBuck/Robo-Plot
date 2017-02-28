@@ -87,8 +87,8 @@ def crop_about(img, centre, new_side_length):
     new_side_length = 2 * int(new_side_length / 2)
 
     cropped_img = img[
-                  centre[0] - new_side_length / 2: centre[0] + new_side_length / 2 + 1,
-                  centre[1] - new_side_length / 2: centre[1] + new_side_length / 2 + 1]
+                  max(0, centre[0] - new_side_length / 2): centre[0] + new_side_length / 2 + 1,
+                  max(0, centre[1] - new_side_length / 2): centre[1] + new_side_length / 2 + 1]
 
     new_centre = (min(centre[0], new_side_length / 2),
                   min(centre[1], new_side_length / 2))
