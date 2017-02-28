@@ -89,7 +89,7 @@ class DummyCamera:
         if __debug__:
             # Show where photos were taken.
             cv2.rectangle(self._debug_map, (image_y_min, image_x_min), (image_y_max, image_x_max), (200, 10, 255), 40)
-            cv2.imwrite(os.path.normpath(os.path.join(config.debug_output_folder, 'Photo_Positions_Debug.jpg')), self._debug_map)
+            cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_Positions_Debug.jpg'), self._debug_map)
 
         return dummy_photo
 

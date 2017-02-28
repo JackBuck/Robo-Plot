@@ -77,7 +77,7 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
                 image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
                 cv2.drawContours(image, [c], -1, (255, 55, 255), int(image.shape[0]/80))
                 cv2.circle(image, (cX, cY), 1, (255, 55, 255), int(image.shape[0]/80))
-                cv2.imwrite(os.path.normpath(os.path.join(config.debug_output_folder, 'Colour_Detection.jpg')), image)
+                cv2.imwrite(os.path.join(config.debug_output_folder, 'Colour_Detection.jpg'), image)
                 
             if change_to_white:
                 hsv_image[mask == 255] = [0, 0, 255]
