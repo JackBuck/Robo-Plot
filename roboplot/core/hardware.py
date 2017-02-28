@@ -20,10 +20,12 @@ small_stepper_1 = stepper_motors.small_stepper_motor(gpio_pins=(5, 6, 12, 16))
 small_stepper_2 = stepper_motors.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
 
 servo = servo_motor.ServoMotor(gpio_pin=18,
-                               min_position=servo_motor.Position(scaled_pwm_output=0.028, degrees=0),
-                               max_position=servo_motor.Position(scaled_pwm_output=0.13, degrees=180))
+                               min_position=0.03,
+                               max_position=0.12)
 
 # Higher level objects
+pen = liftable_pen.LiftablePen(servo=servo, position_when_down=0.03, position_when_up=0.05)
+
 x_axis = stepper_control.Axis(x_axis_motor, lead=8)
 y_axis = stepper_control.Axis(y_axis_motor, lead=8, invert_axis=True)
 
@@ -31,6 +33,3 @@ if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)
 else:
     both_axes = stepper_control.AxisPair(y_axis, x_axis)
-
-# TODO: Set the up and down positions at a practical session
-pen = liftable_pen.LiftablePen(servo=servo, degrees_when_down=80, degrees_when_up=100)

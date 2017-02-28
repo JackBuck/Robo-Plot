@@ -18,77 +18,45 @@ wiringpi.pwmSetClock(765)  # Set PWM clock divisor
 
 # Note: PWM Frequency = 19.2MHz / (PWM_DIVISOR * PWM_RANGE)
 
-class Position:
-    """
-    A position on the servo motor.
-    This class maps the required pwm output to the realised servo motor angle.
-    """
-
-    def __init__(self, scaled_pwm_output, degrees):
-        """
-        Defines a position on the servo motor.
-
-        Args:
-            scaled_pwm_output (float): The scaled pwm output. When multiplied by the pwm range set in wiringpi,
-                                       this gives the pwm output passed to wiringpi.pwmWrite(...).
-            degrees (float): The angle realised by the servo motor when this pwm is applied.
-        """
-        self.pwm_output = scaled_pwm_output
-        self.degrees = degrees
-
-
 class ServoMotor:
-    def __init__(self, gpio_pin: int = 18,
-                 min_position: Position = Position(0, 0),
-                 max_position: Position = Position(1, 180)):
+    def __init__(self, min_position: float, max_position: float, gpio_pin: int = 18):
         """
         Create a servo motor driver.
 
         Args:
             gpio_pin (int): the BCM gpio pin (should be 18 since this is the only hardware pwm pin)
-            min_position (Position): the minimum position attainable by the servo motor
-            max_position (Position): the maximum position attainable by the servo motor
+            min_position (float): the minimum (safe) input to the servo motor
+            max_position (float): the maximum (safe) input to the servo motor
         """
 
         if not gpio_pin == 18:
             warnings.warn("Setting up servo motor on a pin other than 18. BCM pin 18 is the only hardware pwm pin.")
 
+        assert 0 <= min_position <= max_position <= 1
+
         self._gpio_pin = gpio_pin
         wiringpi.pinMode(gpio_pin, wiringpi.PWM_OUTPUT)  # Set SERVO pin as PWM output
         wiringpi.pwmWrite(gpio_pin, 0)  # Turn output off
 
-        self._min_position = min_position
-        self._max_position = max_position
+        self.min_position = min_position
+        self.max_position = max_position
 
-    def rotate_to(self, degrees: float) -> None:
+    def set_position(self, pwm_input: float) -> None:
         """
-        Rotate to the specified angle.
+        Rotate to a specific position.
+
+        The input is in arbitrary units.
 
         Args:
-            degrees: the angle in degrees to which to turn the servo
+            pwm_input: the arbitrary input to use to set the servo orientation
         """
-        assert self.angle_is_in_range(degrees), "Requested angle is outside the servo motor's range!"
-
-        degrees_range = self._max_position.degrees - self._min_position.degrees
-        proportion = (degrees - self._min_position.degrees) / degrees_range
-
-        pwm_range = self._max_position.pwm_output - self._min_position.pwm_output
-        required_output = int((self._min_position.pwm_output + proportion * pwm_range) * PWM_RANGE)
-
-        print(required_output)
+        assert self.input_is_in_range(pwm_input), "Requested angle is outside the servo motor's range!"
+        required_output = int(float(pwm_input) * PWM_RANGE)
         wiringpi.pwmWrite(self._gpio_pin, required_output)
 
-    def angle_is_in_range(self, degrees):
-        return self.min_degrees <= degrees <= self.max_degrees
+    def input_is_in_range(self, pwm_input):
+        return self.min_position <= pwm_input <= self.max_position
 
-    def disengage(self):
-        # TODO: Does this method work? Or does our servo still retain its position?
+    def stop_pwm(self):
+        """Note that the servo motor will still remain engaged after the pi ceases to send a pwm signal."""
         wiringpi.pwmWrite(self._gpio_pin, 0)
-
-    @property
-    def min_degrees(self):
-        return self._min_position.degrees
-
-    @property
-    def max_degrees(self):
-        return self._max_position.degrees
