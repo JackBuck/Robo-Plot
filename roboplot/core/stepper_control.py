@@ -171,6 +171,10 @@ class AxisPair:
     def __init__(self, y_axis: Axis, x_axis: Axis):
         self.x_axis = x_axis
         self.y_axis = y_axis
+        
+        # Note that currently these are hard coded - these will need to be callibrated which could potentially be done as part of the homing. 
+        self.x_soft_limit = 210
+        self.y_soft_limit = 297
 
     @property
     def current_location(self):
@@ -189,7 +193,7 @@ class AxisPair:
     def is_homed(self):
         return self.x_axis.is_homed and self.y_axis.is_homed
 
-    def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1) -> None:
+    def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1, use_soft_limits: bool = True, suppress_limit_warnings: bool = False) -> None:
         """
         Step the motors so as to follow a curve.
 
@@ -197,7 +201,10 @@ class AxisPair:
             curve (Curve): The curve to follow.
             pen_speed (float): The target speed of the pen (in MILLIMETRES / SECOND).
             resolution (float): The resolution to use when splitting the curve into line segments (in MILLIMETRES).
-
+            use_soft_limits (bool): A bool indicating whether soft limits should be used. If this is true the positions will be compared against
+            a soft limits and if they lie outside of these a Warning message is printed and the curve will be adjusted to draw as close
+            as posible to the target points.
+            suppress_limit_warnings (bool): If true suppress the warnings given in when using the soft limits.
         Returns:
             None
 
@@ -209,9 +216,37 @@ class AxisPair:
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
+        
+        # Bool to indicate whether soft limits have been exceeded.
+        soft_limits_exceeded = False
 
         for pt, target_time in zip(points[1:], target_times):
+        
+            # If required, check whether the target location is within the soft limits if not reposition the point to
+            # the closest valid point.  
+            if use_soft_limits:
+                if pt[0] > self.y_soft_limit:
+                    soft_limits_exceeded = True
+                    pt[0] = self.y_soft_limit
+                    
+                if pt[1] > self.x_soft_limit:
+                    soft_limits_exceeded = True
+                    pt[1] = self.x_soft_limit
+                    
+                if pt[0] < 0:
+                    soft_limits_exceeded = True
+                    pt[0] = 0
+                       
+                if pt[1] < 0:
+                    soft_limits_exceeded = True
+                    pt[1] = 0
+                    
+                            
             self.move_linearly(pt, target_time)
+            
+        # Display warning if part of the curve lay outside of the soft limits.
+        if soft_limits_exceeded and not suppress_limit_warnings:
+            print('Warning: Part of the curve lay outside of the soft limits')
 
     def move_linearly(self, target_location: np.ndarray, target_completion_time: float) -> None:
         """
