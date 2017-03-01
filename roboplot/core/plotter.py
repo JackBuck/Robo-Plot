@@ -12,13 +12,19 @@ class Plotter:
         self._axes = axes
         self._pen = pen
 
-    def draw(self, curve: curves.Curve, pen_speed: float = default_pen_speed, resolution=default_resolution):
-        """Draw the curve, lifting the pen before and after."""
+    def draw(self, curve_list, pen_speed: float = default_pen_speed, resolution:float=default_resolution):
+        """Draw the curve (with the pen down), lifting the pen before and after."""
+
+        if isinstance(curve_list, curves.Curve):
+            curve_list = [curve_list]
+
         self._lift_pen()
-        self._move_to_start_of_curve(curve, pen_speed, resolution)
-        self._drop_pen()
-        self._axes.follow(curve, pen_speed, resolution)
-        self._lift_pen()
+        if len(curve_list) > 0:
+            self._move_to_start_of_curve(curve_list[0], pen_speed, resolution)
+            self._drop_pen()
+            for curve in curve_list:
+                self._axes.follow(curve, pen_speed, resolution)
+            self._lift_pen()
 
     def _lift_pen(self):
         self._pen.lift()
