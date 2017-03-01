@@ -26,6 +26,16 @@ class Plotter:
                 self._axes.follow(curve, pen_speed, resolution)
             self._lift_pen()
 
+    def follow(self, curve_list, pen_speed: float = default_pen_speed, resolution:float=default_resolution):
+        """Follow a curve, with the pen up."""
+        # TODO: It is not ideal to not be changing colour each curve when the pen is up...
+        if isinstance(curve_list, curves.Curve):
+            curve_list = [curve_list]
+
+        self._lift_pen()
+        for curve in curve_list:
+            self._axes.follow(curve, pen_speed, resolution)
+
     def _lift_pen(self):
         self._pen.lift()
 
