@@ -2,21 +2,8 @@
 
 import warnings
 
-import wiringpi
+import roboplot.core.gpio.wiringpi_wrapper as wiringpi
 
-# TODO Wrap wiringpi and put this line in the wrapper
-wiringpi.wiringPiSetupGpio()  # Setup wiringpi
-
-# TODO: How specific is this to the ServoMotor? Should it go in the wiringpi wrapper too? Or should the servo class
-#       be a singleton and claim unique access to the wiringpi pwm?
-# TODO: Ask Luke to explain these three lines...
-wiringpi.pwmSetMode(wiringpi.PWM_MODE_MS)  # Set PWM mode as mark space (as opposed to balanced - the default)
-PWM_RANGE = 500
-wiringpi.pwmSetRange(PWM_RANGE)  # Set PWM range (range of duty cycles)
-wiringpi.pwmSetClock(765)  # Set PWM clock divisor
-
-
-# Note: PWM Frequency = 19.2MHz / (PWM_DIVISOR * PWM_RANGE)
 
 class ServoMotor:
     def __init__(self, min_position: float, max_position: float, gpio_pin: int = 18):
@@ -51,7 +38,7 @@ class ServoMotor:
             pwm_input: the arbitrary input to use to set the servo orientation
         """
         assert self.input_is_in_range(pwm_input), "Requested angle is outside the servo motor's range!"
-        required_output = int(float(pwm_input) * PWM_RANGE)
+        required_output = int(float(pwm_input) * wiringpi.pwm_range)
         wiringpi.pwmWrite(self._gpio_pin, required_output)
 
     def input_is_in_range(self, pwm_input):
