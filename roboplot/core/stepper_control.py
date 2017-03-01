@@ -149,6 +149,10 @@ class AxisPair:
 
 
 class AxisPairWithDebugImage(AxisPair):
+    @staticmethod
+    def create_from(axes: AxisPair):
+        return AxisPairWithDebugImage(y_axis=axes.y_axis, x_axis=axes.x_axis)
+
     def __init__(self, y_axis: Axis, x_axis: Axis):
         super().__init__(y_axis, x_axis)
         self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step)
