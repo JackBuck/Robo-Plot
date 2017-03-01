@@ -81,7 +81,7 @@ class SoftLimitTest(unittest.TestCase):
     def test_soft_limit(curve, use_limits=True, suppress_warnings=False):
         temp_stdout = StringIO()
         with contextlib.redirect_stdout(temp_stdout):
-            hardware.both_axes.follow(curve, use_limits, suppress_warnings, 30)
+            hardware.both_axes.follow(curve, pen_speed=30, use_soft_limits=use_limits, suppress_limit_warnings=suppress_warnings)
         output = temp_stdout.getvalue().strip()
         print(output)
         return output

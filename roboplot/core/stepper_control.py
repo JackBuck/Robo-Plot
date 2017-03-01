@@ -297,8 +297,8 @@ class AxisPair:
 
 
 class AxisPairWithDebugImage(AxisPair):
-    def __init__(self, y_axis: Axis, x_axis: Axis):
-        super().__init__(y_axis, x_axis)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step)
 
     @property
@@ -311,9 +311,9 @@ class AxisPairWithDebugImage(AxisPair):
         self.debug_image.add_point(value)
         self.debug_image.change_colour()
 
-    def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1):
+    def follow(self, *args, **kwargs):
         self.debug_image.change_colour()
-        super().follow(curve, pen_speed, resolution)
+        super().follow(*args, **kwargs)
         self.debug_image.save_image()
 
     def _step_the_axis_which_is_behind(self, current_distances, target_distances):
