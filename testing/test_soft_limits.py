@@ -20,65 +20,65 @@ class SoftLimitTest(unittest.TestCase):
 
     def test_ExceedMinXLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [100, -1])        
-        console_output = self.test_soft_limit(line_segment)
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == 'Warning: Part of the curve lay outside of the soft limits'
 
     def test_ExceedMaxXLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [100, 300])        
-        console_output = self.test_soft_limit(line_segment)
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == 'Warning: Part of the curve lay outside of the soft limits'
 
     def test_ExceedMinYLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [-1, 100])        
-        console_output = self.test_soft_limit(line_segment)   
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == 'Warning: Part of the curve lay outside of the soft limits'
 
     def test_ExceedMaxYLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [300, 100])        
-        console_output = self.test_soft_limit(line_segment)    
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == 'Warning: Part of the curve lay outside of the soft limits'
         
     def test_TouchMinXLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [100, 0])        
-        console_output = self.test_soft_limit(line_segment)   
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == ''
 
     def test_TouchMaxXLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [100, hardware.both_axes.x_soft_limit])        
-        console_output = self.test_soft_limit(line_segment)    
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == ''
 
     def test_TouchMinYLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [0, 100])        
-        console_output = self.test_soft_limit(line_segment)     
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == ''
 
     def test_TouchMaxYLimit_LimitsOn(self):
         line_segment = curves.LineSegment([100, 100] , [hardware.both_axes.y_soft_limit, 100])        
-        console_output = self.test_soft_limit(line_segment)       
+        console_output = self._test_soft_limit(line_segment)
         assert console_output == ''
         
     def test_ExceedMinXLimit_LimitsOff(self):
         line_segment = curves.LineSegment([100, 100] , [100, -1])        
-        console_output = self.test_soft_limit(line_segment, False)     
+        console_output = self._test_soft_limit(line_segment, False)
         assert console_output == ''
 
     def test_ExceedMaxXLimit_LimitsOff(self):
         line_segment = curves.LineSegment([100, 100] , [100, 300])        
-        console_output = self.test_soft_limit(line_segment, False)    
+        console_output = self._test_soft_limit(line_segment, False)
         assert console_output == ''
 
     def test_ExceedMinYLimit_LimitsOff(self):
         line_segment = curves.LineSegment([100, 100] , [-1, 100])        
-        console_output = self.test_soft_limit(line_segment, False)    
+        console_output = self._test_soft_limit(line_segment, False)
 
     def test_ExceedMaxYLimit_LimitsOff(self):
         line_segment = curves.LineSegment([100, 100] , [300, 100])        
-        console_output = self.test_soft_limit(line_segment, False)    
+        console_output = self._test_soft_limit(line_segment, False)
         self.assertEqual(console_output,'')
         
     @staticmethod
-    def test_soft_limit(curve, use_limits=True, suppress_warnings=False):
+    def _test_soft_limit(curve, use_limits=True, suppress_warnings=False):
         temp_stdout = StringIO()
         with contextlib.redirect_stdout(temp_stdout):
             hardware.both_axes.follow(curve, pen_speed=30, use_soft_limits=use_limits, suppress_limit_warnings=suppress_warnings)
