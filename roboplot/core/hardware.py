@@ -8,6 +8,7 @@ It is also where the GPIO pins used for each piece of hardware are defined.
 """
 
 import roboplot.core.liftable_pen as liftable_pen
+import roboplot.core.plotter as plotter_module
 import roboplot.core.servo_motor as servo_motor
 import roboplot.core.stepper_motors as stepper_motors
 import roboplot.core.stepper_control as stepper_control
@@ -33,3 +34,5 @@ if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)
 else:
     both_axes = stepper_control.AxisPair(y_axis, x_axis)
+
+plotter = plotter_module.Plotter(axes=both_axes, pen=pen)
