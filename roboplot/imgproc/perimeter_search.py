@@ -1,6 +1,7 @@
 import numpy as np
-import roboplot.imgproc.image_analysis as IP
 import cv2
+
+import roboplot.imgproc.image_analysis as IP
 
 
 def compute_positions(width, height, photo_size):

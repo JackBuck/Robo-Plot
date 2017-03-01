@@ -1,8 +1,9 @@
 # coding=utf-8
+import os
 import numpy as np
 import cv2
 import roboplot.config as config
-import os
+
 
 
 class DummyCamera:

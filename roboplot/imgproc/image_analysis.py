@@ -1,9 +1,11 @@
-import numpy as np
-import cv2
 import enum
 import os
 import math
 import time
+
+import numpy as np
+import cv2
+
 
 
 global white_threshold

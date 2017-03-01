@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import context
+import time
 import unittest
+
 import cv2
+
+import context
 import roboplot.core.stepper_motors as stepper_motors
 from roboplot.core.gpio.gpio_wrapper import GPIO
-import time
 
 
 # Each set of tests can be in their own class, but it must derive from unnit.TestCase

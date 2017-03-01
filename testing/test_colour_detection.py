@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-import context
+
 import unittest
-import cv2
-import roboplot.imgproc.colour_detection as cd
 import time
 
+import cv2
+
+import context
+import roboplot.imgproc.colour_detection as cd
 # noinspection PyUnresolvedReferences
 # import test_runner
 

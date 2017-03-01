@@ -1,8 +1,10 @@
 # coding=utf-8
-import numpy as np
-import roboplot.imgproc.image_analysis as IP
-import cv2
 import math
+
+import numpy as np
+import cv2
+
+import roboplot.imgproc.image_analysis as IP
 import roboplot.imgproc.colour_detection as CD
 import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.perimeter_search as perimeter_search
