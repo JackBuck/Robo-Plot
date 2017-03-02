@@ -6,9 +6,6 @@ import time
 import numpy as np
 import cv2
 
-
-
-global white_threshold
 white_threshold = 130
 
 
