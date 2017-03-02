@@ -96,7 +96,7 @@ class Axis:
             hit_location = self._step_expecting_limit_switch()
 
         # Set the current location to the home position at the point where the limit switch is hit
-        # Note that we back-calculate to account for any backoff.
+        # Note that we back-calculate to account for any back off.
         distance_moved_since_switch_pressed = self.current_location - hit_location
         self.current_location = self._home_position.location + distance_moved_since_switch_pressed
 
@@ -171,10 +171,6 @@ class AxisPair:
     def __init__(self, y_axis: Axis, x_axis: Axis):
         self.x_axis = x_axis
         self.y_axis = y_axis
-        
-        # Note that currently these are hard coded - these will need to be callibrated which could potentially be done as part of the homing. 
-        self.x_soft_limit = 210
-        self.y_soft_limit = 297
 
     @property
     def current_location(self):
@@ -188,6 +184,13 @@ class AxisPair:
     def home(self):
         self.x_axis.home()
         self.y_axis.home()
+
+        # Note that currently these are hard coded - these will need to be calibrated which
+        # could potentially be done as part of the homing.
+        self.x_soft_lower_limit = self.x_axis._home_position.location + 1
+        self.y_soft_lower_limit = self.y_axis._home_position.location + 1
+        self.x_soft_upper_limit = 210
+        self.y_soft_upper_limit = 297
 
     @property
     def is_homed(self):
@@ -203,7 +206,7 @@ class AxisPair:
             resolution (float): The resolution to use when splitting the curve into line segments (in MILLIMETRES).
             use_soft_limits (bool): A bool indicating whether soft limits should be used. If this is true the positions will be compared against
             a soft limits and if they lie outside of these a Warning message is printed and the curve will be adjusted to draw as close
-            as posible to the target points.
+            as possible to the target points.
             suppress_limit_warnings (bool): If true suppress the warnings given in when using the soft limits.
         Returns:
             None
@@ -225,28 +228,27 @@ class AxisPair:
             # If required, check whether the target location is within the soft limits if not reposition the point to
             # the closest valid point.  
             if use_soft_limits:
-                if pt[0] > self.y_soft_limit:
+                if pt[0] > self.y_soft_upper_limit:
                     soft_limits_exceeded = True
-                    pt[0] = self.y_soft_limit
+                    pt[0] = self.y_soft_upper_limit
                     
-                if pt[1] > self.x_soft_limit:
+                if pt[1] > self.x_soft_upper_limit:
                     soft_limits_exceeded = True
-                    pt[1] = self.x_soft_limit
+                    pt[1] = self.x_soft_upper_limit
                     
-                if pt[0] < 0:
+                if pt[0] < self.y_soft_lower_limit:
                     soft_limits_exceeded = True
-                    pt[0] = 0
+                    pt[0] = self.y_soft_lower_limit
                        
-                if pt[1] < 0:
+                if pt[1] < self.x_soft_lower_limit:
                     soft_limits_exceeded = True
-                    pt[1] = 0
-                    
-                            
+                    pt[1] = self.x_soft_lower_limit
+
             self.move_linearly(pt, target_time)
             
         # Display warning if part of the curve lay outside of the soft limits.
         if soft_limits_exceeded and not suppress_limit_warnings:
-            print('Warning: Part of the curve lay outside of the soft limits')
+            warnings.warn('Part of the curve lay outside of the soft limits')
 
     def move_linearly(self, target_location: np.ndarray, target_completion_time: float) -> None:
         """
@@ -319,7 +321,6 @@ class AxisPairWithDebugImage(AxisPair):
     def _step_the_axis_which_is_behind(self, current_distances, target_distances):
         super()._step_the_axis_which_is_behind(current_distances, target_distances)
         self.debug_image.add_point(self.current_location)
-
 
 def _sleep_until(wake_time):
     sleep_duration = wake_time - time.time()
