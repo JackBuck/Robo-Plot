@@ -183,7 +183,7 @@ class AxisPair:
         self.x_axis.current_location = value[1]
 
     def home(self):
-        home_x = threading.Thread(target = self.x_axis.home)
+        home_x = threading.Thread(target=self.x_axis.home)
         home_y = threading.Thread(target=self.y_axis.home)
 
         home_x.start()
