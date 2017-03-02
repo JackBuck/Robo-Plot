@@ -13,10 +13,10 @@ from roboplot.core.gpio.gpio_wrapper import GPIO
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a circle.')
-    parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[0, 0],
+    parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[100, 100],
                         help='the centre (y,x) of the circle in millimetres (default: %(default)smm)')
-    parser.add_argument('-r', '--radius', type=float, required=True,
-                        help='the radius of the circle in millimetres')
+    parser.add_argument('-r', '--radius', type=float, default=50,
+                        help='the radius of the circle in millimetres (default %(default)smm)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float,
                         default=hardware.plotter.default_pen_speed,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
@@ -30,6 +30,7 @@ try:
 
     time.sleep(args.wait)
 
+    hardware.both_axes.home()
     start_time = time.time()
     hardware.plotter.draw(curve_list=circle, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()

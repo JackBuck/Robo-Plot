@@ -13,10 +13,10 @@ from roboplot.core.gpio.gpio_wrapper import GPIO
 try:
     # Commandline arguments
     parser = argparse.ArgumentParser(description='Draw a line segment.')
-    parser.add_argument('-f', '--first-point', metavar=('y', 'x'), nargs=2, type=float, default=[20, 20],
+    parser.add_argument('-f', '--first-point', metavar=('y', 'x'), nargs=2, type=float, default=[50, 50],
                         help='the first point (y,x) of the line segment, in millimetres (default: %(default)smm)')
-    parser.add_argument('-l', '--last-point', metavar=('y', 'x'), nargs=2, type=float, required=True,
-                        help='the last point (y,x) of the line segment, in millimetres (required)')
+    parser.add_argument('-l', '--last-point', metavar=('y', 'x'), nargs=2, type=float, default=[125, 75],
+                        help='the last point (y,x) of the line segment, in millimetres (default: %(default)smm)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float,
                         default=hardware.plotter.default_pen_speed,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
@@ -30,6 +30,7 @@ try:
 
     time.sleep(args.wait)
 
+    hardware.both_axes.home()
     start_time = time.time()
     hardware.plotter.draw(curve_list=line_segment, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()
