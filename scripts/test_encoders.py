@@ -71,4 +71,4 @@ try:
 
 
 finally:
-    GPIO.cleanup()
+    hardware.cleanup()

@@ -43,4 +43,4 @@ try:
     print(distance_travelled / args.pen_millimetres_per_second)
 
 finally:
-    GPIO.cleanup()
+    hardware.cleanup()

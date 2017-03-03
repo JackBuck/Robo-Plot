@@ -41,4 +41,4 @@ try:
     print(2 * np.pi * args.radius / args.pen_millimetres_per_second)
 
 finally:
-    GPIO.cleanup()
+    hardware.cleanup()

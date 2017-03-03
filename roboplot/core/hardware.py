@@ -19,6 +19,7 @@ import roboplot.core.encoders as encoders
 import roboplot.core.limit_switches as limit_switches
 import roboplot.core.stepper_motors as stepper_motors
 import roboplot.core.stepper_control as stepper_control
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
 
 # Direct GPIO connections
@@ -84,3 +85,9 @@ if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)
 else:
     both_axes = stepper_control.AxisPair(y_axis, x_axis)
+
+
+def cleanup():
+    x_axis_encoder.exit_thread()
+    y_axis_encoder.exit_thread()
+    GPIO.cleanup()

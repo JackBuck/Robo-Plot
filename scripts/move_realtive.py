@@ -43,4 +43,4 @@ try:
     print(target_duration)
 
 finally:
-    GPIO.cleanup()
+    hardware.cleanup()

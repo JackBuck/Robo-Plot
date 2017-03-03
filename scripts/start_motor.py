@@ -4,8 +4,8 @@ import argparse
 import time
 
 import context
-from roboplot.core.hardware import x_axis_motor
-from roboplot.core.gpio.gpio_wrapper import GPIO
+import roboplot.core.hardware as hardware
+
 
 try:
     # Commandline arguments
@@ -21,7 +21,7 @@ try:
 
     # Script body
     time.sleep(args.wait)
-    x_axis_motor.start(duration=5, rps=args.revolutions_per_second)
+    hardware.x_axis_motor.start(duration=5, rps=args.revolutions_per_second)
 
 finally:
-    GPIO.cleanup()
+    hardware.cleanup()
