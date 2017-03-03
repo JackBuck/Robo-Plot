@@ -29,6 +29,5 @@ try:
 except KeyboardInterrupt:
     pass
 finally:
-    encoder.exit_thread()
-    encoder.join()
+    hardware.cleanup()
     print("\nProgram Ended")
