@@ -12,6 +12,10 @@ class Plotter:
         self._axes = axes
         self._pen = pen
 
+    def home(self):
+        self._pen.lift()
+        self._axes.home()
+
     def draw(self, curve_list, pen_speed: float = default_pen_speed, resolution:float=default_resolution):
         """Draw the curve (with the pen down), lifting the pen before and after."""
 

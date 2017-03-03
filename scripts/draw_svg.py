@@ -29,7 +29,7 @@ try:
 
     time.sleep(args.wait)
 
-    hardware.both_axes.home()
+    hardware.plotter.home()
 
     start_time = time.time()
 

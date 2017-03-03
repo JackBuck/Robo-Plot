@@ -30,7 +30,7 @@ try:
 
     time.sleep(args.wait)
 
-    hardware.both_axes.home()
+    hardware.plotter.home()
     start_time = time.time()
     hardware.plotter.draw(curve_list=line_segment, pen_speed=args.pen_millimetres_per_second)
     end_time = time.time()
