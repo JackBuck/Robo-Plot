@@ -177,3 +177,7 @@ class PretendEncoder:
     def exit_thread(self):
         """Does nothing"""
         pass
+
+    # noinspection PyMethodMayBeStatic
+    def join(self):
+        pass

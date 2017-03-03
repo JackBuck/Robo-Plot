@@ -5,7 +5,6 @@ import time
 
 import context
 import roboplot.core.hardware as hardware
-from roboplot.core.gpio.gpio_wrapper import GPIO
 
 try:
     # Commandline arguments
@@ -13,7 +12,7 @@ try:
     parser.add_argument('-l', '--length', type=float, default=100,
                         help='the length of the test line in millimetres (default: %(default)smm)')
     parser.add_argument('-a', '--axis', default='X',
-                        help='the axis to test upon (default: %(default))')
+                        help='the axis to test upon (default: %(default)s)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
 
