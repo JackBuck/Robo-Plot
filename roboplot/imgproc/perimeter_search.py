@@ -87,7 +87,7 @@ def compute_positions(width, height, photo_size):
         elif current_path_point[0] + photo_size > max_y_pos:
             current_path_point = (max_y_pos, current_path_point[1])
             last_row = True
-        else
+        else:
             current_path_point = (current_path_point[0] + photo_size, current_path_point[1])
         
         # Decrement x.
@@ -99,11 +99,8 @@ def compute_positions(width, height, photo_size):
         positions.append(current_path_point)
         
         current_path_point = (current_path_point[0] + photo_size, int(photo_size/2))
-        
-        
-        if last_row:
-            break   
-        elif current_path_point[0] > max_y_pos:
+           
+        if current_path_point[0] > max_y_pos:
             current_path_point[0] = max_y_pos
    
 
