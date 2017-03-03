@@ -24,6 +24,11 @@ class ServoMotor:
         self._gpio_pin = gpio_pin
         wiringpi.pinMode(gpio_pin, wiringpi.PWM_OUTPUT)  # Set SERVO pin as PWM output
         wiringpi.pwmWrite(gpio_pin, 0)  # Turn output off
+        wiringpi.pwmSetMode(wiringpi.PWM_MODE_MS)  # Set PWM mode as mark space (as opposed to balanced - the default)
+        self.PWM_RANGE = 500
+        wiringpi.pwmSetRange(self.PWM_RANGE)  # Set PWM range (range of duty cycles)
+        wiringpi.pwmSetClock(765)  # Set PWM clock divisor
+        # Note: PWM Frequency = 19.2MHz / (pwm_divisor * pwm_range)
 
         self.min_position = min_position
         self.max_position = max_position
@@ -38,7 +43,7 @@ class ServoMotor:
             pwm_input: the arbitrary input to use to set the servo orientation
         """
         assert self.input_is_in_range(pwm_input), "Requested angle is outside the servo motor's range!"
-        required_output = int(float(pwm_input) * wiringpi.pwm_range)
+        required_output = int(float(pwm_input) * self.PWM_RANGE)
         wiringpi.pwmWrite(self._gpio_pin, required_output)
 
     def input_is_in_range(self, pwm_input):
