@@ -54,7 +54,7 @@ class Encoder(threading.Thread):
     @property
     def revolutions(self) -> float:
         """The number of partial revolutions completed since the last reset (or since initialisation)."""
-        sign = 1 if self._clockwise_is_positive else -1  # TODO: Calibrate this against the real encoders...
+        sign = -1 if self._clockwise_is_positive else 1
         return sign * self._count / self._positions_per_revolution
 
     def reset_position(self):
