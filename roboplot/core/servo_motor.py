@@ -2,7 +2,7 @@
 
 import warnings
 
-import roboplot.core.gpio.wiringpi_wrapper as wiringpi
+import roboplot.core.gpio.wiringpi_wrapper as wiringpi_wrapper
 
 
 class ServoMotor:
@@ -17,19 +17,16 @@ class ServoMotor:
         """
 
         if not gpio_pin == 18:
-            warnings.warn("Setting up servo motor on a pin other than 18. BCM pin 18 is the only hardware pwm pin.")
+            # Can't do this more naturally because I don't fully understand the scope of the wiringpi.pwmSetMode,
+            # pwmSetRange and pwmSetClock methods.
+            # I've kept the gpio_pin argument so that we can write it explicitly in the hardware class. An
+            # alternative would be to make a factory method on the Servo class called create_on_pin_18() or similar.
+            raise ValueError("Setting up servo motor on a pin other than 18. BCM pin 18 is the only hardware pwm pin.")
 
         assert 0 <= min_position <= max_position <= 1
 
         self._gpio_pin = gpio_pin
-        wiringpi.pinMode(gpio_pin, wiringpi.PWM_OUTPUT)  # Set SERVO pin as PWM output
-        wiringpi.pwmWrite(gpio_pin, 0)  # Turn output off
-        wiringpi.pwmSetMode(wiringpi.PWM_MODE_MS)  # Set PWM mode as mark space (as opposed to balanced - the default)
-        self.PWM_RANGE = 500
-        wiringpi.pwmSetRange(self.PWM_RANGE)  # Set PWM range (range of duty cycles)
-        wiringpi.pwmSetClock(765)  # Set PWM clock divisor
-        # Note: PWM Frequency = 19.2MHz / (pwm_divisor * pwm_range)
-
+        wiringpi_wrapper.setup_pwm_pin_18()
         self.min_position = min_position
         self.max_position = max_position
 
@@ -43,8 +40,8 @@ class ServoMotor:
             pwm_input: the arbitrary input to use to set the servo orientation
         """
         assert self.input_is_in_range(pwm_input), "Requested angle is outside the servo motor's range!"
-        required_output = int(float(pwm_input) * self.PWM_RANGE)
-        wiringpi.pwmWrite(self._gpio_pin, required_output)
+        required_output = int(float(pwm_input) * wiringpi_wrapper.pwm_pin.pwm_range)
+        wiringpi_wrapper.write_pwm_to_pin_18(required_output)
 
     def input_is_in_range(self, pwm_input):
         return self.min_position <= pwm_input <= self.max_position
