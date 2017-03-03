@@ -30,4 +30,5 @@ except KeyboardInterrupt:
     pass
 finally:
     encoder.exit_thread()
+    encoder.join()
     print("\nProgram Ended")
