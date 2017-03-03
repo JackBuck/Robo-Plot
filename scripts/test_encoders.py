@@ -36,7 +36,7 @@ try:
     # calculate steps per millimetre (useful later) and required steps
     steps_per_milli = 200 / 8
     counts_per_milli = 96 / 8
-    required_steps = (args.length / steps_per_milli)
+    required_steps = args.length * steps_per_milli
 
     # check if we need to go backwards or forwards?
     backwards = False
@@ -44,10 +44,7 @@ try:
         required_steps *= -1
         backwards = True
 
-    if backwards:
-        test_axis.forwards = False
-    else:
-        test_axis.forwards = True
+    test_axis.forwards = not backwards
 
     # calculate sleep time
     totaltime = args.length / args.pen_millimetres_per_second
@@ -59,8 +56,8 @@ try:
         time.sleep(sleeptime)
 
     # calculate expected distance
-    expected_distance = test_axis.expected_location / steps_per_milli
-    encoder_distance = test_axis.current_location / counts_per_milli
+    expected_distance = test_axis.expected_location
+    encoder_distance = test_axis.current_location
 
     # print the distances for comparison
     print('Expected Distance (from motor): ', end='')
