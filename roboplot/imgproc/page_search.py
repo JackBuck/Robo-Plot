@@ -57,7 +57,7 @@ def compute_positions(width, height, photo_size):
     """
 
     positions = []
-    current_path_point = (int(photo_size/2), int(photo_size/2))
+    current_path_point = [int(photo_size/2), int(photo_size/2)]
     max_x_pos = width - int(photo_size/2)
     max_y_pos = height - int(photo_size/2)
     
@@ -68,42 +68,37 @@ def compute_positions(width, height, photo_size):
     
         if current_path_point[0] == max_y_pos:
             last_row = True
-       
-        positions.append(current_path_point)
-        
 
-        #Increment x.
+        # Increment x.
         while current_path_point[1] < max_x_pos:
-            positions.append(current_path_point)
-            current_path_point = (current_path_point[0], current_path_point[1] + photo_size)
+            positions.append(current_path_point.copy())
+            current_path_point[1] += photo_size
             
-        current_path_point = (current_path_point[0], max_x_pos)
-        positions.append(current_path_point)
+        current_path_point[1] = max_x_pos
+        positions.append(current_path_point.copy())
         
         # Increment y once.
         
         if last_row:
             break
         elif current_path_point[0] + photo_size > max_y_pos:
-            current_path_point = (max_y_pos, current_path_point[1])
+            current_path_point[0] = max_y_pos
             last_row = True
         else:
-            current_path_point = (current_path_point[0] + photo_size, current_path_point[1])
+            current_path_point[0] += photo_size
         
         # Decrement x.
         while current_path_point[1] > int(photo_size/2):
-            positions.append(current_path_point)
-            current_path_point = (current_path_point[0], current_path_point[1] - photo_size)
+            positions.append(current_path_point.copy())
+            current_path_point[1] -= photo_size
             
-        current_path_point = (current_path_point[0], int(photo_size/2)
-        positions.append(current_path_point)
+        current_path_point[1] = int(photo_size/2)
+        positions.append(current_path_point.copy())
         
-        current_path_point = (current_path_point[0] + photo_size, int(photo_size/2))
+        current_path_point[0] += photo_size
            
         if current_path_point[0] > max_y_pos:
             current_path_point[0] = max_y_pos
-   
-
 
     return positions
 

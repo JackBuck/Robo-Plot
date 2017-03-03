@@ -54,9 +54,10 @@ class DebugImage:
         # Background image
         if bgimage_path is not None:
             self.debug_image = cv2.imread(bgimage_path)
-            self.debug_image = cv2.resize(self.debug_image, self._image_dimensions_pixels)
         else:
             self.debug_image = np.zeros(self._image_dimensions_pixels + (3,), np.uint8)
+
+        self.debug_image = cv2.resize(self.debug_image, self._image_dimensions_pixels)
 
         # Choose how often an image is saved.
         self.millimeters_between_saves = 20
