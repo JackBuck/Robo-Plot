@@ -3,10 +3,6 @@
 import argparse
 
 import context
-
-import roboplot.config
-roboplot.config.real_hardware = True
-
 import roboplot.core.hardware as hardware
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
@@ -15,7 +11,7 @@ try:
     parser.add_argument('position', type=float,
                         help="The position to set on the servo "
                              "(this is a proportion of the maximum pwm frequency set up on the pi). "
-                             "This should be between {0:d} and {1:d}".format(hardware.servo.min_position,
+                             "This should be between {} and {}".format(hardware.servo.min_position,
                                                                              hardware.servo.max_position))
     args = parser.parse_args()
 
