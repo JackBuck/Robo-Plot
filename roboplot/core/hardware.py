@@ -90,4 +90,6 @@ else:
 def cleanup():
     x_axis_encoder.exit_thread()
     y_axis_encoder.exit_thread()
+    x_axis_encoder.join()
+    y_axis_encoder.join()
     GPIO.cleanup()
