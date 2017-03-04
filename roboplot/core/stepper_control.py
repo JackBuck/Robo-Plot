@@ -28,6 +28,7 @@ class HomePosition:
 
 class Axis:
     current_location = 0
+    home_position = HomePosition()
     _is_homed = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
@@ -37,7 +38,7 @@ class Axis:
                  motor: StepperMotor,
                  lead: float,
                  limit_switch_pair,
-                 home_position: HomePosition = HomePosition(),
+                 home_position: HomePosition = home_position,
                  invert_axis: bool = False):
         """
         Creates an Axis.
@@ -46,6 +47,7 @@ class Axis:
             motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
             limit_switch_pair (iterable of LimitSwitch): The pair of limit switches at each end of the axis.
+            home_position (HomePosition): The direction and location of the (primary) limit switch to use when homing.
             invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
         assert lead > 0, "The lead specified must be positive!"
@@ -54,8 +56,8 @@ class Axis:
         self._motor = motor
         self._lead = lead
         self._limit_switches = limit_switch_pair
-        self.home_position = home_position
         self._invert_axis = invert_axis
+        self.home_position = home_position
 
     @property
     def back_off_millimetres(self):

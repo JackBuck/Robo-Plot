@@ -160,17 +160,21 @@ class AxisHomingTest(BaseTestCases.Axis):
 
 class AxisPairHomingTest(unittest.TestCase):
     def setUp(self):
-        self._mock_x_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False)
-        self._mock_y_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False)
+        self._mock_x_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False,
+                                      home_position=stepper_control.HomePosition())
+        self._mock_y_axis = MagicMock(name='y_axis', spec_set=stepper_control.Axis, is_homed=False,
+                                      home_position=stepper_control.HomePosition())
         self._both_axes = stepper_control.AxisPair(y_axis=self._mock_y_axis, x_axis=self._mock_x_axis)
 
         def home_x():
             self._mock_x_axis.is_homed = True
+            return 210
 
         self._mock_x_axis.home.side_effect = home_x
 
         def home_y():
             self._mock_y_axis.is_homed = True
+            return 279
 
         self._mock_y_axis.home.side_effect = home_y
 
