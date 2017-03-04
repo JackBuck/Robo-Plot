@@ -17,6 +17,7 @@ class Encoder(threading.Thread):
     _lock = threading.Lock()
     _count = 0
     _exit_requested = False
+    _total_number_of_double_steps = 0
 
     def __init__(self, gpio_pins, positions_per_revolution, invert_revolutions=False, thread_name=None):
         """
@@ -93,7 +94,8 @@ class Encoder(threading.Thread):
 
             # But if it is not...
             if count_change == 2:
-                warnings.warn("Encoder moved more than one step")
+                self._total_number_of_double_steps += 1
+                warnings.warn("Encoder moved more than one step ({})".format(self._total_number_of_double_steps))
                 count_change = 0  # We do not know whether we gained two or lost two steps - so do nothing!
 
             # Use a lock to make count variable thread safe
