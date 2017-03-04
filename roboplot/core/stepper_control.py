@@ -54,7 +54,7 @@ class Axis:
         self._motor = motor
         self._lead = lead
         self._limit_switches = limit_switch_pair
-        self._home_position = home_position
+        self.home_position = home_position
         self._invert_axis = invert_axis
 
     @property
@@ -84,7 +84,8 @@ class Axis:
         The home_position argument to Axis.__init__ controls the direction in which to home as well as the value set
         upon reaching it.
         """
-        self.forwards = self._home_position.forwards
+
+        self.forwards = self.home_position.forwards
 
         # Check that a limit switch is not currently pressed
         if any([switch.is_pressed for switch in self._limit_switches]):
@@ -98,9 +99,20 @@ class Axis:
         # Set the current location to the home position at the point where the limit switch is hit
         # Note that we back-calculate to account for any back off.
         distance_moved_since_switch_pressed = self.current_location - hit_location
-        self.current_location = self._home_position.location + distance_moved_since_switch_pressed
+        self.current_location = self.home_position.location + distance_moved_since_switch_pressed
+
+        # Step back until a switch is hit
+        self.forwards = not self.home_position.forwards
+
+        hit_location = self._step_expecting_limit_switch()
+        while hit_location is None:
+            hit_location = self._step_expecting_limit_switch()
+
+        # Set the upper home limits of the home position at the point where the limit switch is hit
+        # Note that we back-calculate to account for any back off.
 
         self._is_homed = True
+        return hit_location
 
     def _step_expecting_limit_switch(self):
         """
@@ -172,6 +184,11 @@ class AxisPair:
         self.x_axis = x_axis
         self.y_axis = y_axis
 
+        self.x_soft_lower_limit = -np.infty
+        self.x_soft_upper_limit = np.infty
+        self.y_soft_lower_limit = -np.infty
+        self.y_soft_upper_limit = np.infty
+
     @property
     def current_location(self):
         return np.array([self.y_axis.current_location, self.x_axis.current_location])
@@ -182,15 +199,24 @@ class AxisPair:
         self.x_axis.current_location = value[1]
 
     def home(self):
-        self.x_axis.home()
-        self.y_axis.home()
 
-        # Note that currently these are hard coded - these will need to be calibrated which
-        # could potentially be done as part of the homing.
-        self.x_soft_lower_limit = self.x_axis._home_position.location + 1
-        self.y_soft_lower_limit = self.y_axis._home_position.location + 1
-        self.x_soft_upper_limit = 210
-        self.y_soft_upper_limit = 297
+        if self.x_axis.home_position.forwards:
+            x_margin = - 0.5
+        else:
+            x_margin = 0.5
+
+        if self.y_axis.home_position.forwards:
+            y_margin = - 0.5
+        else:
+            y_margin = 0.5
+
+        # Home axis and set soft limits.
+        self.x_soft_upper_limit = self.x_axis.home() - x_margin
+        self.y_soft_upper_limit = self.y_axis.home() - y_margin
+
+        self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
+        self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
+
 
     @property
     def is_homed(self):
