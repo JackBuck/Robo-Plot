@@ -11,7 +11,7 @@ try:
     parser = argparse.ArgumentParser(description='Test Encoders VS Motors.')
     parser.add_argument('-l', '--length', type=float, default=100,
                         help='the length of the test line in millimetres (default: %(default)smm)')
-    parser.add_argument('-a', '--axis', default='X',
+    parser.add_argument('-a', '--axis', type=str, choices=('X', 'Y'), nargs='?', default='X',
                         help='the axis to test upon (default: %(default)s)')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
@@ -34,17 +34,11 @@ try:
     assert test_axis.expected_location == 0, 'Reset Encoder Position Failed (expected_location != 0).'
 
     # calculate steps per millimetre (useful later) and required steps
-    steps_per_milli = 200 / 8
-    counts_per_milli = 96 / 8
-    required_steps = args.length * steps_per_milli
+    required_steps = args.length * test_axis.millimetres_per_step
 
     # check if we need to go backwards or forwards?
-    backwards = False
-    if required_steps < 0:
-        required_steps *= -1
-        backwards = True
-
-    test_axis.forwards = not backwards
+    test_axis.forwards = required_steps >= 0
+    required_steps = abs(required_steps)
 
     # calculate sleep time
     totaltime = args.length / args.pen_millimetres_per_second

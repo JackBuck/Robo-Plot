@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(
 
 parser.parse_args()
 
+
 def TestEncoder(axis, axis_name):
     initial_expected_location = axis.expected_location
     initial_current_location = axis.current_location
@@ -31,6 +32,7 @@ def TestEncoder(axis, axis_name):
         message = '{}: Encoder needs inverting = {}'.format(axis_name, needs_inverting)
 
     print(message)
+
 
 try:
     TestEncoder(hardware.x_axis, 'x-axis')
