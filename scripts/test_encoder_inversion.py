@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser(
     description='Determine whether the encoders need to be inverted in the hardware module.'
                 'The script will move the robot forwards and backwards in both axes, and print a summary.')
 
+parser.parse_args()
 
 def TestEncoder(axis, axis_name):
     initial_expected_location = axis.expected_location
