@@ -223,12 +223,12 @@ class AxisPair:
         self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
         self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
 
-
     @property
     def is_homed(self):
         return self.x_axis.is_homed and self.y_axis.is_homed
 
-    def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1, use_soft_limits: bool = True, suppress_limit_warnings: bool = False) -> None:
+    def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1, use_soft_limits: bool = True,
+               suppress_limit_warnings: bool = False) -> None:
         """
         Step the motors so as to follow a curve.
 
@@ -251,33 +251,33 @@ class AxisPair:
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
-        
+
         # Bool to indicate whether soft limits have been exceeded.
         soft_limits_exceeded = False
 
         for pt, target_time in zip(points[1:], target_times):
-        
+
             # If required, check whether the target location is within the soft limits if not reposition the point to
             # the closest valid point.  
             if use_soft_limits:
                 if pt[0] > self.y_soft_upper_limit:
                     soft_limits_exceeded = True
                     pt[0] = self.y_soft_upper_limit
-                    
+
                 if pt[1] > self.x_soft_upper_limit:
                     soft_limits_exceeded = True
                     pt[1] = self.x_soft_upper_limit
-                    
+
                 if pt[0] < self.y_soft_lower_limit:
                     soft_limits_exceeded = True
                     pt[0] = self.y_soft_lower_limit
-                       
+
                 if pt[1] < self.x_soft_lower_limit:
                     soft_limits_exceeded = True
                     pt[1] = self.x_soft_lower_limit
 
             self.move_linearly(pt, target_time)
-            
+
         # Display warning if part of the curve lay outside of the soft limits.
         if soft_limits_exceeded and not suppress_limit_warnings:
             warnings.warn('Part of the curve lay outside of the soft limits')
@@ -353,6 +353,7 @@ class AxisPairWithDebugImage(AxisPair):
     def _step_the_axis_which_is_behind(self, current_distances, target_distances):
         super()._step_the_axis_which_is_behind(current_distances, target_distances)
         self.debug_image.add_point(self.current_location)
+
 
 def _sleep_until(wake_time):
     sleep_duration = wake_time - time.time()
