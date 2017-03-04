@@ -22,7 +22,8 @@ class BaseTestCases:
             self._mock_limit_switches = (MagicMock(name='switch_1', spec_set=LimitSwitch, is_pressed=False),
                                          MagicMock(name='switch_2', spec_set=LimitSwitch, is_pressed=False))
             self._mock_motor = MagicMock(name='motor', spec_set=StepperMotor, steps_per_revolution=200, clockwise=True)
-            self._axis = stepper_control.Axis(self._mock_motor, 8, self._mock_limit_switches)
+            self._axis = stepper_control.Axis(self._mock_motor, 8, self._mock_limit_switches,
+                                              stepper_control.HomePosition(forwards=False, location=0))
 
 
 class AxisStepTests(BaseTestCases.Axis):
@@ -132,10 +133,10 @@ class AxisHomingTest(BaseTestCases.Axis):
         self._mock_motor.step.side_effect = new_motor_side_effect
         self._axis.home()
 
-    def test_ends_2mm_behind_limit_switch(self):
+    def test_ends_2mm_behind_secondary_limit_switch(self):
         self._axis.home()
         steps_in_2mm = 2 / self._axis.millimetres_per_step
-        self.assertEqual(self.true_motor_location_in_steps, steps_in_2mm)
+        self.assertEqual(self.true_motor_location_in_steps, 200 - steps_in_2mm)
 
     def test_current_location_would_be_home_location_at_limit_switch(self):
         self._axis.home()
@@ -149,6 +150,12 @@ class AxisHomingTest(BaseTestCases.Axis):
     def test_is_homed_property_is_true_after_home(self):
         self._axis.home()
         self.assertTrue(self._axis.is_homed)
+
+    def test_returns_secondary_limit_switch_location(self):
+        secondary_switch_location = self._axis.home()
+        self.assertAlmostEqual(secondary_switch_location,
+                               200 * self._axis.millimetres_per_step,
+                               delta=self._axis.millimetres_per_step/2)
 
 
 class AxisPairHomingTest(unittest.TestCase):
