@@ -9,9 +9,6 @@ It is also
   * where all initialisation of the hardware is performed (e.g. starting the encoder threads).
 """
 
-import os
-import warnings
-
 import numpy as np
 
 import roboplot.config as config
@@ -34,9 +31,10 @@ x_limit_switches = (limit_switches.LimitSwitch(gpio_pin=8),  # Motor side
 y_limit_switches = (limit_switches.LimitSwitch(gpio_pin=9),  # Motor side
                     limit_switches.LimitSwitch(gpio_pin=11))  # Encoder side
 
-x_axis_encoder = encoders.Encoder(gpio_pins=(0, 1), positions_per_revolution=96, thread_name="x axis encoder")
-y_axis_encoder = encoders.Encoder(gpio_pins=(14, 15), positions_per_revolution=96, clockwise_is_positive=True,
-thread_name="y axis encoder")
+x_axis_encoder = encoders.Encoder(gpio_pins=(0, 1), positions_per_revolution=96, invert_revolutions=False,
+                                  thread_name="x axis encoder")
+y_axis_encoder = encoders.Encoder(gpio_pins=(14, 15), positions_per_revolution=96, invert_revolutions=True,
+                                  thread_name="y axis encoder")
 
 x_home_position = stepper_control.HomePosition()
 y_home_position = stepper_control.HomePosition()

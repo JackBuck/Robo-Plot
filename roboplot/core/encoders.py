@@ -18,17 +18,17 @@ class Encoder(threading.Thread):
     _count = 0
     _exit_requested = False
 
-    def __init__(self, gpio_pins, positions_per_revolution, clockwise_is_positive=False, thread_name=None):
+    def __init__(self, gpio_pins, positions_per_revolution, invert_revolutions=False, thread_name=None):
         """
         Initialises the encoder class.
 
         Args:
             gpio_pins: BCM number of the GPIO pins which make up the A and B channel of the encoder.
-                  See pin allocation scheme on google drive.
+                       See pin allocation scheme on google drive.
 
             positions_per_revolution (int): the number of counts the encoder has per revolution.
 
-            clockwise_is_positive (bool): determines which direction is reported as 'increasing' revolutions.
+            invert_revolutions (bool): determines which direction is reported as 'increasing' revolutions.
 
             thread_name (str): a name to use to identify the base class thread object.
         """
@@ -38,7 +38,7 @@ class Encoder(threading.Thread):
 
         # In python, class members appear to be created when you refer to them
         self._positions_per_revolution = positions_per_revolution
-        self._clockwise_is_positive = clockwise_is_positive
+        self._invert_revolutions = invert_revolutions
         self._a_pin = gpio_pins[0]
         self._b_pin = gpio_pins[1]
 
@@ -54,7 +54,7 @@ class Encoder(threading.Thread):
     @property
     def revolutions(self) -> float:
         """The number of partial revolutions completed since the last reset (or since initialisation)."""
-        sign = -1 if self._clockwise_is_positive else 1
+        sign = -1 if self._invert_revolutions else 1
         return sign * self._count / self._positions_per_revolution
 
     def reset_position(self):
