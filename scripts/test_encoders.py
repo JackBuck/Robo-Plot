@@ -27,14 +27,17 @@ try:
         raise ValueError('Bad axis option. Choose X or Y.')
 
     # Reset the soft positions of motors and encoders to zero
-    test_axis.current_location = 0
+    forced_initial_location = 100  # To get around pretend limit switches when running with simulated hardware
+    test_axis.current_location = forced_initial_location
 
     # Check at right location
-    assert test_axis.current_location == 0, 'Reset Encoder Position Failed (current_location != 0).'
-    assert test_axis.expected_location == 0, 'Reset Encoder Position Failed (expected_location != 0).'
+    assert test_axis.current_location == forced_initial_location, \
+        'Reset Encoder Position Failed (current_location != {}).'.format(forced_initial_location)
+    assert test_axis.expected_location == forced_initial_location,\
+        'Reset Encoder Position Failed (expected_location != {}).'.format(forced_initial_location)
 
     # calculate steps per millimetre (useful later) and required steps
-    required_steps = args.length * test_axis.millimetres_per_step
+    required_steps = args.length / test_axis.millimetres_per_step
 
     # check if we need to go backwards or forwards?
     test_axis.forwards = required_steps >= 0
@@ -50,10 +53,12 @@ try:
         time.sleep(sleeptime)
 
     # calculate expected distance
-    expected_distance = test_axis.expected_location
-    encoder_distance = test_axis.current_location
+    expected_distance = test_axis.expected_location - forced_initial_location
+    encoder_distance = test_axis.current_location - forced_initial_location
 
     # print the distances for comparison
+    print('Requested Distance: ', end='')
+    print(args.length)
     print('Expected Distance (from motor): ', end='')
     print(expected_distance)
     print('Expected Distance (from encoder): ', end='')
