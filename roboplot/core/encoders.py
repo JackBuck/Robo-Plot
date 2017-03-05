@@ -98,7 +98,8 @@ class Encoder(threading.Thread):
             # But if it is not...
             if count_change == 2:
                 self._total_number_of_double_steps += 1
-                warnings.warn("Encoder moved more than one step ({})".format(self._total_number_of_double_steps))
+                warnings.warn("Encoder on thread {} moved more than one step ({})".format(
+                    self.name, self._total_number_of_double_steps))
                 count_change = 0  # We do not know whether we gained two or lost two steps - so do nothing!
 
             # Use a lock to make count variable thread safe
@@ -147,9 +148,18 @@ class StepperEncoderBinding:
         self._stepper = stepper
 
         # Patch the method on the stepper
-        self._stepper.step = self.new_motor_step_method
+        self._append_to_motor_step_method(self._addition_to_motor_step_method)
 
-    def new_motor_step_method(self):
+    def _append_to_motor_step_method(self, additional_method):
+        old_method = self._stepper.step
+
+        def new_step_method():
+            old_method()
+            additional_method()
+
+        self._stepper.step = new_step_method
+
+    def _addition_to_motor_step_method(self):
         if self._stepper.clockwise:
             self._non_resettable_motor_step_count += 1
             while self._motor_revolutions > self._encoder_revolutions - self._encoder_resolution:
