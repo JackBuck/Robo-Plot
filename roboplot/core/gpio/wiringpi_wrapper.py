@@ -23,7 +23,7 @@ wiringpi.wiringPiSetupGpio()  # Use BCM pin numbering
 pwm_pin = None  # We are only supporting one pwm pin
 
 
-def setup_pwm_pin_18():
+def setup_pwm_pin_18(initial_value: float = 0):
     """
     Sets up pin 18 PWM.
 
@@ -32,6 +32,9 @@ def setup_pwm_pin_18():
 
     Be warned -- This method will only allow you to setup pin 18 in a hardcoded way! You can however read the
     configuration variables used by looking at the pwm_pin attribute of this module.
+
+    Args:
+        initial_value (float): a value to set after setting up the pin for pwm
     """
     global pwm_pin
     if pwm_pin is not None:
@@ -47,6 +50,8 @@ def setup_pwm_pin_18():
     wiringpi.pwmSetRange(pwm_pin.pwm_range)  # Set PWM range (range of duty cycles)
     wiringpi.pwmSetClock(pwm_pin.pwm_clock_divisor)  # Set PWM clock divisor
     # Note: PWM Frequency = 19.2MHz / (pwm_divisor * pwm_range)
+
+    wiringpi.pwmWrite(pwm_pin.pin_number, initial_value)
 
 
 def write_pwm_to_pin_18(value: int):
