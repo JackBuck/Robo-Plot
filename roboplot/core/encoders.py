@@ -39,6 +39,9 @@ class Encoder(threading.Thread):
 
         # Default members
         self.state_sequence = ((0, 1), (0, 0), (1, 0), (1, 1))
+        if invert_revolutions:
+            self.state_sequence = tuple(reversed(self.state_sequence))
+
         self._update_events = set()
         self._lock = threading.Lock()
         self._count = 0
@@ -47,7 +50,6 @@ class Encoder(threading.Thread):
 
         # Members from initialiser arguments
         self._positions_per_revolution = positions_per_revolution
-        self.invert_revolutions = invert_revolutions
         self.a_pin = gpio_pins[0]
         self.b_pin = gpio_pins[1]
 
@@ -73,8 +75,7 @@ class Encoder(threading.Thread):
     @property
     def revolutions(self) -> float:
         """The number of partial revolutions completed since the last reset (or since initialisation)."""
-        sign = -1 if self.invert_revolutions else 1
-        return sign * self._count / self._positions_per_revolution
+        return self._count / self._positions_per_revolution
 
     def reset_position(self) -> None:
         """Resets the revolutions to 0."""
@@ -147,10 +148,7 @@ class StepperEncoderBinding:
         self._encoder_pin_a = encoder.a_pin
         self._encoder_pin_b = encoder.b_pin
         self._encoder_resolution = encoder.resolution
-        if encoder.invert_revolutions:
-            self._encoder_state_sequence = tuple(reversed(encoder.state_sequence))
-        else:
-            self._encoder_state_sequence = encoder.state_sequence
+        self._encoder_state_sequence = encoder.state_sequence
         self._encoder_state_index = self._encoder_state_sequence.index((GPIO.input(self._encoder_pin_a),
                                                                         GPIO.input(self._encoder_pin_b)))
 
