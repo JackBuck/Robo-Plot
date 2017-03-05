@@ -14,6 +14,8 @@ from roboplot.core.stepper_motors import StepperMotor
 class Encoder(threading.Thread):
     """This class is a collection of functions and variables to setup and use an encoder"""
 
+    state_sequence = ((0, 1), (0, 0), (1, 0), (1, 1))
+
     _lock = threading.Lock()
     _count = 0
     _exit_requested = False
@@ -39,12 +41,12 @@ class Encoder(threading.Thread):
 
         # In python, class members appear to be created when you refer to them
         self._positions_per_revolution = positions_per_revolution
-        self._invert_revolutions = invert_revolutions
-        self._a_pin = gpio_pins[0]
-        self._b_pin = gpio_pins[1]
+        self.invert_revolutions = invert_revolutions
+        self.a_pin = gpio_pins[0]
+        self.b_pin = gpio_pins[1]
 
         # Setup gpio_pins
-        for pin in (self._a_pin, self._b_pin):
+        for pin in (self.a_pin, self.b_pin):
             GPIO.setup(pin, GPIO.IN)
 
     @property
@@ -55,7 +57,7 @@ class Encoder(threading.Thread):
     @property
     def revolutions(self) -> float:
         """The number of partial revolutions completed since the last reset (or since initialisation)."""
-        sign = -1 if self._invert_revolutions else 1
+        sign = -1 if self.invert_revolutions else 1
         return sign * self._count / self._positions_per_revolution
 
     def reset_position(self):
@@ -107,39 +109,69 @@ class Encoder(threading.Thread):
         """
         Returns a number modulo 4 to indicate the current reading from the encoder.
         """
-        a = GPIO.input(self._a_pin)
-        b = GPIO.input(self._b_pin)
-
-        return self._compute_section(a, b)
-
-    @staticmethod
-    def _compute_section(a, b):
-        """
-        Returns a number modulo 4 to indicate the state of the encoder corresponding to the supplied pin readings.
-
-        Args:
-            a: the pin reading for the A channel (either 0 or 1)
-            b: the pin reading for the B channel (either 0 or 1)
-
-        Returns:
-            The value modulo 4 corresponding to the pin readings.
-        """
-        # return 3*a + (1-b)*(1-2*a)  # Some opaque magic...
-
-        if (a, b) == (0, 1):
-            return 0
-        elif (a, b) == (0, 0):
-            return 1
-        elif (a, b) == (1, 0):
-            return 2
-        elif (a, b) == (1, 1):
-            return 3
-        else:
-            assert False, "GPIO input pins returned unexpected values!"
+        a = GPIO.input(self.a_pin)
+        b = GPIO.input(self.b_pin)
+        return self.state_sequence.index((a, b))
 
 
 def _get_modular_representative(value, min, modulus):
     return ((value - min) % modulus) + min
+
+
+class StepperBoundToEncoder(StepperMotor):
+    _non_resettable_encoder_count = 0
+    _non_resettable_motor_step_count = 0
+
+    def __init__(self, encoder: Encoder, stepper: StepperMotor):
+        super().__init__(stepper._gpio_pins,
+                         stepper._sequence,
+                         stepper.steps_per_revolution,
+                         stepper._minimum_seconds_between_steps)
+
+        self._encoder_pin_a = encoder.a_pin
+        self._encoder_pin_b = encoder.b_pin
+        self._encoder_resolution = encoder.resolution
+        if encoder.invert_revolutions:
+            self._encoder_state_sequence = tuple(reversed(encoder.state_sequence))
+        else:
+            self._encoder_state_sequence = encoder.state_sequence
+        self._encoder_state_index = self._encoder_state_sequence.index(GPIO.input(self._encoder_pin_a),
+                                                                       GPIO.input(self._encoder_pin_b))
+
+    def step(self):
+        super().step()
+
+        if self.clockwise:
+            self._non_resettable_motor_step_count += 1
+            while self._motor_revolutions > self._encoder_revolutions - self._encoder_resolution:
+                self._step_encoder_forwards()
+        else:
+            self._non_resettable_motor_step_count -= 1
+            while self._motor_revolutions < self._encoder_revolutions + self._encoder_resolution:
+                self._step_encoder_backwards()
+
+    @property
+    def _motor_revolutions(self):
+        return self._non_resettable_motor_step_count / self.steps_per_revolution
+
+    @property
+    def _encoder_revolutions(self):
+        return self._non_resettable_encoder_count * self._encoder_resolution
+
+    def _step_encoder_forwards(self):
+        self._encoder_state_index = (self._encoder_state_index + 1) % len(self._encoder_state_sequence)
+        self._update_encoder_gpio()
+        self._non_resettable_encoder_count += 1
+
+    def _step_encoder_backwards(self):
+        self._encoder_state_index = (self._encoder_state_index - 1) % len(self._encoder_state_sequence)
+        self._update_encoder_gpio()
+        self._non_resettable_encoder_count -= 1
+
+    def _update_encoder_gpio(self):
+        target_state = self._encoder_state_sequence[self._encoder_state_index]
+        GPIO.cheeky_output(self._encoder_pin_a, target_state[0])
+        GPIO.cheeky_output(self._encoder_pin_b, target_state[1])
 
 
 class PretendEncoder:

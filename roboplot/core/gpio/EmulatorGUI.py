@@ -440,6 +440,34 @@ class GPIO:
         drawGPIOOut(channel)
 
     @staticmethod
+    @typeassert(int, int)
+    def cheeky_output(channel, state):
+        """Set the value returned by input(channel) whether it is an output pin or an input pin."""
+        global dictionaryPins
+        channel = str(channel)
+
+        GPIO.checkModeValidator()
+
+        if channel not in dictionaryPins:
+            raise Exception('gpio must be setup before used')
+
+        objPin = dictionaryPins[channel]
+
+        if state == GPIO.LOW:
+            state = "0"
+        elif state == GPIO.HIGH:
+            state = "1"
+        else:
+            raise ValueError("Invalid state requested!")
+
+        if objPin.SetMode == "IN":
+            objPin.In = state
+        elif objPin.SetMode == "OUT":
+            objPin.Out = state
+
+        drawGPIOOut(channel)
+
+    @staticmethod
     @typeassert(int)
     def input(channel):
         global dictionaryPins
