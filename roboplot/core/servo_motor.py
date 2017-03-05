@@ -34,18 +34,25 @@ class ServoMotor:
 
     def move_smoothly_to(self, target_position: float, seconds_to_take: float) -> None:
         """
-        Move smoothly between the current position and the target position.
+        If possible, move smoothly between the current position and the target position.
+
+        If the last set servo position is out of range (i.e. if we have not yet set the position) then the servo
+        motor will move directly to the target position.
 
         Args:
             target_position (float): the target position for the servo motor
             seconds_to_take (float): the time in seconds to take for the move
         """
-        num_positions = self._num_possible_positions_between(self._last_set_position, target_position)
-        target_positions = np.linspace(self._last_set_position, target_position, num_positions)
-        target_times = time.time() + np.linspace(0, seconds_to_take, num_positions)
-        for i in range(num_positions):
-            self.set_position(target_positions[i])
-            _wait_until(target_times[i])
+
+        if self.input_is_in_range(self._last_set_position):
+            num_positions = self._num_possible_positions_between(self._last_set_position, target_position)
+            target_positions = np.linspace(self._last_set_position, target_position, num_positions)
+            target_times = time.time() + np.linspace(0, seconds_to_take, num_positions)
+            for i in range(num_positions):
+                self.set_position(target_positions[i])
+                _wait_until(target_times[i])
+        else:
+            self.set_position(target_position)
 
     def _num_possible_positions_between(self, first, second):
         """Returns the number of possible positions between two positions, including both those positions."""
@@ -60,7 +67,10 @@ class ServoMotor:
         Args:
             pwm_input: the arbitrary input to use to set the servo orientation
         """
-        assert self.input_is_in_range(pwm_input), "Requested angle is outside the servo motor's range!"
+        assert self.input_is_in_range(pwm_input), \
+            "Requested position ({}) is outside the servo motor's range ({}, {})!".format(pwm_input,
+                                                                                          self.min_position,
+                                                                                          self.max_position)
         wiringpi_wrapper.write_pwm_to_pin_18(self._required_output(pwm_input))
         self._last_set_position = pwm_input
 
@@ -80,7 +90,7 @@ class ServoMotor:
             int: the corresponding value to be written by wiringpi
 
         """
-        return int(pwm_input * wiringpi_wrapper.pwm_pin.pwm_range)
+        return int(round(pwm_input * wiringpi_wrapper.pwm_pin.pwm_range))
 
     # noinspection PyMethodMayBeStatic
     def stop_pwm(self):
