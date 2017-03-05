@@ -1,7 +1,5 @@
 """This module defines the servo motor GPIO connection"""
 
-import warnings
-
 import roboplot.core.gpio.wiringpi_wrapper as wiringpi_wrapper
 
 
@@ -48,4 +46,4 @@ class ServoMotor:
 
     def stop_pwm(self):
         """Note that the servo motor will still remain engaged after the pi ceases to send a pwm signal."""
-        wiringpi.pwmWrite(self._gpio_pin, 0)
+        wiringpi_wrapper.write_pwm_to_pin_18(0)
