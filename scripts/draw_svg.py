@@ -27,6 +27,9 @@ try:
     svg_curves = svg.parse(args.filepath)
 
     time.sleep(args.wait)
+
+    hardware.both_axes.home()
+
     start_time = time.time()
 
     distance_travelled = 0

@@ -253,8 +253,13 @@ class AxisPair:
         self.x_axis.current_location = value[1]
 
     def home(self):
-        self.x_axis.home()
-        self.y_axis.home()
+        home_x = threading.Thread(target=self.x_axis.home)
+        home_y = threading.Thread(target=self.y_axis.home)
+
+        home_x.start()
+        home_y.start()
+        home_x.join()
+        home_y.join()
 
     @property
     def is_homed(self):
