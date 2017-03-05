@@ -42,10 +42,7 @@ x_home_position = stepper_control.HomePosition()
 y_home_position = stepper_control.HomePosition()
 
 # Swap in dummy objects if requested
-if config.real_hardware:
-    x_axis_motor = encoders.StepperBoundToEncoder(x_axis_encoder, x_axis_motor)
-    y_axis_motor = encoders.StepperBoundToEncoder(y_axis_encoder, y_axis_motor)
-else:
+if not config.real_hardware:
     def _define_pretend_limit_switches(home_position, separation):
         assert separation > 0
 
@@ -59,6 +56,9 @@ else:
 
     x_limit_switches = _define_pretend_limit_switches(x_home_position, 220)
     y_limit_switches = _define_pretend_limit_switches(y_home_position, 350)
+
+    x_axis_motor_encoder_binding = encoders.StepperEncoderBinding(x_axis_encoder, x_axis_motor)
+    y_axis_motor_encoder_binding = encoders.StepperEncoderBinding(y_axis_encoder, y_axis_motor)
 
 
 # Higher level objects

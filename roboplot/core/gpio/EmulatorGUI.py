@@ -305,21 +305,26 @@ def buttonClickRelease(self):
 
 
 def drawGPIOOut(gpioID):
+    # TODO: I believe these two 'global' keywords are undecessary since we are not modifying the variables...
     global dictionaryPins
     global dictionaryPinsTkinter
 
     gpioID = str(gpioID)
-    objPin = dictionaryPins[gpioID]
-    objBtn = dictionaryPinsTkinter[gpioID]
 
-    if objPin.SetMode == "OUT":
-        objBtn["text"] = "gpio" + str(gpioID) + "\nOUT=" + str(objPin.Out)
-        if str(objPin.Out) == "1":
-            objBtn.configure(background='tan2')
-            objBtn.configure(activebackground='tan2')
-        else:
-            objBtn.configure(background='DarkOliveGreen3')
-            objBtn.configure(activebackground='DarkOliveGreen3')
+    if gpioID in ("0", "1"):
+        return
+    else:
+        objPin = dictionaryPins[gpioID]
+        objBtn = dictionaryPinsTkinter[gpioID]
+
+        if objPin.SetMode == "OUT":
+            objBtn["text"] = "gpio" + str(gpioID) + "\nOUT=" + str(objPin.Out)
+            if str(objPin.Out) == "1":
+                objBtn.configure(background='tan2')
+                objBtn.configure(activebackground='tan2')
+            else:
+                objBtn.configure(background='DarkOliveGreen3')
+                objBtn.configure(activebackground='DarkOliveGreen3')
 
 
 def drawBindUpdateButtonIn(gpioID, In):

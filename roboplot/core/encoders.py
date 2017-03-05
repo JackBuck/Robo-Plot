@@ -4,6 +4,7 @@ This module defines a class to manage encoder activities.
 Author: Luke W (refactored by Jack)
 """
 
+import time
 import threading
 import warnings
 
@@ -105,6 +106,8 @@ class Encoder(threading.Thread):
                 with self._lock:
                     self._count += count_change
 
+            time.sleep(0.001)
+
     def _compute_current_section(self):
         """
         Returns a number modulo 4 to indicate the current reading from the encoder.
@@ -118,16 +121,18 @@ def _get_modular_representative(value, min, modulus):
     return ((value - min) % modulus) + min
 
 
-class StepperBoundToEncoder(StepperMotor):
+class StepperEncoderBinding:
+    """
+    Augments the step() method on a stepper motor with the ability to change the GPIO pins read by an encoder when
+    stepping.
+
+    This class is intended for use with simulated hardware.
+    """
     _non_resettable_encoder_count = 0
     _non_resettable_motor_step_count = 0
 
     def __init__(self, encoder: Encoder, stepper: StepperMotor):
-        super().__init__(stepper._gpio_pins,
-                         stepper._sequence,
-                         stepper.steps_per_revolution,
-                         stepper._minimum_seconds_between_steps)
-
+        # Pull info out of encoder
         self._encoder_pin_a = encoder.a_pin
         self._encoder_pin_b = encoder.b_pin
         self._encoder_resolution = encoder.resolution
@@ -135,13 +140,17 @@ class StepperBoundToEncoder(StepperMotor):
             self._encoder_state_sequence = tuple(reversed(encoder.state_sequence))
         else:
             self._encoder_state_sequence = encoder.state_sequence
-        self._encoder_state_index = self._encoder_state_sequence.index(GPIO.input(self._encoder_pin_a),
-                                                                       GPIO.input(self._encoder_pin_b))
+        self._encoder_state_index = self._encoder_state_sequence.index((GPIO.input(self._encoder_pin_a),
+                                                                        GPIO.input(self._encoder_pin_b)))
 
-    def step(self):
-        super().step()
+        # Pull info out of stepper
+        self._stepper = stepper
 
-        if self.clockwise:
+        # Patch the method on the stepper
+        self._stepper.step = self.new_motor_step_method
+
+    def new_motor_step_method(self):
+        if self._stepper.clockwise:
             self._non_resettable_motor_step_count += 1
             while self._motor_revolutions > self._encoder_revolutions - self._encoder_resolution:
                 self._step_encoder_forwards()
@@ -152,7 +161,7 @@ class StepperBoundToEncoder(StepperMotor):
 
     @property
     def _motor_revolutions(self):
-        return self._non_resettable_motor_step_count / self.steps_per_revolution
+        return self._non_resettable_motor_step_count / self._stepper.steps_per_revolution
 
     @property
     def _encoder_revolutions(self):

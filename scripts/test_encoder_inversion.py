@@ -4,6 +4,7 @@ import argparse
 
 import context
 import roboplot.core.hardware as hardware
+from roboplot.core.stepper_control import Axis
 
 parser = argparse.ArgumentParser(
     description='Determine whether the encoders need to be inverted in the hardware module.'
@@ -12,7 +13,7 @@ parser = argparse.ArgumentParser(
 parser.parse_args()
 
 
-def TestEncoder(axis, axis_name):
+def TestEncoder(axis: Axis, axis_name: str):
     initial_expected_location = axis.expected_location
     initial_current_location = axis.current_location
 
