@@ -140,10 +140,12 @@ class StepperEncoderBinding:
 
     This class is intended for use with simulated hardware.
     """
-    _non_resettable_encoder_count = 0
-    _non_resettable_motor_step_count = 0
 
     def __init__(self, encoder: Encoder, stepper: StepperMotor):
+        # Default info
+        self._non_resettable_encoder_count = 0
+        self._non_resettable_motor_step_count = 0
+
         # Pull info out of encoder
         self._encoder_pin_a = encoder.a_pin
         self._encoder_pin_b = encoder.b_pin
