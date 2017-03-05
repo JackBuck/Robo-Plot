@@ -13,7 +13,15 @@ from roboplot.core.stepper_motors import StepperMotor
 
 
 class Encoder(threading.Thread):
-    """This class is a collection of functions and variables to setup and use an encoder"""
+    """
+    This class is a collection of functions and variables to setup and use an encoder.
+
+    The encoder loop runs on its own thread, with a small sleep.
+
+    **update_events (set):** Clients wishing to synchronise with the encoder's thread should add a threading.Event()
+                             to this container. All events in update_events are 'set' at the end of the encoder loop. It
+                             is up to the client to 'clear' them when appropriate.
+    """
 
     state_sequence = ((0, 1), (0, 0), (1, 0), (1, 1))
 
@@ -22,7 +30,7 @@ class Encoder(threading.Thread):
     _exit_requested = False
     _total_number_of_double_steps = 0
 
-    update_events = set()
+    update_events = set()  # Add threading.Event() objects to be 'set' at the end of each iteration of the encoder loop
 
     def __init__(self, gpio_pins, positions_per_revolution, invert_revolutions=False, thread_name=None):
         """
@@ -64,33 +72,23 @@ class Encoder(threading.Thread):
         return sign * self._count / self._positions_per_revolution
 
     def reset_position(self):
-        """
-        This function resets the position to 0
-        """
+        """Resets the revolutions to 0."""
         with self._lock:
             self._count = 0
 
     def exit_thread(self):
-        """
-        This function sets up the conditions to kill the thread
-
-        Shortly after calling this function the thread will exit
-        """
+        """Shortly after calling this function the thread will exit."""
         with self._lock:
             self._exit_requested = True  # TODO: Is there any point in locking here? We do not lock when we read it...
 
-    def _encoder_loop(self):
-        """
-        Loop to update the encoder count until an exit is requested.
-
-        Returns:
-            None
-        """
+    def _encoder_loop(self) -> None:
+        """Loop to update the encoder count until an exit is requested."""
 
         current_section = self._compute_current_section()
 
         # Infinite while loop until program ends, at which point a flag can be set from another thread
         while not self._exit_requested:
+            # Compute which of the four possible states the encoder is in
             previous_section = current_section
             current_section = self._compute_current_section()
 
@@ -116,9 +114,7 @@ class Encoder(threading.Thread):
             time.sleep(0.001)  # If we do not sleep, then the encoder will hog the cpu
 
     def _compute_current_section(self):
-        """
-        Returns a number modulo 4 to indicate the current reading from the encoder.
-        """
+        """Returns a number modulo 4 to indicate the current reading from the encoder."""
         a = GPIO.input(self.a_pin)
         b = GPIO.input(self.b_pin)
         return self.state_sequence.index((a, b))
