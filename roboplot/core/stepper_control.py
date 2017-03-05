@@ -6,6 +6,8 @@ This module controls the 2D drive system for the plotter.
 All distances in the module are expressed in MILLIMETRES.
 
 """
+
+import threading
 import time
 import warnings
 
@@ -66,6 +68,10 @@ class Axis:
         self._invert_axis = invert_axis
         self._position_offset = 0
 
+        # Make it possible for us to wait for an encoder update event
+        self._encoder_update_event = threading.Event()
+        self._encoder.update_events.add(self._encoder_update_event)
+
     @property
     def current_location(self):
         """
@@ -76,6 +82,7 @@ class Axis:
         Returns:
             the current position of the axis.
         """
+        self._encoder_update_event.wait()
         sign = -1 if self._invert_axis else 1
         return sign * (self._encoder.revolutions * self._lead + self._position_offset)
 
@@ -207,7 +214,11 @@ class Axis:
 
     def _step_unsafe(self):
         """Step without paying attention to the limit switches."""
+        # Waiting before the step and clearing after will hopefully allow the encoder to do it's update while we are
+        # doing other things
+        self._encoder_update_event.wait()
         self._motor.step()
+        self._encoder_update_event.clear()
 
     def nearest_measureable_location(self, target_location):
         """

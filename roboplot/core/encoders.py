@@ -22,6 +22,8 @@ class Encoder(threading.Thread):
     _exit_requested = False
     _total_number_of_double_steps = 0
 
+    update_events = set()
+
     def __init__(self, gpio_pins, positions_per_revolution, invert_revolutions=False, thread_name=None):
         """
         Initialises the encoder class.
@@ -107,7 +109,11 @@ class Encoder(threading.Thread):
                 with self._lock:
                     self._count += count_change
 
-            time.sleep(0.001)
+            # Signal to waiters that we have just updated
+            for update_event in self.update_events:
+                update_event.set()
+
+            time.sleep(0.001)  # If we do not sleep, then the encoder will hog the cpu
 
     def _compute_current_section(self):
         """
