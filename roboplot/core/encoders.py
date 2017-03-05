@@ -160,13 +160,16 @@ class StepperEncoderBinding:
         self._stepper.step = new_step_method
 
     def _addition_to_motor_step_method(self):
+        encoder_steps = 0
         if self._stepper.clockwise:
             self._non_resettable_motor_step_count += 1
-            while self._motor_revolutions > self._encoder_revolutions - self._encoder_resolution:
+            while self._motor_revolutions > self._encoder_revolutions + self._encoder_resolution:
+                encoder_steps += 1
                 self._step_encoder_forwards()
         else:
             self._non_resettable_motor_step_count -= 1
-            while self._motor_revolutions < self._encoder_revolutions + self._encoder_resolution:
+            while self._motor_revolutions < self._encoder_revolutions - self._encoder_resolution:
+                encoder_steps += 1
                 self._step_encoder_backwards()
 
     @property
