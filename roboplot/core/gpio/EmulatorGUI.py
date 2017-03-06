@@ -364,7 +364,7 @@ class GPIO:
     #gpio LIBRARY Functions
     @typeassert(int)
     def setmode(mode):
-        time.sleep(1)
+        # time.sleep(1)
         if(mode == GPIO.BCM):
             GPIO.setModeDone = True
         else:
