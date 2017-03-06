@@ -5,12 +5,15 @@ import roboplot.imgproc.image_analysis as IP
 
 
 def compute_perimeter_positions(width, height, photo_size):
-    """
-    Finds the positions needed for the camera to capture the entire border of the page.
-    :param width:
-    :param height:
-    :param photo_size:
-    :return:
+    """Finds the positions needed for the camera to capture the entire border of page.
+    
+    Args:
+        width (int): The width of the paper (x axis).
+        height (int): The height of the paper (y axis).
+        photo_size (int): The size of the square photo in mm
+        
+    Returns:
+        positions (list of points) The path required to scan border of the page.
     """
 
     positions = []
@@ -48,12 +51,15 @@ def compute_perimeter_positions(width, height, photo_size):
     
     
 def compute_positions(width, height, photo_size):
-    """
-    Finds the positions needed for the camera to capture the entire border of the page.
-    :param width:
-    :param height:
-    :param photo_size:
-    :return:
+    """Finds the positions needed for the camera to capture the entire page.
+    
+    Args:
+        width (int): The width of the paper (x axis).
+        height (int): The height of the paper (y axis).
+        photo_size (int): The size of the square photo in mm
+        
+    Returns:
+        positions (list of points) The path required to scan entire page.
     """
 
     positions = []
