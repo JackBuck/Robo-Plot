@@ -4,7 +4,6 @@ import os
 import time
 import unittest
 
-import numpy as np
 import cv2
 
 import context

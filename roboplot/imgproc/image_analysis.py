@@ -434,57 +434,57 @@ class InterpolateAverages:
         
 def find_start_direction(img):
     """
-    This function takes an image and determine shich direction the path leaves the centre from.
-    Note in cases where the start of th path is at an angle (see northnortheast and eastnortheast
+    This function takes an image and determine which direction the path leaves the centre from.
+    Note in cases where the start of the path is at an angle (see northnortheast and eastnortheast
     test cases) the result is sub optimal however the method should still be able to cope with 
     these systems by recognising that the path needs to be rotated. If this is not the case 
     this method will need to be revisited.
     
     Args:
-        img: The image whose centre is at the centre of the gree triangle which has now been made
-        white.
+        img: The image whose centre is at the centre of the green triangle which has now been made
+             white.
 
     Returns:
-        enum orientation.
+        enum.IntEnum orientation.
     """
 
     # Extract centre of the image.
 
-    img_width = img.shape[0]
-    img_height = img.shape[1]
+    img_height = img.shape[0]
+    img_width = img.shape[1]
 
-    sub_array = img[int(img_width/3):int(2*img_width/3), int(img_height/3):int(2*img_height/3)]
+    sub_array = img[int(img_height/3):int(2*img_height/3), int(img_width/3):int(2*img_width/3)]
 
     # Determine which orientation contains the most white pixels.
     # North
     north_sub_array = sub_array[:int(sub_array.shape[0] / 2), :]
-    north_num_white_pixels = north_sub_array.sum()
+    north_whiteness_total = north_sub_array.sum()
 
     # East
     east_sub_array = sub_array[:, int(sub_array.shape[1] / 2):]
-    east_num_white_pixels = east_sub_array.sum()
+    east_whiteness_total = east_sub_array.sum()
 
     # South
     south_sub_array = sub_array[int(sub_array.shape[0] / 2):, :]
-    south_num_white_pixels = south_sub_array.sum()
+    south_whiteness_total = south_sub_array.sum()
 
     # West
     west_sub_array = sub_array[:, :int(sub_array.shape[1] / 2)]
-    west_num_white_pixels = west_sub_array.sum()
+    west_whiteness_total = west_sub_array.sum()
 
-    max_num_pixels = max(north_num_white_pixels, east_num_white_pixels,
-                         south_num_white_pixels, west_num_white_pixels)
+    max_num_pixels = max(north_whiteness_total, east_whiteness_total,
+                         south_whiteness_total, west_whiteness_total)
 
-    if max_num_pixels == north_num_white_pixels:
+    if max_num_pixels == north_whiteness_total:
         return Direction.NORTH
 
-    if max_num_pixels == east_num_white_pixels:
+    if max_num_pixels == east_whiteness_total:
         return Direction.EAST
 
-    if max_num_pixels == south_num_white_pixels:
+    if max_num_pixels == south_whiteness_total:
         return Direction.SOUTH
 
-    if max_num_pixels == west_num_white_pixels:
+    if max_num_pixels == west_whiteness_total:
         return Direction.WEST
         
         

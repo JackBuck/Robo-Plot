@@ -1,10 +1,11 @@
-import context
+#!/usr/bin/env python3
+
 import cv2
 import argparse
-import roboplot.imgproc.image_analysis as image_analysis
-import roboplot.core.config as config
 
-config.init_()
+import context
+import roboplot.imgproc.image_analysis as image_analysis
+
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Find start direction from given image')
@@ -18,6 +19,5 @@ image = cv2.imread(inFile, cv2.IMREAD_GRAYSCALE)
 
 start_direction = image_analysis.find_start_direction(image)
 
-print(start_direction)
-cv2.waitKey(0)
-print("Done")
+print('Done, start direction is: ' + str(start_direction))
+
