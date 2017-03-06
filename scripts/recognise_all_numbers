@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Repeatedly call the recognise number script
+#
+# Example usage:
+# ./recognise_all_numbers ../../Resources/NumberRecognition/*deg.jpg
+#
+
+script_directory=`dirname $0`
+
+for i in "$@"
+do
+  echo `basename $i .jpg`
+  $script_directory/recognise_number.py $i -r || { echo ERROR: recognise_number.py failed; exit 1; }
+  echo
+done
