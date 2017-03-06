@@ -13,7 +13,7 @@ class DummyCamera:
         self._map = cv2.imread(config.debug_image_file_path)
 
         if self._map is None:
-            raise TypeError
+            self._map = np.zeros((4200, 5940) + (3,), np.uint8)
 
         # Resize to make it A4 ratio with 40mm = 200 pixels
         self._map = cv2.resize(self._map, (4200, 5940))
