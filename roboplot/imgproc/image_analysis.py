@@ -6,9 +6,6 @@ import time
 import numpy as np
 import cv2
 
-
-
-global white_threshold
 white_threshold = 130
 
 
@@ -432,3 +429,64 @@ class InterpolateAverages:
             error = 0.0
 
         return error
+
+        
+        
+def find_start_direction(img):
+    """
+    This function takes an image and determine shich direction the path leaves the centre from.
+    Note in cases where the start of th path is at an angle (see northnortheast and eastnortheast
+    test cases) the result is sub optimal however the method should still be able to cope with 
+    these systems by recognising that the path needs to be rotated. If this is not the case 
+    this method will need to be revisited.
+    
+    Args:
+        img: The image whose centre is at the centre of the gree triangle which has now been made
+        white.
+
+    Returns:
+        enum orientation.
+    """
+
+    # Extract centre of the image.
+
+    img_width = img.shape[0]
+    img_height = img.shape[1]
+
+    sub_array = img[int(img_width/3):int(2*img_width/3), int(img_height/3):int(2*img_height/3)]
+
+    # Determine which orientation contains the most white pixels.
+    # North
+    north_sub_array = sub_array[:int(sub_array.shape[0] / 2), :]
+    north_num_white_pixels = north_sub_array.sum()
+
+    # East
+    east_sub_array = sub_array[:, int(sub_array.shape[1] / 2):]
+    east_num_white_pixels = east_sub_array.sum()
+
+    # South
+    south_sub_array = sub_array[int(sub_array.shape[0] / 2):, :]
+    south_num_white_pixels = south_sub_array.sum()
+
+    # West
+    west_sub_array = sub_array[:, :int(sub_array.shape[1] / 2)]
+    west_num_white_pixels = west_sub_array.sum()
+
+    max_num_pixels = max(north_num_white_pixels, east_num_white_pixels,
+                         south_num_white_pixels, west_num_white_pixels)
+
+    if max_num_pixels == north_num_white_pixels:
+        return Direction.NORTH
+
+    if max_num_pixels == east_num_white_pixels:
+        return Direction.EAST
+
+    if max_num_pixels == south_num_white_pixels:
+        return Direction.SOUTH
+
+    if max_num_pixels == west_num_white_pixels:
+        return Direction.WEST
+        
+        
+        
+        
