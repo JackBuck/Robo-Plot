@@ -10,9 +10,10 @@ variables available:
 """
 
 import os
+import roboplot.config as config
 
 
-is_emulator = os.environ.get('ROBOPLOT', 0) == 0
+is_emulator = not config.real_hardware
 
 if is_emulator:
     from roboplot.core.camera.dummy_camera import DummyCamera as Camera
