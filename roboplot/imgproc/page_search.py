@@ -83,8 +83,7 @@ def compute_positions(width, height, photo_size):
         current_path_point[1] = max_x_pos
         positions.append(current_path_point.copy())
         
-        # Increment y once.
-        
+        # Increment y once.   
         if last_row:
             break
         elif current_path_point[0] + photo_size > max_y_pos:
