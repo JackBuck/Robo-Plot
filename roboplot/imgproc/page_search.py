@@ -64,6 +64,8 @@ def compute_positions(width, height, photo_size):
 
     positions = []
     current_path_point = [int(photo_size/2), int(photo_size/2)]
+    
+    # Set up min/max positions for camera to view entire page.
     max_x_pos = width - int(photo_size/2)
     max_y_pos = height - int(photo_size/2)
     
