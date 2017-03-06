@@ -357,7 +357,7 @@ class GPIO:
     # gpio LIBRARY Functions
     @typeassert(int)
     def setmode(mode):
-        # time.sleep(1)
+        app.loaded_event.wait()  # So that we wait for the minimum possible time
         if (mode == GPIO.BCM):
             GPIO.setModeDone = True
         else:
