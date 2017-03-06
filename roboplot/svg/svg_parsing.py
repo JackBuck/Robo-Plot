@@ -97,7 +97,7 @@ class ViewBox:
 class SVGPath(Curve):
     """A curve which wraps an svgpathtools.Path object."""
 
-    _evaluation_tolerance_mm = 0.01
+    _evaluation_tolerance_mm = 0.1
 
     def __init__(self, path: svg.Path, mm_per_unit: float):
         """
