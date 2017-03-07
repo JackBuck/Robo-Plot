@@ -82,7 +82,6 @@ class Axis:
         Returns:
             the current position of the axis.
         """
-        self._encoder_update_event.wait()
         sign = -1 if self._invert_axis else 1
         return sign * (self._encoder.revolutions * self._lead + self._position_offset)
 
