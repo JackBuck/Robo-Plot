@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
 
-
+import os
 import unittest
 import time
 
 import cv2
 
 import context
+import roboplot.config as config
 import roboplot.imgproc.colour_detection as cd
-# noinspection PyUnresolvedReferences
-# import test_runner
 
 
 # Each set of tests can be in their own class, but it must derive from unnit.TestCase
 class ColourDetectionTest(unittest.TestCase):
 
-    # Each test has its own function here. There are lots of different functions to use in tests
-    def testPass(self):
-        self.assertTrue(True)
+    def __init__(self, *args, **kwargs):
+        super(ColourDetectionTest, self).__init__(*args, **kwargs)
+        self.path_to_test_data = os.path.join(config.test_data_dir, 'ColourDetectionTest')
 
     def testGreenDetection(self):
         # Load image for testing.
-        image = cv2.imread("../resources/test_data/ColourDetectionTest/testGreenDetection.jpg")
+        image = cv2.imread(os.path.join(self.path_to_test_data, 'testGreenDetection.jpg'))
 
         # Check image was loaded correctly
         if image is None:
@@ -44,7 +43,7 @@ class ColourDetectionTest(unittest.TestCase):
 
     def testRedDetection(self):
         # Load image for testing.
-        image = cv2.imread("../resources/test_data/ColourDetectionTest/testRedDetection.jpg")
+        image = cv2.imread(os.path.join(self.path_to_test_data, 'testRedDetection.jpg'))
 
         # Check image was loaded correctly
         if image is None:
