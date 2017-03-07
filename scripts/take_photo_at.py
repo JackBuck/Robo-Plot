@@ -14,7 +14,7 @@ from roboplot.core.camera.camera_wrapper import Camera
 
 try:
     # Commandline arguments
-    parser = argparse.ArgumentParser(description='Draw a circle.')
+    parser = argparse.ArgumentParser(description='Moves to given location and takes photo')
     parser.add_argument('-c', '--centre', metavar=('y', 'x'), nargs=2, type=float, default=[150, 100],
                         help='the centre (y,x) of the photo wanted')
     parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
