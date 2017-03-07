@@ -53,6 +53,7 @@ try:
         time.sleep(sleeptime)
 
     # calculate expected distance
+    time.sleep(0.5)  # To give the steppers time to settle (nb this should be masses more than we need!)
     expected_distance = test_axis.expected_location - forced_initial_location
     encoder_distance = test_axis.current_location - forced_initial_location
 
