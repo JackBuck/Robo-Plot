@@ -56,15 +56,16 @@ try:
     time.sleep(0.5)  # To give the steppers time to settle (nb this should be masses more than we need!)
     expected_distance = test_axis.expected_location - forced_initial_location
     encoder_distance = test_axis.current_location - forced_initial_location
+    difference = abs(encoder_distance - expected_distance)
 
     # print the distances for comparison
-    print('Requested Distance: ', end='')
-    print(args.length)
-    print('Expected Distance (from motor): ', end='')
-    print(expected_distance)
-    print('Expected Distance (from encoder): ', end='')
-    print(encoder_distance)
-
+    print('Requested Distance: {}'.format(args.length))
+    print('Expected Distance (from motor): {}'.format(expected_distance))
+    print('Expected Distance (from encoder): {}'.format(encoder_distance))
+    print('Encoder Resolution (in mm): {}'.format(test_axis.millimetres_per_encoder_mark))
+    print('Stepper Resolution (in mm): {}'.format(test_axis.millimetres_per_step))
+    print('Possible steps dropped : {}(if on encoder)'.format(difference / test_axis.millimetres_per_encoder_mark))
+    print('                         {}(if on stepper)'.format(difference / test_axis.millimetres_per_step))
 
 finally:
     hardware.cleanup()
