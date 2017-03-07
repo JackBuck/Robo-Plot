@@ -44,7 +44,7 @@ try:
     required_steps = abs(required_steps)
 
     # calculate sleep time
-    totaltime = args.length / args.pen_millimetres_per_second
+    totaltime = abs(args.length) / args.pen_millimetres_per_second
     sleeptime = totaltime / required_steps
 
     # run for the required number of steps
