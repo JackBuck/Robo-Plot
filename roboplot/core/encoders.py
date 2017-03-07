@@ -120,7 +120,7 @@ class Encoder(threading.Thread):
             for update_event in update_events_not_set_at_beginning_of_loop:
                 update_event.set()
 
-            time.sleep(0.001)  # If we do not sleep, then the encoder will hog the cpu
+            time.sleep(0.0001)  # If we do not sleep, then the encoder will hog the cpu
 
     def _compute_current_section(self) -> int:
         """Returns a number modulo 4 to indicate the current reading from the encoder."""
