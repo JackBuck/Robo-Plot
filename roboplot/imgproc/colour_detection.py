@@ -1,7 +1,8 @@
 # import the necessary packages
+import os
+
 import numpy as np
 import cv2
-import os
 
 import roboplot.config as config
 

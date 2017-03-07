@@ -1,9 +1,12 @@
-import context
-import cv2
 import argparse
+
+import cv2
+import numpy as np
+
+import context
 import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.colour_detection as cd
-import numpy as np
+
 
 
 # Commandline arguments

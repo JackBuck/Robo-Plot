@@ -1,11 +1,13 @@
 # coding=utf-8
-import numpy as np
-import roboplot.imgproc.image_analysis as IP
-import cv2
 import math
+
+import numpy as np
+import cv2
+
+import roboplot.imgproc.image_analysis as IP
 import roboplot.imgproc.colour_detection as CD
 import roboplot.core.camera.camera_wrapper as camera_wrapper
-import roboplot.imgproc.perimeter_search as perimeter_search
+import roboplot.imgproc.page_search as page_search
 import roboplot.core.curves as curves
 import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
@@ -52,7 +54,7 @@ def find_green_triangle(pen_speed, min_size):
     hardware.both_axes.home()
 
     # Calculate the list of positions photos need to be taken at to walk round the outside of the paper.
-    camera_positions = perimeter_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
+    camera_positions = page_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
     green_found = False
 
     # Walk round to each position and analyse the photo taken at that position.
@@ -68,7 +70,7 @@ def find_green_triangle(pen_speed, min_size):
             break
 
     if not green_found:
-        raise AssertionError("No green was found along perimeter")
+        raise AssertionError("No green was found on paper")
 
     return camera_centre[0] + displacement_y, camera_centre[1] + displacement_x
 

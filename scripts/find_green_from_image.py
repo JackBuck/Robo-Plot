@@ -2,9 +2,6 @@ import context
 import cv2
 import argparse
 import roboplot.imgproc.colour_detection as cd
-import roboplot.core.config as config
-
-config.init_()
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Find green in a given image')

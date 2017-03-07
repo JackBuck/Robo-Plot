@@ -2,6 +2,8 @@
 
 import os
 import unittest
+import time
+
 import cv2
 
 import context
@@ -65,7 +67,7 @@ class ColourDetectionTest(unittest.TestCase):
 
 # Running this runs all the tests and outputs their results.
 def main():
-    unittest.main(testRunner=test_runner.CustomTestRunner())
+    unittest.main()
 
 
 if __name__ == '__main__':
