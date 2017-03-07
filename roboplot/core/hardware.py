@@ -34,7 +34,7 @@ y_limit_switches = (limit_switches.LimitSwitch(gpio_pin=9),  # Motor side
 x_axis_encoder = encoders.Encoder(gpio_pins=(0, 1), positions_per_revolution=96, invert_revolutions=False,
                                   thread_name="x axis encoder")
 x_axis_encoder.start()
-y_axis_encoder = encoders.Encoder(gpio_pins=(14, 15), positions_per_revolution=96, invert_revolutions=True,
+y_axis_encoder = encoders.Encoder(gpio_pins=(14, 15), positions_per_revolution=96, invert_revolutions=False,
                                   thread_name="y axis encoder")
 y_axis_encoder.start()
 
