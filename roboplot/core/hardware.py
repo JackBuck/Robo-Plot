@@ -72,7 +72,6 @@ if not config.real_hardware:
 both_axes = stepper_control.AxisPair(y_axis, x_axis)
 
 pen = liftable_pen.LiftablePen(servo=servo, position_when_down=0.03, position_when_up=0.044)
-pen.lift()
 plotter = plotter_module.Plotter(axes=both_axes, pen=pen)
 
 if __debug__:
