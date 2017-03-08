@@ -26,11 +26,5 @@ if __name__ == '__main__':
     else:
         recognised_number = number_recognition.recognise_number(img)
 
-    print("Recognised number after rotation search: {!r}".format(recognised_number))
-
-    # Extract the location
-    try:
-        spot_location = number_recognition.extract_spots(img)[0].pt
-    except IndexError:
-        spot_location = 'No spot!!'
-    print("Probable spot location: {!r}".format(spot_location))
+    print("Recognised number: {!r}".format(recognised_number.numeric_value))
+    print("Probable spot location: {!r}".format(recognised_number.dot_location_yx))

@@ -7,6 +7,21 @@ import numpy as np
 import pytesseract
 
 
+class Number:
+    """Represents a number on the dot-to-dot picture."""
+
+    def __init__(self, numeric_value: int, dot_location_yx: tuple):
+        """
+        Create an instance to represent a number on the dot-to-dot picture.
+        
+        Args:
+            numeric_value (int): the ordinal associated with the dot-to-dot number\n
+            dot_location_yx (tuple): a pair (y,x) of floats specifying the location of the dot in the photo
+        """
+        self.numeric_value = numeric_value
+        self.dot_location_yx = dot_location_yx
+
+
 def read_image(file_path: str) -> np.ndarray:
     """
     Load an image from a supplied file path.
@@ -24,7 +39,7 @@ def read_image(file_path: str) -> np.ndarray:
         raise TypeError("Could not open image file: {}".format(file_path))
 
 
-def recognise_rotated_number(img: int):
+def recognise_rotated_number(img) -> Number:
     """
     Extract an integer from a potentially rotated image containing text such as '23.'.
 
@@ -35,26 +50,23 @@ def recognise_rotated_number(img: int):
         img (np.ndarray): the image
 
     Returns:
-        int: the recognised integer
+        Number: the number detected in the image
     """
 
     img = _clean_image(img)
-    spot = _extract_first_spot_location(img)
-    current_angle = _estimate_degrees_from_number_centre_to_spot(img, spot)
-    desired_angle = -30
-    rotated_image = _rotate_image(desired_angle - current_angle, img)
-    return _recognise_number_in_clean_image(rotated_image)
+    spot = _extract_first_spot_from_clean_image(img)
 
+    if spot is not None:
+        current_angle = _estimate_degrees_from_number_centre_to_spot(img, spot)
+        desired_angle = -30
+        rotated_image = _rotate_image(desired_angle - current_angle, img)
+        numeric_value = _recognise_number_in_clean_image(rotated_image)
+        spot_location = spot.pt
+    else:
+        numeric_value = None
+        spot_location = None
 
-def _extract_first_spot_location(img):
-    possible_spots = _extract_spots_from_clean_image(img)
-    if len(possible_spots) == 0:
-        raise ValueError("Could not find a spot in the image")
-
-    elif len(possible_spots) > 1:
-        warnings.warn("{} possible spots found - using the first".format(len(possible_spots)))
-
-    return possible_spots[0]
+    return Number(numeric_value, dot_location_yx=spot_location)
 
 
 def _rotate_image(degrees, img):
@@ -99,36 +111,7 @@ def _crop_about(img, centre, new_side_length):
     return cropped_img, new_centre
 
 
-def extract_spots(img: np.ndarray):
-    """
-    Returns a list of cv2.KeyPoint instances representing the spots found in the image.
-
-    Args:
-        img (np.ndarray): the image
-
-    Returns:
-        list<cv2.KeyPoint>: keypoints at the spots found in the image
-    """
-    img = _clean_image(img)
-    return _extract_spots_from_clean_image(img)
-
-
-def _extract_spots_from_clean_image(img):
-    params = cv2.SimpleBlobDetector_Params()
-    params.filterByArea = True
-    params.minArea = 20  # The dot in 20pt font has area of about 30
-    params.filterByCircularity = True
-    params.minCircularity = 0.7
-    params.filterByConvexity = True
-    params.minConvexity = 0.8
-    params.filterByInertia = True
-    params.minInertiaRatio = 0.6
-    detector = cv2.SimpleBlobDetector_create(params)
-    keypoints = detector.detect(img)
-    return keypoints
-
-
-def recognise_number(img: np.ndarray) -> int:
+def recognise_number(img: np.ndarray) -> Number:
     """
     Extract an integer from an (correctly oriented) image containing text such as '23.'.
 
@@ -136,13 +119,16 @@ def recognise_number(img: np.ndarray) -> int:
         img (np.ndarray): a image
 
     Returns:
-        int: the number detected in the image (or None if the expected format was not met)
+        Number: the number detected in the image
     """
     img = _clean_image(img)
-    return _recognise_number_in_clean_image(img)
+    numeric_value = _recognise_number_in_clean_image(img)
+    spot = _extract_first_spot_from_clean_image(img)
+    spot_location = spot.pt if spot is not None else None
+    return Number(numeric_value, dot_location_yx=spot_location)
 
 
-def _recognise_number_in_clean_image(img):
+def _recognise_number_in_clean_image(img) -> int:
     recognised_text = _recognise_number_text(img)
     return _text_to_number(recognised_text)
 
@@ -169,6 +155,29 @@ def _text_to_number(recognised_text: str) -> int:
         return None
     else:
         return int(match.group(1))
+
+
+def _extract_first_spot_from_clean_image(img):
+    possible_spots = _extract_spots_from_clean_image(img)
+    if len(possible_spots) == 0:
+        return None
+    else:
+        return possible_spots[0]
+
+
+def _extract_spots_from_clean_image(img):
+    params = cv2.SimpleBlobDetector_Params()
+    params.filterByArea = True
+    params.minArea = 20  # The dot in 20pt font has area of about 30
+    params.filterByCircularity = True
+    params.minCircularity = 0.7
+    params.filterByConvexity = True
+    params.minConvexity = 0.8
+    params.filterByInertia = True
+    params.minInertiaRatio = 0.6
+    detector = cv2.SimpleBlobDetector_create(params)
+    keypoints = detector.detect(img)
+    return keypoints
 
 
 def __draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
