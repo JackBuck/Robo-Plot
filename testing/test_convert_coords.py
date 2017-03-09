@@ -17,9 +17,10 @@ class PathFollowingTest(unittest.TestCase):
         self.path_to_test_data = os.path.join(config.test_data_dir, 'PathFollowingTest')
 
     def testConvertFromSouth(self):
-        config.x_pixels_to_points_scale = 1
-        config.y_pixels_to_points_scale = 1
-        points = [(0, 0), (3, 10), (5, 12), (7, 18), (9, 17)]
+        config.X_PIXELS_TO_POINTS_SCALE = 1
+        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.CAMERA_RESOLUTION = (20, 20)
+        points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
         scan_direction = image_analysis.Direction.SOUTH
@@ -28,9 +29,10 @@ class PathFollowingTest(unittest.TestCase):
         self.assertEqual(output, expected_output_points)
 
     def testConvertFromNorth(self):
-        config.x_pixels_to_points_scale = 1
-        config.y_pixels_to_points_scale = 1
-        points = [(0, 0), (3, 10), (5, 12), (7, 18), (9, 17)]
+        config.X_PIXELS_TO_POINTS_SCALE = 1
+        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.CAMERA_RESOLUTION = (20, 20)
+        points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
         scan_direction = image_analysis.Direction.NORTH
@@ -39,9 +41,10 @@ class PathFollowingTest(unittest.TestCase):
         self.assertEqual(output, expected_output_points)
 
     def testConvertFromEast(self):
-        config.x_pixels_to_points_scale = 1
-        config.y_pixels_to_points_scale = 1
-        points = [(0, 0), (3, 10), (5, 12), (7, 18), (9, 17)]
+        config.X_PIXELS_TO_POINTS_SCALE = 1
+        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.CAMERA_RESOLUTION = (20, 20)
+        points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
         scan_direction = image_analysis.Direction.EAST
@@ -50,14 +53,24 @@ class PathFollowingTest(unittest.TestCase):
         self.assertEqual(output, expected_output_points)
 
     def testConvertFromWest(self):
-        config.x_pixels_to_points_scale = 1
-        config.y_pixels_to_points_scale = 1
-        points = [(0, 0), (3, 10), (5, 12), (7, 18), (9, 17)]
+        config.X_PIXELS_TO_POINTS_SCALE = 1
+        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.CAMERA_RESOLUTION = (20, 20)
+        points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
         scan_direction = image_analysis.Direction.WEST
         output = path_following.convert_to_global_coords(points, scan_direction, centre)
         expected_output_points = [(50, 40), (60, 37), (62, 35), (68, 33), (67, 31)]
+        self.assertEqual(output, expected_output_points)
+
+    def testConvertWithDefaultParam(self):
+        points = [(0, 100), (13, 120), (85, 122), (27, 128), (150, 130)]
+        centre = (50, 40)
+
+        scan_direction = image_analysis.Direction.SOUTH
+        output = path_following.convert_to_global_coords(points, scan_direction, centre)
+        expected_output_points = [(50, 40), (52.6, 44), (67, 44.4), (55.4, 45.6), (80, 46)]
         self.assertEqual(output, expected_output_points)
 
 

@@ -21,6 +21,9 @@ debug_image_file_path = os.path.normpath(os.path.join(resources_dir, 'Challenge_
 debug_output_folder = os.path.normpath(os.path.join(resources_dir, 'DebugImages'))
 
 
-# Scaling factors
-x_pixels_to_points_scale = 0.2
-y_pixels_to_points_scale = 0.2
+# Camera constants
+X_PIXELS_TO_POINTS_SCALE = 0.2
+Y_PIXELS_TO_POINTS_SCALE = 0.2
+
+CAMERA_RESOLUTION = (200, 200)
+
