@@ -19,3 +19,8 @@ real_hardware = os.environ.get('ROBOPLOT', 0) != 0
 # Debugging image paths
 debug_image_file_path = os.path.normpath(os.path.join(resources_dir, 'Challenge_2_Test_Images', 'HackspacePath_Sample3.png'))
 debug_output_folder = os.path.normpath(os.path.join(resources_dir, 'DebugImages'))
+
+
+# Scaling factors
+x_pixels_to_points_scale = 0.2
+y_pixels_to_points_scale = 0.2
