@@ -335,9 +335,7 @@ class ImageAnalyser:
             cv2.circle(image, (x_end_image, y_end_image), 3, (255, 10, 10))
 
         cv2.imshow('LineApproximation', image)
-        _curr_dir = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-        _debug_dir = os.path.join(_curr_dir, '..', '..', 'resources')
-        cv2.imwrite(_debug_dir + "LineApproximation" + self._debug_index + "_" + self._debug_line_index, image)
+        cv2.imwrite(os.path.join(config.debug_output_folder, "LineApproximation" + str(self._debug_index) + "_" + str(self._debug_line_index)), image)
         self._debug_line_index += 1
 
     @staticmethod
