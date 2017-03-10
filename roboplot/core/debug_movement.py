@@ -5,6 +5,7 @@ This module creates a debug images showing the movement of the plotter.
 
 """
 import os
+import warnings
 
 import cv2
 import numpy as np
@@ -73,15 +74,13 @@ class DebugImage:
             point: Point to be added to the buffer (in mm)
         """
 
-                
         pixel = tuple(int(round(i * self.pixels_per_mm)) for i in point)
 
         if 0 <= pixel[0] < self._image_dimensions_pixels[1] and \
-           0 <= pixel[1] < self._image_dimensions_pixels[0]:
+                                0 <= pixel[1] < self._image_dimensions_pixels[0]:
             self.debug_image[pixel] = self.colour
         else:
-            print('Warning: Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
-            raise Exception
+            warnings.warn('Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
 
         self.steps_since_save += 1
 
@@ -98,6 +97,7 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(os.path.join(config.debug_output_folder, "DebugImage_{i:04}.jpg".format(i=self.image_index)), self.debug_image)
+        cv2.imwrite(os.path.join(config.debug_output_folder, "DebugImage_{i:04}.jpg".format(i=self.image_index)),
+                    self.debug_image)
         self.image_index += 1
         self.steps_since_save = 0
