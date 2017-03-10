@@ -20,7 +20,7 @@ debug_image_file_path = os.path.normpath(os.path.join(resources_dir, 'Challenge_
 debug_output_folder = os.path.normpath(os.path.join(resources_dir, 'DebugImages'))
 
 
-# Camera offset
+# camera offset
 
 # Currently approximated.
 camera_offset = [30 , 0]
