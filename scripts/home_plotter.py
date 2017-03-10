@@ -14,6 +14,11 @@ def report_position():
         print("\rCurrent Location = ({0[0]: 7.2f}, {0[1]: 7.2f})".format(axes.current_location), end='')
         time.sleep(0.1)
 
-threading.Thread(target=report_position, daemon=True).start()
-axes.home()
-time.sleep(0.2)
+
+try:
+    threading.Thread(target=report_position, daemon=True).start()
+    axes.home()
+    time.sleep(0.2)
+
+finally:
+    hardware.cleanup()
