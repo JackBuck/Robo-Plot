@@ -3,7 +3,7 @@
 import argparse
 import time
 
-import numpy as np
+import cv2 as cv2
 
 import context
 import roboplot.config as config
@@ -21,22 +21,24 @@ try:
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
                         help='an initial sleep time in seconds (default: %(default)s)')
-
+    parser.add_argument('-f', '--file_path', type=str, required=False, default=None,
+                        help='where the iamge will be saved')
     args = parser.parse_args()
-
-    
     time.sleep(args.wait)
 
     # Move to start of path.
     
     # Needs homing 
-    hardware.both_axes.current_location = [0,0]
+    hardware.both_axes.current_location = [0, 0]
     
     line_to_start = curves.LineSegment(hardware.both_axes.current_location, [args.centre[0] - config.camera_offset[0], args.centre[1] - config.camera_offset[1]])
     hardware.both_axes.follow(curve=line_to_start, pen_speed=args.pen_millimetres_per_second)
   
     a_camera = Camera()
-    a_camera.take_photo_at(hardware.both_axes.current_location)
+    image = a_camera.take_photo_at(hardware.both_axes.current_location)
+
+    if args.file_path is not None:
+        cv2.imwrite(args.file_path, image)
 
 
 finally:
