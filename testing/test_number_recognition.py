@@ -61,3 +61,7 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
                 self.assertEqual(number.numeric_value, expected_number)
                 self.assertAlmostEqual(number.dot_location_yx[0], expected_spot_location[0], places=0)
                 self.assertAlmostEqual(number.dot_location_yx[1], expected_spot_location[1], places=0)
+
+
+if __name__ == '__main__':
+    unittest.main()
