@@ -18,9 +18,9 @@ class PathFromImageTest(unittest.TestCase):
         super(PathFromImageTest, self).__init__(*args, **kwargs)
         self.path_to_test_data = os.path.join(config.test_data_dir, 'PathFromImageTest')
 
-    def testNorth(self):
+    def testSouth(self):
         # Load image for testing.
-        image = cv2.imread(os.path.join(self.path_to_test_data, 'South'), cv2.IMAGE_GRAYSCALE)
+        image = cv2.imread(os.path.join(self.path_to_test_data, 'South.jpg'), cv2.IMREAD_GRAYSCALE)
 
         # Check image was loaded correctly
         if image is None:
@@ -33,7 +33,7 @@ class PathFromImageTest(unittest.TestCase):
 
 # Running this runs all the tests and outputs their results.
 def main():
-    unittest.main(testRunner=test_runner.CustomTestRunner())
+    unittest.main()
 
 
 if __name__ == '__main__':
