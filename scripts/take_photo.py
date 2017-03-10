@@ -8,7 +8,7 @@ import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.config as config
 
 parser = argparse.ArgumentParser(description='Take a photo at the current position.')
-parser.add_argument('savepath', type=str, nargs='?', default=os.path.join(config.debug_image_file_path, 'Photo.jpg'),
+parser.add_argument('savepath', type=str, nargs='?', default=os.path.join(config.debug_output_folder, 'Photo.jpg'),
                     help='the location at which to save the image')
 args = parser.parse_args()
 
