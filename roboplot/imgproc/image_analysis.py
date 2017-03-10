@@ -89,7 +89,18 @@ def compute_pixel_path(image, search_width):
     # Get average pixel positions and direction for next photo.
     indices, turn_to_next_scan = analyse_rows(image, search_width)
 
-    # If we have ended prematurely try continuing the scan by rotating the image by 45.
+    if __debug__:
+        debug_image = iadebug.save_average_rows(image, indices)
+    else:
+        debug_image = None
+
+    pixel_segments = approximate_path(indices)
+
+    # Show current state if debug is set to true and reset indices.
+    if __debug__:
+        iadebug.save_line_approximation(debug_image, pixel_segments)
+
+    # If we have ended prematurely try continuing the scan by rotating the image by 60.
 
     if (len(indices) < image.shape[0]) and (turn_to_next_scan is not Turning.STRAIGHT):
         if turn_to_next_scan is Turning.LEFT:
@@ -104,30 +115,36 @@ def compute_pixel_path(image, search_width):
         M = cv2.getRotationMatrix2D((centre[1], centre[0]), angle, 1.0)
         rotated = cv2.warpAffine(image, M, (w, h))
 
-        cv2.imshow('Rotated', rotated)
-
-
         # Centre the last white centroid into the centre of the image.
         half_sub_image_width = int(min(min(search_width, indices[-1][1]),
                                        min(rotated.shape[1] - indices[-1][1], search_width)))
 
         sub_image = rotated[indices[-1][0]:,
                             indices[-1][1] - half_sub_image_width: indices[-1][1] + half_sub_image_width]
-        cv2.waitKey(0)
+
         rotated_indices, turn_to_next_scan = analyse_rows(sub_image, search_width)
 
-        extra_indices = [tuple(map(operator.add,
-                                   (centre[0], 0.0), rotate((0.0, half_sub_image_width), point, math.radians(-angle))))
-                         for point in rotated_indices]
+        if __debug__:
+            debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices)
+        else:
+            debug_sub_image = None
 
-        indices += extra_indices
+        rotated_pixel_segments = approximate_path(rotated_indices)
+
+        # Show current state if debug is set to true and reset indices.
+        if __debug__:
+            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments)
+
+        extra_pixel_segments = [tuple(map(operator.add,
+                                          (centre[0], 0.0), rotate((0.0, half_sub_image_width),
+                                                                   point, math.radians(-angle))))
+                                for point in rotated_pixel_segments]
+
+        pixel_segments += extra_pixel_segments
 
         if __debug__:
-            debug_image = iadebug.show_average_rows(image, indices)
-        else:
-            debug_image = None
-
-    pixel_segments = approximate_line_from_indices(indices, debug_image)
+            debug_image = iadebug.create_debug_image(image)
+            iadebug.save_line_approximation(debug_image, pixel_segments)
 
     return pixel_segments, turn_to_next_scan
 
@@ -229,9 +246,6 @@ def analyse_rows(pixels, search_width):
 
                 last_centroid = Centroid.INVALID_NO_WHITE
 
-    if __debug__:
-        iadebug.show_average_rows(pixels, indices)
-
     # Return the list of average indices and the scan direction for the next picture taken.
     return indices, turn_to_next_scan
 
@@ -320,11 +334,11 @@ def rotate(origin, point, angle):
     return qx, qy
 
 
-def approximate_line_from_indices(pixel_indices, debug_image):
+def approximate_path(pixel_indices):
 
     # Approximate the pixels with a line. Start with a line between first and last average pixel.
     # Pixels in the segment index are ordered y, x
-    pixel_segments = [(0, pixel_indices[-1][0]), (len(pixel_indices) - 1, pixel_indices[-1][1])]
+    pixel_segments = [pixel_indices[0], pixel_indices[-1]]
     segment_index = 0
 
     # Max distance allowed between line and average pixel.
@@ -361,9 +375,5 @@ def approximate_line_from_indices(pixel_indices, debug_image):
 
         # Good approximation found for this interval move to next interval.
         segment_index += 1
-
-    # Show current state if debug is set to true and reset indices.
-    if __debug__:
-        iadebug.show_line_approximation(debug_image, pixel_segments)
 
     return pixel_segments
