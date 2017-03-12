@@ -85,8 +85,19 @@ def process_and_extract_sub_image(image, scan_direction):
 
 
 def compute_pixel_path(image, search_width):
+    """
 
-    # Get average pixel positions and direction for next photo.
+    Args:
+        image: The image to compute a pixel path for.
+        search_width: The width of area around the central pixel to be searched.
+
+    Returns:
+        pixel_segements: An array containing the pixel co-ordinates of the line ends.
+        turn_to_next_scan: The direction the path is turning in at the end of this photo.
+
+    """
+
+    # Get average pixel positions and next path direction for photo.
     indices, turn_to_next_scan = analyse_rows(image, search_width)
 
     if __debug__:
@@ -96,32 +107,22 @@ def compute_pixel_path(image, search_width):
 
     pixel_segments = approximate_path(indices)
 
-    # Show current state if debug is set to true and reset indices.
+    # Show current state if debug is set to true.
     if __debug__:
         iadebug.save_line_approximation(debug_image, pixel_segments)
 
-    # If we have ended prematurely try continuing the scan by rotating the image by 60.
-
+    # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
     if (len(indices) < image.shape[0]) and (turn_to_next_scan is not Turning.STRAIGHT):
+
         if turn_to_next_scan is Turning.LEFT:
             angle = -60
         else:
             angle = 60
 
-        (h, w) = image.shape[:2]
-        centre = indices[-1]
+        # Create rotated sub_image to analyse
+        sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle)
 
-        # Rotation transform requires x then y.
-        M = cv2.getRotationMatrix2D((centre[1], centre[0]), angle, 1.0)
-        rotated = cv2.warpAffine(image, M, (w, h))
-
-        # Centre the last white centroid into the centre of the image.
-        half_sub_image_width = int(min(min(search_width, indices[-1][1]),
-                                       min(rotated.shape[1] - indices[-1][1], search_width)))
-
-        sub_image = rotated[indices[-1][0]:,
-                            indices[-1][1] - half_sub_image_width: indices[-1][1] + half_sub_image_width]
-
+        # Analyse sub image
         rotated_indices, turn_to_next_scan = analyse_rows(sub_image, search_width)
 
         if __debug__:
@@ -129,17 +130,21 @@ def compute_pixel_path(image, search_width):
         else:
             debug_sub_image = None
 
+        # Compute approximate lines on sub_image
         rotated_pixel_segments = approximate_path(rotated_indices)
 
         # Show current state if debug is set to true and reset indices.
         if __debug__:
             iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments)
 
-        extra_pixel_segments = [tuple(map(operator.add,
-                                          (centre[0], 0.0), rotate((0.0, half_sub_image_width),
-                                                                   point, math.radians(-angle))))
-                                for point in rotated_pixel_segments]
+        # Rotate line indices back.
 
+            extra_pixel_segments = [list(map(operator.add,
+                                             (int(pixel_segments[-1][0]), int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
+                                             rotate(rotated_pixel_segments[0], point, math.radians(-angle))))
+                                    for point in rotated_pixel_segments]
+
+        # Add segments to list.
         pixel_segments += extra_pixel_segments
 
         if __debug__:
@@ -201,25 +206,6 @@ def analyse_rows(pixels, search_width):
             # Invalid result - too much of a gap created.
             # If the last row was also invalid then we stop as another picture needs to be taken.
             if last_centroid != Centroid.VALID:
-
-                ## We have 2 invalid entries in a row.. This means the approximation should stop.
-                ## Find the first central pixel that is black.
-                #interval = find_first_black_row(pixels, rr, average_index_rows[-1])
-#
-                ## Set the next camera position at a 45 degree angle from the current position and half the distance
-                ## away in both x and y. This is so that the remaining path in this direction is skipped.
-#
-                ##     |   ||  |
-                ##     |   ||  |
-                ##     |   ||  |
-                ##     |   ||  |
-                ##     |   ||  |
-                ##     |   ||  |_________
-                ##     |   \\
-                ##     |     \\
-                ##             = Ready for next photo to be taken
-                ##     | ______________
-#
                 if next_centroid - indices[-1][1] < 0:
                     turn_to_next_scan = Turning.RIGHT
                 else:
@@ -331,7 +317,7 @@ def rotate(origin, point, angle):
 
     qx = ox + cos_angle * (px - ox) - sin_angle * (py - oy)
     qy = oy + sin_angle * (px - ox) + cos_angle * (py - oy)
-    return qx, qy
+    return [int(qx), int(qy)]
 
 
 def approximate_path(pixel_indices):
@@ -377,3 +363,23 @@ def approximate_path(pixel_indices):
         segment_index += 1
 
     return pixel_segments
+
+
+def create_rotated_sub_image(image, centre, search_width, angle):
+
+    # Rotation transform requires x then y.
+    M = cv2.getRotationMatrix2D((centre[1], centre[0]), angle, 1.0)
+
+    w = image.shape[1]
+    h = int(centre[0] + (w/2 - abs(centre[1] - w/2))*abs(math.sin(math.radians(angle))))
+
+    rotated = cv2.warpAffine(image, M, (w, h))
+
+    # Centre the last white centroid into the centre of the image.
+    half_sub_image_width = int(min(min(search_width, centre[1]),
+                                   min(rotated.shape[1] - centre[1], search_width)))
+
+    sub_image = rotated[centre[0]:,
+                        centre[1] - half_sub_image_width: centre[1] + half_sub_image_width]
+
+    return sub_image
