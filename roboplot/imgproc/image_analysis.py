@@ -9,6 +9,7 @@ import cv2
 
 import roboplot.config as config
 import roboplot.imgproc.image_analysis_debug as iadebug
+import roboplot.imgproc.colour_detection as cd
 
 white_threshold = 130
 
@@ -303,6 +304,7 @@ def compute_error(line_normal, line_origin, indices):
         error = 0.0
     return error
 
+
 def rotate(origin, point, angle):
     """
     Rotate a point counterclockwise by a given angle around a given origin.
@@ -383,3 +385,16 @@ def create_rotated_sub_image(image, centre, search_width, angle):
                         centre[1] - half_sub_image_width: centre[1] + half_sub_image_width]
 
     return sub_image
+
+
+def search_for_red_triangle_near_centre(photo, min_size):
+
+    mid_point = int(photo.shape[0]/2)
+    restricted_image = photo[mid_point - 20:mid_point + 20, mid_point - 20:mid_point + 20]
+    hsv_restricted_image = cv2.cvtColor(restricted_image, cv2.COLOR_BGR2HSV)
+    (cX, cY) = cd.detect_red(hsv_restricted_image, min_size, False)
+
+    if cX == -1:
+        return False, [cX, cY]
+    else:
+        return True, [mid_point - 20 + cX, mid_point - 20 + cY]

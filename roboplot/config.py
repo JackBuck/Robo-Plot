@@ -19,3 +19,7 @@ real_hardware = os.environ.get('ROBOPLOT', 0) != 0
 # Debugging image paths
 debug_image_file_path = os.path.normpath(os.path.join(resources_dir, 'Challenge_2_Test_Images', 'HackspacePath_Sample3.png'))
 debug_output_folder = os.path.normpath(os.path.join(resources_dir, 'DebugImages'))
+
+
+# Pen offset
+pen_offset = (0.0, 20.0)  # Currently a guess needs calibrating
