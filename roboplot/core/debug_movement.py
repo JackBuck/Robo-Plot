@@ -48,21 +48,22 @@ class DebugImage:
 
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
-        a4paper = (210, 297)  # (x then y as tuple)
+        a4paper = (210, 297)  # openCV asks for image dimensions as width then height.
+        
         self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
 
         # Background image
         if bgimage_path is not None:
             self.debug_image = cv2.imread(bgimage_path)
-            self.debug_image = cv2.resize(self.debug_image, self._image_dimensions_pixels)
         else:
             self.debug_image = np.zeros(self._image_dimensions_pixels + (3,), np.uint8)
+
+        self.debug_image = cv2.resize(self.debug_image, self._image_dimensions_pixels)
 
         # Choose how often an image is saved.
         self.millimeters_between_saves = 20
         self.steps_between_saves = self.millimeters_between_saves / millimetres_per_step
 
-        print(self.debug_image.shape)
         self.save_image()
 
     def add_point(self, point):

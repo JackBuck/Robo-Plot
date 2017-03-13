@@ -59,8 +59,8 @@ if not config.real_hardware:
     for switch in y_limit_switches:
         switch.register_parent_axis(y_axis)
 
-    x_axis.current_location = x_home_position.location + (10 if not x_home_position.forwards else -10)
-    y_axis.current_location = y_home_position.location + (10 if not y_home_position.forwards else -10)
+    x_axis.current_location = x_home_position.location + (3 if not x_home_position.forwards else -3)
+    y_axis.current_location = y_home_position.location + (3 if not y_home_position.forwards else -3)
 
 if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage(y_axis, x_axis)

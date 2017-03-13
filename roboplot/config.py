@@ -13,13 +13,16 @@ resources_dir = os.path.normpath(os.path.join(roboplot_directory, '..', 'resourc
 test_data_dir = os.path.join(resources_dir, 'test_data')
 
 # Environment variables
-real_hardware = os.environ.get('ROBOPLOT', 0) != 0
-
+real_hardware = os.environ.get('ROBOPLOT', '0') != '0'
+if real_hardware:
+    print("Using real hardware")
+else:
+    print("Using simulated hardware")
 
 # Debugging image paths
 debug_image_file_path = os.path.normpath(os.path.join(resources_dir, 'Challenge_2_Test_Images', 'HackspacePath_Sample3.png'))
 debug_output_folder = os.path.normpath(os.path.join(resources_dir, 'DebugImages'))
 
 
-# Pen offset
-pen_offset = (0.0, 20.0)  # Currently a guess needs calibrating
+# Camera variables.
+camera_offset = (0.0, 2.0)  # Needs calibration. This is translation to move from pen centre to camera centre.

@@ -2,9 +2,6 @@ import context
 import cv2
 import argparse
 import roboplot.imgproc.colour_detection as cd
-import roboplot.core.config as config
-
-config.init_()
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Find green in a given image')
@@ -19,7 +16,7 @@ print(inFile)
 image = cv2.imread(inFile)
 hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 (cX, cY) = cd.detect_green(hsv_image, args.minsize, False)
-cv2.circle(image, (cX, cY), 20, (255, 10, 10), 10)
+cv2.circle(image, (cX, cY), 5, (255, 10, 10), 3)
 cv2.imshow('Centre', cv2.resize(image, (500, 500)))
 cv2.waitKey(0)
 print("Done")

@@ -35,10 +35,6 @@ try:
                              start_degrees=args.interval_degrees[0],
                              end_degrees=args.interval_degrees[1])
 
-    # Move to start of path.
-    line_to_start = curves.LineSegment(hardware.both_axes.current_location, arc.get_start_point())
-    hardware.both_axes.follow(curve=line_to_start, pen_speed=args.pen_millimetres_per_second)
-
     hardware.both_axes.home()
     start_time = time.time()
     hardware.both_axes.follow(curve=arc, pen_speed=args.pen_millimetres_per_second)
