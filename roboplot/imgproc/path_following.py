@@ -27,9 +27,13 @@ def compute_complete_path(image, starting_direction):
 
     # Analyse image where greed triangle was found and compute its path.
     image_to_analyse = image_analysis.process_and_extract_sub_image(image, starting_direction)
-    computed_path, next_direction = image_analysis.compute_pixel_path(image, search_width)
+    computed_pixel_path, next_direction = image_analysis.compute_pixel_path(image, search_width)
+    computed_path = transform_to_global_coords(computed_pixel_path, starting_direction,
+                                                            hardware.both_axes.current_location)
 
     while True:
+
+        current_direction = next_direction
         # Create the line segment and move to the last point in the found path.
         line_segment = curves.LineSegment(hardware.both_axes.current_location, computed_path[-1])
         hardware.both_axes.follow(curve=line_segment, pen_speed=32)
@@ -48,7 +52,8 @@ def compute_complete_path(image, starting_direction):
         image_to_analyse = image_analysis.process_and_extract_sub_image(photo, next_direction)
 
         # Analyse image
-        next_computed_path_segment, next_direction = image_analysis.compute_pixel_path(image, search_width)
+        next_computed_pixel_path_segment, next_direction = image_analysis.compute_pixel_path(image, search_width)
+        next_computed_path_segment = transform_to_global_coords(next_computed_path_segment, current_direction, hardware.both_axes.current_location
 
         # Append the computed path with the new values.
         computed_path.append(next_computed_path_segment)
@@ -67,5 +72,17 @@ def follow_computed_path(computed_path):
         line_segment = curves.LineSegment(hardware.both_axes.current_location, (computed_path[0][0] + config.)
         hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
-        
 
+def transform_to_global_coords(computed_pixel_path, scan_direction, centre):
+    # Rotate
+    if scan_direction == image_analysis.Direction.NORTH:
+        computed_points = [[centre[0] - point[0], centre[1] + point[1]]  for point in computed_pixel_path]
+    elif scan_direction == image_analysis.Direction.EAST:
+        computed_points = [[centre[1] + point[1], centre[0] + point[0]]  for point in computed_pixel_path]
+    elif scan_direction == image_analysis.Direction.SOUTH:
+        computed_points = [[centre[0] + point[0], centre[1] - point[1]]  for point in computed_pixel_path]
+    else:
+        computed_points = [[centre[1] - point[1], centre[0] - point[0]]  for point in computed_pixel_path]
+
+
+    return computed_points

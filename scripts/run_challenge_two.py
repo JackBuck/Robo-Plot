@@ -14,7 +14,7 @@ try:
 
     # Need function to compute first direction here.
 
-    computed_camera_path = path_following.compute_complete_path(image, starting_direction)
+    computed_camera_path = path_following.compute_complete_path(photo, starting_direction)
     path_following.follow_computed_path(computed_camera_path)
 
 
