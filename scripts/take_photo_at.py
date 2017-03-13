@@ -25,21 +25,20 @@ try:
                         help='where the iamge will be saved')
     args = parser.parse_args()
     time.sleep(args.wait)
-
-    # Move to start of path.
     
     # Needs homing 
-    hardware.both_axes.current_location = [0, 0]
+    hardware.both_axes.home()
     
-    line_to_start = curves.LineSegment(hardware.both_axes.current_location, [args.centre[0] - config.camera_offset[0], args.centre[1] - config.camera_offset[1]])
-    hardware.both_axes.follow(curve=line_to_start, pen_speed=args.pen_millimetres_per_second)
+    line_to_camera_location = curves.LineSegment(hardware.both_axes.current_location,
+                                                 [args.centre[0] - config.camera_offset[0],
+                                                  args.centre[1] - config.camera_offset[1]])
+    hardware.both_axes.follow(curve=line_to_camera_location, pen_speed=args.pen_millimetres_per_second)
   
     a_camera = Camera()
     image = a_camera.take_photo_at(hardware.both_axes.current_location)
 
     if args.file_path is not None:
         cv2.imwrite(args.file_path, image)
-
 
 finally:
     GPIO.cleanup()
