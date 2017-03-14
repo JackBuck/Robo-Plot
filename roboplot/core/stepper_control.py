@@ -83,16 +83,13 @@ class Axis:
     def is_homed(self):
         return self._is_homed
 
-    def home(self) -> float:
+    def home(self) -> None:
         """
         Home the axis by driving into the limit switch and setting the current_location upon reaching it.
-        Then drive to the opposite limit switch and return the location of that switch.
+        Then drive to the opposite limit switch and record the location of that switch.
 
         The home_position argument to Axis.__init__ controls the direction of the primary switch (to be used for
         setting the home) as well as the value set upon reaching it.
-
-        Returns:
-            float: The position of the secondary limit switch (in the homed coordinate system).
         """
 
         self.forwards = self.home_position.forwards
