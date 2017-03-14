@@ -16,8 +16,20 @@ class Plotter:
         self._pen.lift()
         self._axes.home()
 
-    def draw(self, curve_list, pen_speed: float = default_pen_speed, resolution:float=default_resolution):
-        """Draw the curve (with the pen down), lifting the pen before and after."""
+    def draw(self, curve_list, pen_speed: float = default_pen_speed, resolution: float = default_resolution) -> None:
+        """
+        Algorithm:
+         - Lift the pen
+         - Move to the start
+         - Drop the pen
+         - Draw all the curves
+         - Lift the pen
+
+        Args:
+            curve_list: the curves to be drawn
+            pen_speed: the speed of the pen (mm/s)
+            resolution: the length of the line segments in which to split the curves before drawing
+        """
 
         if isinstance(curve_list, curves.Curve):
             curve_list = [curve_list]
@@ -30,8 +42,17 @@ class Plotter:
                 self._axes.follow(curve, pen_speed, resolution)
             self._lift_pen()
 
-    def follow(self, curve_list, pen_speed: float = default_pen_speed, resolution:float=default_resolution):
-        """Follow a curve, with the pen up."""
+    def follow(self, curve_list, pen_speed: float = default_pen_speed, resolution: float = default_resolution):
+        """
+        Algorithm:
+          - Lift the pen
+          - Follow all the curves
+
+        Args:
+            curve_list: the curves to be drawn
+            pen_speed: the speed of the pen (mm/s)
+            resolution: the length of the line segments in which to split the curves before following
+        """
         # TODO: It is not ideal to not be changing colour each curve when the pen is up...
         if isinstance(curve_list, curves.Curve):
             curve_list = [curve_list]
