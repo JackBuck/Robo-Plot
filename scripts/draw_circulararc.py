@@ -2,9 +2,7 @@
 
 import argparse
 import time
-
 import numpy as np
-
 import context
 import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
@@ -28,14 +26,14 @@ try:
                         help='an initial sleep time in seconds (default: %(default)s)')
 
     args = parser.parse_args()
+    time.sleep(args.wait)
+    start_time = time.time()
 
-    # Draw a circle
+    # Create circle path.
     arc = curves.CircularArc(centre=args.centre,
                              radius=args.radius,
                              start_degrees=args.interval_degrees[0],
                              end_degrees=args.interval_degrees[1])
-
-    time.sleep(args.wait)
 
     hardware.both_axes.home()
     start_time = time.time()

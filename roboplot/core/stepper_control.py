@@ -6,6 +6,7 @@ This module controls the 2D drive system for the plotter.
 All distances in the module are expressed in MILLIMETRES.
 
 """
+import math
 import time
 import threading
 import warnings
@@ -16,6 +17,7 @@ import roboplot.core.debug_movement as debug_movement
 import roboplot.core.limit_switches as limit_switches
 from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
+import roboplot.config as config
 
 
 class HomePosition:
@@ -270,7 +272,7 @@ class AxisPair:
 class AxisPairWithDebugImage(AxisPair):
     def __init__(self, y_axis: Axis, x_axis: Axis):
         super().__init__(y_axis, x_axis)
-        self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step)
+        self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step, config.debug_image_file_path)
 
     @property
     def current_location(self):

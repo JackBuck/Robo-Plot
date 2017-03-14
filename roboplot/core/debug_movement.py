@@ -26,7 +26,7 @@ class DebugImage:
     colour_index = 0
     colour = Colour.Yellow
 
-    def __init__(self, millimetres_per_step, bgimage_path=None, pixels_per_mm=2):
+    def __init__(self, millimetres_per_step, bgimage_path=None, pixels_per_mm=3):
         """
         Creates debug image.
 
@@ -38,28 +38,28 @@ class DebugImage:
 
         """
 
-        self.dir_path = os.path.join(config.resources_dir, 'DebugImages')
-
         # Create the directory if it doesn't exist
-        if not os.path.exists(self.dir_path):
-            os.mkdir(self.dir_path, 0o750)  # drwxr-x---
+        if not os.path.exists(config.debug_output_folder):
+            os.mkdir(config.debug_output_folder, 0o750)  # drwxr-x---
 
         # Remove any existing debug files from folder
-        file_list = [f for f in os.listdir(self.dir_path) if os.path.isfile(os.path.join(self.dir_path, f))]
+        file_list = [f for f in os.listdir(config.debug_output_folder) if os.path.isfile(os.path.join(config.debug_output_folder, f))]
         for file_name in file_list:
-            os.remove(self.dir_path + "/" + file_name)
+            os.remove(config.debug_output_folder + "/" + file_name)
 
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
-        a4paper = (297, 210)
+        a4paper = (210, 297)  # openCV asks for image dimensions as width then height.
+
         self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
 
         # Background image
         if bgimage_path is not None:
             self.debug_image = cv2.imread(bgimage_path)
-            cv2.resize(self.debug_image, self._image_dimensions_pixels)
         else:
             self.debug_image = np.zeros(self._image_dimensions_pixels + (3,), np.uint8)
+
+        self.debug_image = cv2.resize(self.debug_image, self._image_dimensions_pixels)
 
         # Choose how often an image is saved.
         self.millimeters_between_saves = 20
@@ -75,11 +75,14 @@ class DebugImage:
             point: Point to be added to the buffer (in mm)
         """
 
-        pixel = (int(round(point[0] * self.pixels_per_mm)), int(round(point[1] * self.pixels_per_mm)))
+        pixel = tuple(int(round(i * self.pixels_per_mm)) for i in point)
 
-        if 0 <= pixel[0] < self._image_dimensions_pixels[0] and \
-                                0 <= pixel[1] < self._image_dimensions_pixels[1]:
+        if 0 <= pixel[0] < self._image_dimensions_pixels[1] and \
+           0 <= pixel[1] < self._image_dimensions_pixels[0]:
             self.debug_image[pixel] = self.colour
+        else:
+            print('Warning: Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
+            raise Exception
 
         self.steps_since_save += 1
 
@@ -96,7 +99,7 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        savepath = os.path.join(self.dir_path, "DebugImage_{i:04}.jpg".format(i=self.image_index))
+        savepath = os.path.join(config.debug_output_folder, "DebugImage_{i:04}.jpg".format(i=self.image_index))
 
         # Threaded in the hope that we can reduce time wasted waiting on IO
         debug_image_copy = self.debug_image.copy()
