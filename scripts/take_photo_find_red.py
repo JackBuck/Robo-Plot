@@ -10,8 +10,8 @@ import roboplot.imgproc.colour_detection as cd
 parser = argparse.ArgumentParser(description='Take a photo and find the red in')
 
 parser.add_argument('-c', '--centre', metavar=('x', 'y'), nargs=2, type=float, default=[180, 30],
-                        help='the centre (x,y) of the photo to be taken (note only relevant in debug o/w'
-                             'photo taken in current camera position)')
+                    help='the centre (x,y) of the photo to be taken (note only relevant in debug o/w photo taken in '
+                         'current camera position)')
 parser.add_argument('-m', '--minsize', type=float, default=10,
                     help='the minimum size of red to be detected')
 
