@@ -32,6 +32,7 @@ class HomePosition:
 class Axis:
     current_location = 0
     home_position = HomePosition()
+    upper_limit = HomePosition()
     _is_homed = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
@@ -82,16 +83,13 @@ class Axis:
     def is_homed(self):
         return self._is_homed
 
-    def home(self) -> float:
+    def home(self) -> None:
         """
         Home the axis by driving into the limit switch and setting the current_location upon reaching it.
-        Then drive to the opposite limit switch and return the location of that switch.
+        Then drive to the opposite limit switch and record the location of that switch.
 
         The home_position argument to Axis.__init__ controls the direction of the primary switch (to be used for
         setting the home) as well as the value set upon reaching it.
-
-        Returns:
-            float: The position of the secondary limit switch (in the homed coordinate system).
         """
 
         self.forwards = self.home_position.forwards
@@ -117,11 +115,10 @@ class Axis:
         while hit_location is None:
             hit_location = self._step_expecting_limit_switch()
 
-        # Set the upper home limits of the home position at the point where the limit switch is hit
-        # Note that we back-calculate to account for any back off.
+        # Set the upper home limits of the home position at the point where the limit switch is hit.
+        self.upper_limit.location = hit_location
 
         self._is_homed = True
-        return hit_location
 
     def _step_expecting_limit_switch(self):
         """
@@ -208,14 +205,8 @@ class AxisPair:
         self.x_axis.current_location = value[1]
 
     def home(self):
-        home_x = threading.Thread(target=self.x_axis.home)
-        home_y = threading.Thread(target=self.y_axis.home)
 
-        home_x.start()
-        home_y.start()
-        home_x.join()
-        home_y.join()
-
+        # Set margin for soft limits with the hard limit switches.
         if self.x_axis.home_position.forwards:
             x_margin = - 0.5
         else:
@@ -226,12 +217,22 @@ class AxisPair:
         else:
             y_margin = 0.5
 
-        # Home axis and set soft limits.
-        self.x_soft_upper_limit = self.x_axis.home() - x_margin
-        self.y_soft_upper_limit = self.y_axis.home() - y_margin
+        # Home the switches
+        home_x = threading.Thread(target=self.x_axis.home)
+        home_y = threading.Thread(target=self.y_axis.home)
+
+        home_x.start()
+        home_y.start()
+        home_x.join()
+        home_y.join()
+
+        # Set soft limits.
+        self.x_soft_upper_limit = self.x_axis.upper_limit.location - x_margin
+        self.y_soft_upper_limit = self.y_axis.upper_limit.location - y_margin
 
         self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
         self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
+
 
     @property
     def is_homed(self):
