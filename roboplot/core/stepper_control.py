@@ -6,18 +6,17 @@ This module controls the 2D drive system for the plotter.
 All distances in the module are expressed in MILLIMETRES.
 
 """
-import math
 import time
 import threading
 import warnings
 
 import numpy as np
 
+import roboplot.config as config
 import roboplot.core.debug_movement as debug_movement
 import roboplot.core.limit_switches as limit_switches
 from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
-import roboplot.config as config
 
 
 class HomePosition:
@@ -232,7 +231,6 @@ class AxisPair:
 
         self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
         self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
-
 
     @property
     def is_homed(self):
