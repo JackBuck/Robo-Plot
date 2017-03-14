@@ -32,6 +32,7 @@ class HomePosition:
 class Axis:
     current_location = 0
     home_position = HomePosition()
+    upper_limit = HomePosition()
     _is_homed = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
@@ -61,7 +62,6 @@ class Axis:
         self._limit_switches = limit_switch_pair
         self._invert_axis = invert_axis
         self.home_position = home_position
-        self.upper_limit = home_position
 
     @property
     def back_off_millimetres(self):
@@ -96,7 +96,6 @@ class Axis:
         """
 
         self.forwards = self.home_position.forwards
-        self.upper_limit.forwards = self.home_position.forwards
 
         # Check that a limit switch is not currently pressed
         if any([switch.is_pressed for switch in self._limit_switches]):
@@ -236,6 +235,7 @@ class AxisPair:
 
         self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
         self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
+
 
     @property
     def is_homed(self):
