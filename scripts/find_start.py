@@ -1,12 +1,10 @@
-import context
-import cv2
-import argparse
-import numpy as np
 
-from roboplot.core.gpio.gpio_wrapper import GPIO
-import roboplot.core.camera.camera_wrapper as camera_wrapper
-import roboplot.imgproc.colour_detection as cd
+import argparse
+
+
+import context
 import roboplot.challenge_two_functions as challenge2
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
 
 try:
