@@ -6,6 +6,7 @@ This module creates a debug images showing the movement of the plotter.
 """
 import os
 import threading
+import warnings
 
 import cv2
 import numpy as np
@@ -81,8 +82,7 @@ class DebugImage:
            0 <= pixel[1] < self._image_dimensions_pixels[0]:
             self.debug_image[pixel] = self.colour
         else:
-            print('Warning: Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
-            raise Exception
+            warnings.warn('Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
 
         self.steps_since_save += 1
 
