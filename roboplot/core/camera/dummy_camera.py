@@ -48,36 +48,36 @@ class DummyCamera:
         # dummy photo to ensure the dummy photo has correct centre.
 
         # Set min x value and placement in the photo
-        if 0 > camera_centre[1] - int(self._photo_size / 2):
+        if 0 > camera_centre[0] - int(self._photo_size / 2):
             image_x_min = 0
             # Simplification of int(self._photo_size - (camera_centre[0] + int(self._photo_size/2)))
-            image_x_min_placement = int(self._photo_size/2) - int(camera_centre[1])
+            image_x_min_placement = int(self._photo_size/2) - int(camera_centre[0])
         else:
-            image_x_min = int(camera_centre[1]) - int(self._photo_size / 2)
+            image_x_min = int(camera_centre[0]) - int(self._photo_size / 2)
             image_x_min_placement = 0
 
         # Set min y value and placement in the photo
-        if 0 > int(camera_centre[0]) - int(self._photo_size / 2):
+        if 0 > int(camera_centre[1]) - int(self._photo_size / 2):
             image_y_min = 0
-            image_y_min_placement = int(self._photo_size/2) - int(camera_centre[0])
+            image_y_min_placement = int(self._photo_size/2) - int(camera_centre[1])
         else:
-            image_y_min = int(camera_centre[0]) - int(self._photo_size / 2)
+            image_y_min = int(camera_centre[1]) - int(self._photo_size / 2)
             image_y_min_placement = 0
 
         # Set max x value and placement in the photo
-        if self._map_width < int(camera_centre[1]) + int(self._photo_size / 2):
+        if self._map_width < int(camera_centre[0]) + int(self._photo_size / 2):
             image_x_max = self._map_width
-            image_x_max_placement = int(self._photo_size / 2 + camera_centre[1] - self._map_width)
+            image_x_max_placement = int(self._photo_size / 2 - camera_centre[0] + self._map_width)
         else:
-            image_x_max = int(camera_centre[1] + int(self._photo_size / 2))
+            image_x_max = int(camera_centre[0] + int(self._photo_size / 2))
             image_x_max_placement = int(self._photo_size)
 
         # Set max y value and placement in the photo
-        if self._map_height < camera_centre[0] + int(self._photo_size / 2):
+        if self._map_height < camera_centre[1] + int(self._photo_size / 2):
             image_y_max = int(self._map_height)
-            image_y_max_placement = int(self._photo_size / 2 + camera_centre[0] - self._map_height)
+            image_y_max_placement = int(self._photo_size / 2 - camera_centre[1] + self._map_height)
         else:
-            image_y_max = camera_centre[0] + int(self._photo_size / 2)
+            image_y_max = camera_centre[1] + int(self._photo_size / 2)
             image_y_max_placement = int(self._photo_size)
 
         # Get dummy photo as sub array of the map.

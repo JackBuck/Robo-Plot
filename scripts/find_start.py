@@ -3,6 +3,7 @@ import cv2
 import argparse
 import numpy as np
 
+import roboplot.core.hardware as hardware
 from roboplot.core.gpio.gpio_wrapper import GPIO
 import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.colour_detection as cd
@@ -22,7 +23,7 @@ try:
     args = parser.parse_args()
 
 
-
+    hardware.both_axes.home()
     centre = challenge2.find_green_triangle(args.pen_millimetres_per_second, args.minsize)
     
     centre, photo = challenge2.find_green_centre(centre, args.pen_millimetres_per_second, args.minsize)
