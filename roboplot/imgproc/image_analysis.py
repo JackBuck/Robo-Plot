@@ -35,13 +35,11 @@ class Turning(enum.IntEnum):
 
 def compute_weighted_centroid(lightnesses):
     num_elements = lightnesses.shape
-    np.savetxt('Lightnesses.txt', lightnesses, fmt="%2.1f", delimiter=',')
 
     x = np.arange(num_elements[0])
     is_white = lightnesses > white_threshold
     num_white = sum(is_white)
     weighted = np.multiply(is_white, x)
-    np.savetxt('weight.txt', weighted, fmt="%2.1f", delimiter=" , ")
 
     if num_white == 0:
         return -1
@@ -127,7 +125,7 @@ def compute_pixel_path(image, search_width):
         sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle)
 
         # Analyse sub image
-        rotated_indices, turn_to_next_scan = analyse_rows(sub_image, search_width)
+        rotated_indices, _ = analyse_rows(sub_image, search_width)
 
         if __debug__:
             debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices)
@@ -329,6 +327,7 @@ def approximate_path(pixel_indices):
 
     # Approximate the pixels with a line. Start with a line between first and last average pixel.
     # Pixels in the segment index are ordered y, x
+
     pixel_segments = [pixel_indices[0], pixel_indices[-1]]
     segment_index = 0
 
@@ -362,6 +361,12 @@ def approximate_path(pixel_indices):
 
             else:
                 # Add this line to the list of lines. (y , x)
+
+                # Can use computed point but this would require this to be added to the list of indices
+                # considered for the next line to remove kinks.
+                # new_point = [pixel_indices[end_index][0], int(pixel_indices[end_index][0]*current_line[0] + current_line[1])]
+
+                # Currently simply use the last index as can only be tolerance out.
                 pixel_segments.insert(segment_index + 1, pixel_indices[end_index])
 
         # Good approximation found for this interval move to next interval.
