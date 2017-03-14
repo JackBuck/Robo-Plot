@@ -12,8 +12,7 @@ import roboplot.core.hardware as hardware
 
 try:
     # Home axes.
-    #hardware.both_axes.home()
-    hardware.both_axes.current_location = (3, 3)
+    hardware.both_axes.home()
 
     centre = challenge2.find_green_triangle(32, 20)
     centre, photo = challenge2.find_green_centre(centre, 32, 20)

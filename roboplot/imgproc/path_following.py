@@ -31,8 +31,9 @@ def compute_complete_path(image, starting_direction):
     computed_path = transform_to_global_coords(computed_pixel_path, starting_direction,
                                                             hardware.both_axes.current_location)
 
-    while True:
-
+    i = 0
+    while i < 4:  # Should be true but restricting path for debugging.
+        i += 1
         current_direction = next_direction
         # Create the line segment and move to the last point in the found path.
         line_segment = curves.LineSegment(hardware.both_axes.current_location, computed_path[-1])
@@ -42,7 +43,7 @@ def compute_complete_path(image, starting_direction):
         photo = a_camera.take_photo_at(hardware.both_axes.current_location)
 
         # Analyse photo to check if red is found.
-        red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_on_path(photo, red_min_size)
+        red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_near_centre(photo, red_min_size)
 
         if red_triangle_found:
             computed_path.append(centre_of_red)
@@ -53,11 +54,14 @@ def compute_complete_path(image, starting_direction):
 
         # Analyse image
         next_computed_pixel_path_segment, next_direction = image_analysis.compute_pixel_path(image, search_width)
-        next_computed_path_segment = transform_to_global_coords(next_computed_path_segment,
+        next_computed_path_segment = transform_to_global_coords(next_computed_pixel_path_segment,
                                                                 current_direction, hardware.both_axes.current_location)
 
         # Append the computed path with the new values.
-        computed_path.append(next_computed_path_segment)
+        computed_path.extend(next_computed_path_segment)
+
+    if __debug__:
+        iadebug.save_line_approximation(hardware.both_axes.debug_image.debug_image, computed_path)
 
     return computed_path
 
@@ -66,26 +70,27 @@ def follow_computed_path(computed_path):
 
     # Move to start of the computed path.
     line_segment = curves.LineSegment(hardware.both_axes.current_location,
-                                      (computed_path[0][0] - config.camera_offset[0]))
+                                      list(map(operator.sub, computed_path[0], config.camera_offset)))
+
     hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
     for i in range(1, len(computed_path)):
         # Move to next point in the computed path. # This can be updated when new follow exists.
         line_segment = curves.LineSegment(hardware.both_axes.current_location,
-                                          computed_path[i][0] - config.camera_offest[0])
+                                          list(map(operator.sub, computed_path[i], config.camera_offset)))
         hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
 
 def transform_to_global_coords(computed_pixel_path, scan_direction, centre):
     # Rotate
     if scan_direction == image_analysis.Direction.NORTH:
-        computed_points = [[centre[0] - point[0], centre[1] + point[1]]  for point in computed_pixel_path]
+        computed_points = [[centre[0] - point[0], centre[1] + point[1]] for point in computed_pixel_path]
     elif scan_direction == image_analysis.Direction.EAST:
-        computed_points = [[centre[1] + point[1], centre[0] + point[0]]  for point in computed_pixel_path]
+        computed_points = [[centre[1] + point[1], centre[0] + point[0]] for point in computed_pixel_path]
     elif scan_direction == image_analysis.Direction.SOUTH:
-        computed_points = [[centre[0] + point[0], centre[1] - point[1]]  for point in computed_pixel_path]
+        computed_points = [[centre[0] + point[0], centre[1] - point[1]] for point in computed_pixel_path]
     else:
-        computed_points = [[centre[1] - point[1], centre[0] - point[0]]  for point in computed_pixel_path]
+        computed_points = [[centre[1] - point[1], centre[0] - point[0]] for point in computed_pixel_path]
 
 
     return computed_points

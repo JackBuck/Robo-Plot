@@ -65,8 +65,11 @@ def process_and_extract_sub_image(image, scan_direction):
     # Convert image to black and white - we cannot take the photos in black and white as we
     # must first search for the red triangle.
 
-    # Assuming the rotations below are quicker by converting to gray scale first.
-    processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    # Assuming the rotations below are quicker by converting to gray scale first if not already gra
+    if len(image.shape) == 3:
+        processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    else:
+        processed_img = image
 
     # Orientate image so we are scanning the bottom half.
     if scan_direction == Direction.NORTH:

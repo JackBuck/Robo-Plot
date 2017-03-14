@@ -104,7 +104,7 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
 
         return displacement_x, displacement_y, photo
     else:
-        return -1, -1, photo
+        return -1, -1, hsv_image[:, :, 2]
 
 
 def find_green_centre(initial_centre, pen_speed, min_size):
