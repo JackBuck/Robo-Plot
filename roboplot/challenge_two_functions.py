@@ -50,9 +50,6 @@ def find_green_triangle(pen_speed, min_size):
 
     """
 
-    # Home axes.
-    hardware.both_axes.home()
-
     # Calculate the list of positions photos need to be taken at to walk round the outside of the paper.
     camera_positions = page_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
     green_found = False
@@ -62,7 +59,7 @@ def find_green_triangle(pen_speed, min_size):
 
         camera_centre = camera_positions[i]
 
-        (displacement_x, displacement_y), photo = find_green_at_position(camera_centre, pen_speed, min_size)
+        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, pen_speed, min_size)
 
         # Check if any green was detected.
         if displacement_x != -1:
@@ -120,7 +117,7 @@ def find_green_centre(initial_centre, pen_speed, min_size):
     while error > 2/conversion_factor:
 
         # Find the centre of the largest green contour found on the image (if one exists)
-        (displacement_x, displacement_y), photo = find_green_at_position(camera_centre, pen_speed, min_size)
+        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, pen_speed, min_size)
         new_centre = (camera_centre[0] + displacement_y, camera_centre[1] + displacement_x)
 
         # Calculate the error between old centre and new centre

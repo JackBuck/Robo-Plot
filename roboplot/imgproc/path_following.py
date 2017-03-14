@@ -9,7 +9,7 @@ import cv2
 
 import roboplot.config as config
 import roboplot.core.hardware as hardware
-import roboplot.core.camera_wrapper as camera_wrapper
+import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.image_analysis_debug as iadebug
 import roboplot.imgproc.image_analysis as image_analysis
 import roboplot.imgproc.colour_detection as cd
@@ -53,7 +53,8 @@ def compute_complete_path(image, starting_direction):
 
         # Analyse image
         next_computed_pixel_path_segment, next_direction = image_analysis.compute_pixel_path(image, search_width)
-        next_computed_path_segment = transform_to_global_coords(next_computed_path_segment, current_direction, hardware.both_axes.current_location
+        next_computed_path_segment = transform_to_global_coords(next_computed_path_segment,
+                                                                current_direction, hardware.both_axes.current_location)
 
         # Append the computed path with the new values.
         computed_path.append(next_computed_path_segment)
@@ -64,12 +65,14 @@ def compute_complete_path(image, starting_direction):
 def follow_computed_path(computed_path):
 
     # Move to start of the computed path.
-    line_segment = curves.LineSegment(hardware.both_axes.current_location, (computed_path[0][0] + config.)
+    line_segment = curves.LineSegment(hardware.both_axes.current_location,
+                                      (computed_path[0][0] - config.camera_offset[0]))
     hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
     for i in range(1, len(computed_path)):
         # Move to next point in the computed path. # This can be updated when new follow exists.
-        line_segment = curves.LineSegment(hardware.both_axes.current_location, (computed_path[0][0] + config.)
+        line_segment = curves.LineSegment(hardware.both_axes.current_location,
+                                          computed_path[i][0] - config.camera_offest[0])
         hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
 
