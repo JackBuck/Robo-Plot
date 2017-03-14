@@ -52,6 +52,17 @@ class Curve:
 
         return self.evaluate_at(arc_lengths)
 
+    def get_start_point(self):
+        """
+        This method should be overridden in derived classes to return the coordinates on the curve at (a) given
+        position(s).
+
+        Returns:
+            np.ndarray: An nx2 matrix the first point in the curve.
+
+               """
+        raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
+
 
 class LineSegment(Curve):
     def __init__(self, start: np.ndarray, end: np.ndarray):
@@ -79,6 +90,9 @@ class LineSegment(Curve):
             t[np.isnan(t)] = 0
         return (1 - t) * self.start + t * self.end
 
+    def get_start_point(self):
+        return self.start
+
 
 class CircularArc(Curve):
     def __init__(self, centre: np.ndarray, radius: float, start_degrees: float, end_degrees: float):
@@ -101,7 +115,7 @@ class CircularArc(Curve):
 
     @property
     def total_millimetres(self):
-        radians = deg2rad(self.end_degrees - self.start_degrees)
+        radians = np.deg2rad(self.end_degrees - self.start_degrees)
         return abs(radians) * self.radius
 
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
@@ -109,10 +123,13 @@ class CircularArc(Curve):
             return np.copy(self.centre.reshape(1,2))
         else:
             arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
-            radians = arc_length / self.radius + deg2rad(self.start_degrees)
+            radians = arc_length / self.radius + np.deg2rad(self.start_degrees)
             points = np.hstack((np.sin(radians), np.cos(radians)))  # (y,x)
             points = self.radius * points + self.centre
             return points
+
+    def get_start_point(self):
+        return np.array([self.radius * np.cos(deg2rad(self.start_degrees)), self.radius * np.sin(deg2rad(self.start_degrees))] + self.centre)
 
 
 class Circle(CircularArc):
@@ -129,15 +146,3 @@ class Circle(CircularArc):
                              radius=radius,
                              start_degrees=0,
                              end_degrees=360)
-
-
-# TODO: Consider replacing these methods with an Angle class...
-# (then the conversions would be available wherever the Angle is used)
-def deg2rad(degrees):
-    """Convert values in degrees to radians."""
-    return degrees * np.pi / 180
-
-
-def rad2deg(radians):
-    """Convert values in radians to degrees."""
-    return radians * 180 / np.pi

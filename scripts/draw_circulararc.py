@@ -29,18 +29,18 @@ try:
                         help='an initial sleep time in seconds (default: %(default)s)')
 
     args = parser.parse_args()
+    time.sleep(args.wait)
+    start_time = time.time()
 
-    # Draw a circle
+    # Create circle path.
     arc = curves.CircularArc(centre=args.centre,
                              radius=args.radius,
                              start_degrees=args.interval_degrees[0],
                              end_degrees=args.interval_degrees[1])
 
-    time.sleep(args.wait)
-
     hardware.plotter.home()
-    start_time = time.time()
     hardware.plotter.draw(curve_list=arc, pen_speed=args.pen_millimetres_per_second)
+
     end_time = time.time()
 
     # Report statistics
