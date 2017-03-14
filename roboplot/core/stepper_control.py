@@ -61,6 +61,7 @@ class Axis:
         self._limit_switches = limit_switch_pair
         self._invert_axis = invert_axis
         self.home_position = home_position
+        self.upper_limit = home_position
 
     @property
     def back_off_millimetres(self):
@@ -95,6 +96,7 @@ class Axis:
         """
 
         self.forwards = self.home_position.forwards
+        self.upper_limit.forwards = self.home_position.forwards
 
         # Check that a limit switch is not currently pressed
         if any([switch.is_pressed for switch in self._limit_switches]):
@@ -117,11 +119,10 @@ class Axis:
         while hit_location is None:
             hit_location = self._step_expecting_limit_switch()
 
-        # Set the upper home limits of the home position at the point where the limit switch is hit
-        # Note that we back-calculate to account for any back off.
+        # Set the upper home limits of the home position at the point where the limit switch is hit.
+        self.upper_limit.location = hit_location
 
         self._is_homed = True
-        return hit_location
 
     def _step_expecting_limit_switch(self):
         """
@@ -208,14 +209,8 @@ class AxisPair:
         self.x_axis.current_location = value[1]
 
     def home(self):
-        home_x = threading.Thread(target=self.x_axis.home)
-        home_y = threading.Thread(target=self.y_axis.home)
 
-        home_x.start()
-        home_y.start()
-        home_x.join()
-        home_y.join()
-
+        # Set margin for soft limits with the hard limit switches.
         if self.x_axis.home_position.forwards:
             x_margin = - 0.5
         else:
@@ -226,9 +221,18 @@ class AxisPair:
         else:
             y_margin = 0.5
 
-        # Home axis and set soft limits.
-        self.x_soft_upper_limit = self.x_axis.home() - x_margin
-        self.y_soft_upper_limit = self.y_axis.home() - y_margin
+        # Home the switches
+        home_x = threading.Thread(target=self.x_axis.home)
+        home_y = threading.Thread(target=self.y_axis.home)
+
+        home_x.start()
+        home_y.start()
+        home_x.join()
+        home_y.join()
+
+        # Set soft limits.
+        self.x_soft_upper_limit = self.x_axis.upper_limit.location - x_margin
+        self.y_soft_upper_limit = self.y_axis.upper_limit.location - y_margin
 
         self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
         self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
