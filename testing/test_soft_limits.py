@@ -51,8 +51,9 @@ class SoftLimitTest(unittest.TestCase):
             self.assertTrue("Part of the curve lay outside of the soft limits" in str(w[-1].message))
 
     def test_ExceedMaxXLimit_LimitsOn(self):
-        hardware.both_axes.current_location = (1, hardware.both_axes.x_soft_upper_limit - 1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_upper_limit - 1], [1, hardware.both_axes.x_soft_upper_limit + 1])
+        hardware.x_axis.current_location = hardware.both_axes.x_soft_upper_limit - 1
+        target_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_upper_limit + 1)
+        line_segment = curves.LineSegment(hardware.both_axes.current_location, target_location)
         with warnings.catch_warnings(record=True) as w:
             # Run test.
             self._test_soft_limit(line_segment, True)
