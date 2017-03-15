@@ -24,7 +24,7 @@ class Axis:
     # Class variables, present so that we can use spec_set with unittest.Mock
     current_location = 0
     home_position = None
-    upper_limit = None
+    secondary_home_position = None
     _is_homed = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
@@ -108,7 +108,7 @@ class Axis:
             hit_location = self._step_expecting_limit_switch()
 
         # Set the upper home limits of the home position at the point where the limit switch is hit.
-        self.upper_limit = HomePosition(location=hit_location, forwards=not self.home_position.forwards)
+        self.secondary_home_position = HomePosition(location=hit_location, forwards=not self.home_position.forwards)
 
         self._is_homed = True
 
@@ -197,18 +197,6 @@ class AxisPair:
         self.x_axis.current_location = value[1]
 
     def home(self):
-
-        # Set margin for soft limits with the hard limit switches.
-        if self.x_axis.home_position.forwards:
-            x_margin = - 0.5
-        else:
-            x_margin = 0.5
-
-        if self.y_axis.home_position.forwards:
-            y_margin = - 0.5
-        else:
-            y_margin = 0.5
-
         # Home the switches
         home_x = threading.Thread(target=self.x_axis.home)
         home_y = threading.Thread(target=self.y_axis.home)
@@ -218,12 +206,16 @@ class AxisPair:
         home_x.join()
         home_y.join()
 
-        # Set soft limits.
-        self.x_soft_upper_limit = self.x_axis.upper_limit.location - x_margin
-        self.y_soft_upper_limit = self.y_axis.upper_limit.location - y_margin
+        # Set soft limits
+        margin = 0.5
 
-        self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
-        self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
+        self.x_soft_lower_limit, self.x_soft_upper_limit = \
+            sorted([self.x_axis.home_position.location, self.x_axis.secondary_home_position.location]) + \
+            margin * np.array([1, -1])
+
+        self.y_soft_lower_limit, self.y_soft_upper_limit = \
+            sorted([self.y_axis.home_position.location, self.y_axis.secondary_home_position.location]) + \
+            margin * np.array([1, -1])
 
     @property
     def is_homed(self):
