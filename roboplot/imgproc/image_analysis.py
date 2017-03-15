@@ -76,9 +76,6 @@ def process_and_extract_sub_image(image, scan_direction):
     # must first search for the red triangle.
 
     # Assuming the rotations below are quicker by converting to gray scale first if not already gray
-
-    image = cv2.resize(image, (200, 200))
-
     if len(image.shape) == 3:
         processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     else:
@@ -422,10 +419,8 @@ def search_for_red_triangle_near_centre(photo, min_size):
         return False, [cX, cY]
     else:
         return True, [mid_point - 20 + cX, mid_point - 20 + cY]
-        return error
 
-        
-        
+
 def find_start_direction(img):
     """
     This function takes an image and determine which direction the path leaves the centre from.

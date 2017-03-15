@@ -5,6 +5,7 @@ This module creates a debug images showing the movement of the plotter.
 
 """
 import os
+import threading
 
 import cv2
 import numpy as np
@@ -49,7 +50,7 @@ class DebugImage:
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
         a4paper = (210, 297)  # openCV asks for image dimensions as width then height.
-        
+
         self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
 
         # Background image
@@ -101,6 +102,11 @@ class DebugImage:
         self.colour = scan[self.colour_index]
 
     def save_image(self):
-        cv2.imwrite(os.path.join(config.debug_output_folder, "DebugImage_{i:04}.jpg".format(i=self.image_index)), self.debug_image)
-        self.image_index += 1
+        savepath = os.path.join(config.debug_output_folder, "DebugImage_{i:04}.jpg".format(i=self.image_index))
+
+        # Threaded in the hope that we can reduce time wasted waiting on IO
+        debug_image_copy = self.debug_image.copy()
+        threading.Thread(target=lambda: cv2.imwrite(savepath, debug_image_copy)).start()
+
+        #self.image_index += 1
         self.steps_since_save = 0

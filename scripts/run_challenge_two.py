@@ -3,6 +3,7 @@ import cv2
 import argparse
 import numpy as np
 
+import roboplot.config as config
 from roboplot.core.gpio.gpio_wrapper import GPIO
 import roboplot.imgproc.path_following as path_following
 import roboplot.imgproc.image_analysis as image_analysis
@@ -14,8 +15,8 @@ try:
     # Home axes.
    # hardware.both_axes.home()
 
-    centre = challenge2.find_green_triangle(32, 20)
-    centre, photo = challenge2.find_green_centre(centre, 32, 20)
+    global_centre = challenge2.find_green_triangle(32, 20)
+    centre, photo = challenge2.find_green_centre(global_centre, 32, 20)
 
     # Need function to compute first direction here.
 

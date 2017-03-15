@@ -5,7 +5,6 @@ import cv2
 import roboplot.config as config
 
 
-
 class DummyCamera:
     """This class holds the functions required to mimic the behavior of the plotter when taking photos."""
 
@@ -23,8 +22,10 @@ class DummyCamera:
         self._map_width = self._map.shape[0]
         self._map_height = self._map.shape[1]
 
-        self._conversion_factor = 0.05  # This converts pixels to mm, 1mm  is 20 pixels
-        self._photo_size = 800
+        # Conversion between pixel co-ordinates and mm 20 pixels per mm.
+        self._conversion_factor = 0.05
+
+        self._photo_size = int(40 / self._conversion_factor)  # 40 mm photo size
         self._photo_index = 0
 
     def take_photo_at(self, camera_centre):
@@ -95,5 +96,5 @@ class DummyCamera:
             cv2.rectangle(self._debug_map, (image_y_min, image_x_min), (image_y_max, image_x_max), (200, 10, 255), 40)
             cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_Positions_Debug.jpg'), self._debug_map)
 
-        return dummy_photo
+        return cv2.resize(dummy_photo, config.CAMERA_RESOLUTION)
 

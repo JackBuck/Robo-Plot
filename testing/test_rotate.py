@@ -22,25 +22,25 @@ class RotationTest(unittest.TestCase):
         # Rotate 90 anti-clockwise
         angle = math.radians(90)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (-10, 2.0)
+        expected_point = [-10, 2]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-3))
 
         # Rotate 90 clockwise
         angle = math.radians(-90)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (10, -2.0)
+        expected_point = [10, -1]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-3))
 
         # Rotate 45 anti-clockwise
         angle = math.radians(45)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (-5.656, 8.485)
+        expected_point = [-5, 8]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-2))
 
         # Rotate 45 clockwise
         angle = math.radians(-45)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (8.485, 5.656)
+        expected_point = [8, 5]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-2))
 
     def testRotateAboutPoint(self):
@@ -50,25 +50,25 @@ class RotationTest(unittest.TestCase):
         # Rotate 90 anti-clockwise
         angle = math.radians(90)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (3.0, 5.0)
+        expected_point = [3, 5]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-3))
 
         # Rotate 90 clockwise
         angle = math.radians(-90)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (7.0, 11.0)
+        expected_point = [7, 11]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-3))
 
         # Rotate 45 anti-clockwise
         angle = math.radians(45)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (1.46, 7.29)
+        expected_point = [1, 7]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-2))
 
         # Rotate 45 clockwise
         angle = math.radians(-45)
         rotated_point = image_analysis.rotate(origin, point, angle)
-        expected_point = (4.29, 11.54)
+        expected_point = [4, 11]
         self.assertTrue(np.allclose(rotated_point, expected_point, atol=1e-2))
 
 # Running this runs all the tests and outputs their results.
