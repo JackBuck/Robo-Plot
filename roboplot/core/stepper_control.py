@@ -29,9 +29,10 @@ class HomePosition:
 
 
 class Axis:
+    # Class variables, present so that we can use spec_set with unittest.Mock
     current_location = 0
-    home_position = HomePosition()
-    upper_limit = HomePosition()
+    home_position = None
+    upper_limit = None
     _is_homed = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
@@ -115,7 +116,7 @@ class Axis:
             hit_location = self._step_expecting_limit_switch()
 
         # Set the upper home limits of the home position at the point where the limit switch is hit.
-        self.upper_limit.location = hit_location
+        self.upper_limit = HomePosition(location=hit_location, forwards=not self.home_position.forwards)
 
         self._is_homed = True
 
