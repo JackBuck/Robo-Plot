@@ -180,7 +180,7 @@ def _extract_spots_from_clean_image(img):
     return keypoints
 
 
-def __draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
+def _draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
     """An apparently unused method which is actually quite useful when debugging!"""
 
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
