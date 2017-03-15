@@ -51,7 +51,7 @@ class Axis:
 
         self._motor = motor
         self._lead = lead
-        self._limit_switches = limit_switch_pair
+        self.limit_switches = limit_switch_pair
         self._invert_axis = invert_axis
         self.home_position = home_position
 
@@ -87,7 +87,7 @@ class Axis:
         self.forwards = self.home_position.forwards
 
         # Check that a limit switch is not currently pressed
-        if any([switch.is_pressed for switch in self._limit_switches]):
+        if any([switch.is_pressed for switch in self.limit_switches]):
             raise limit_switches.UnexpectedLimitSwitchError("Cannot home if switch is already pressed!")
 
         # Step until a switch is hit
@@ -120,10 +120,10 @@ class Axis:
         Returns:
             The current_location when the switch press occurred.
         """
-        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
         if not a_switch_is_pressed:
             self._step_unsafe()
-            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+            a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
 
         if a_switch_is_pressed:
             hit_location = self.current_location
@@ -131,10 +131,10 @@ class Axis:
             return hit_location  # Allow the caller the make use of the hit location, e.g. for homing
 
     def step(self) -> None:
-        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
         if not a_switch_is_pressed:
             self._step_unsafe()
-            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+            a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
 
         if a_switch_is_pressed:
             self._back_off()
@@ -157,7 +157,7 @@ class Axis:
         finally:
             self.forwards = originally_forwards
 
-        if any(switch.is_pressed for switch in self._limit_switches):
+        if any(switch.is_pressed for switch in self.limit_switches):
             raise limit_switches.UnexpectedLimitSwitchError(message='Limit switch is still pressed after backoff!')
 
     def _step_unsafe(self):

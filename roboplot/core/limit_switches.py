@@ -42,11 +42,23 @@ class PretendLimitSwitch:
             valid_range (tuple): an ordered pair of numbers, one of which is infinite, which define the range in which
                                  the limit switch will return False to is_pressed.
         """
+        self._verify_valid_range(valid_range)
+        self._valid_range = valid_range
+
+    @property
+    def valid_range(self):
+        return self._valid_range
+
+    @valid_range.setter
+    def valid_range(self, new_valid_range):
+        self._verify_valid_range(new_valid_range)
+        self._valid_range = new_valid_range
+
+    @staticmethod
+    def _verify_valid_range(valid_range):
         assert len(valid_range) == 2
         assert sum(np.isinf(valid_range)) == 1
         assert valid_range[0] < valid_range[1]
-
-        self._valid_range = valid_range
 
     def register_parent_axis(self, parent_axis) -> None:
         """
