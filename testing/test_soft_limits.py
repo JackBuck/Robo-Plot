@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 
-import os
-import time
 import unittest
 import contextlib
 import warnings
 from io import StringIO
 
-import numpy as np
-
 import context
-import roboplot.config as config
 import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
 import roboplot.core.limit_switches as limit_switches
