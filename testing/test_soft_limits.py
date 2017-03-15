@@ -31,8 +31,8 @@ else:
 
 
 class SoftLimitTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super(SoftLimitTest, self).__init__(*args, **kwargs)
+
+    def setUp(self):
         hardware.both_axes.home()
 
     def test_ExceedMinXLimit_LimitsOn(self):
