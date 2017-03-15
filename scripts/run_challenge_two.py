@@ -12,17 +12,16 @@ import roboplot.core.hardware as hardware
 
 try:
     # Home axes.
-    hardware.both_axes.home()
+   # hardware.both_axes.home()
 
     centre = challenge2.find_green_triangle(32, 20)
     centre, photo = challenge2.find_green_centre(centre, 32, 20)
 
     # Need function to compute first direction here.
 
-    gray_scale_photo = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
-    starting_direction = image_analysis.find_start_direction(gray_scale_photo)
+    starting_direction = image_analysis.find_start_direction(photo)
 
-    computed_camera_path = path_following.compute_complete_path(gray_scale_photo, starting_direction)
+    computed_camera_path = path_following.compute_complete_path(photo, starting_direction)
     path_following.follow_computed_path(computed_camera_path)
 
 

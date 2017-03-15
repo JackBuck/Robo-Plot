@@ -27,15 +27,24 @@ def compute_complete_path(image, starting_direction):
 
     # Analyse image where greed triangle was found and compute its path.
     image_to_analyse = image_analysis.process_and_extract_sub_image(image, starting_direction)
-    computed_pixel_path, next_direction = image_analysis.compute_pixel_path(image, search_width)
+    computed_pixel_path, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse, search_width)
     computed_path = transform_to_global_coords(computed_pixel_path, starting_direction,
                                                             hardware.both_axes.current_location)
 
     i = 0
-    while i < 4:  # Should be true but restricting path for debugging.
+    while i < 1:  # Should be true but restricting path for debugging.
         i += 1
-        current_direction = next_direction
+
+        # Compute the current direction.
+        if turn_to_next_direction == image_analysis.Turning.LEFT:
+            current_direction = image_analysis.Direction.turn_left(current_direction)
+        elif turn_to_next_direction == image_analysis.Turning.RIGHT:
+            current_direction = image_analysis.Direction.turn_right(current_direction)
+
         # Create the line segment and move to the last point in the found path.
+        # Translate it into global co-ords first.
+
+        
         line_segment = curves.LineSegment(hardware.both_axes.current_location, computed_path[-1])
         hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
@@ -50,10 +59,10 @@ def compute_complete_path(image, starting_direction):
             break
 
         # Process picture and extract image for analysis.
-        image_to_analyse = image_analysis.process_and_extract_sub_image(photo, next_direction)
+        image_to_analyse = image_analysis.process_and_extract_sub_image(photo, turn_to_next_direction)
 
         # Analyse image
-        next_computed_pixel_path_segment, next_direction = image_analysis.compute_pixel_path(image, search_width)
+        next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse, search_width)
         next_computed_path_segment = transform_to_global_coords(next_computed_pixel_path_segment,
                                                                 current_direction, hardware.both_axes.current_location)
 

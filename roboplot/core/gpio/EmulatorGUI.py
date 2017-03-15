@@ -394,7 +394,7 @@ class GPIO:
                 objTemp.Out = "1"
                 
             dictionaryPins[str(channel)] =objTemp
-            drawGPIOOut(channel)
+            #drawGPIOOut(channel)
             
         elif(state == GPIO.IN):
             #set input
@@ -410,7 +410,7 @@ class GPIO:
                 objTemp.pull_up_down = "PUD_UP"
                 objTemp.In = "1"
                 
-            drawBindUpdateButtonIn(str(channel),objTemp.In)
+            #drawBindUpdateButtonIn(str(channel),objTemp.In)
             dictionaryPins[str(channel)] =objTemp
             
             
@@ -446,7 +446,7 @@ class GPIO:
             objPin.Out = "1"
 
         
-        drawGPIOOut(channel)
+        #drawGPIOOut(channel)
 
 
     @typeassert(int)

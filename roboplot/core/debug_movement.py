@@ -80,10 +80,11 @@ class DebugImage:
         if 0 <= pixel[0] < self._image_dimensions_pixels[1] and \
            0 <= pixel[1] < self._image_dimensions_pixels[0]:
             self.debug_image[pixel] = self.colour
-            print(' Pixel: ' + str(pixel))
+           # print(' Pixel: ' + str(pixel))
         else:
-            print('Warning: Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
+           # print('Warning: Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
             #raise Exception
+            x=0
 
         self.steps_since_save += 1
 

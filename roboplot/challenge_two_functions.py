@@ -84,7 +84,6 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
     # Move to camera position
 
     if not np.array_equal(hardware.both_axes.current_location, camera_centre):
-        print(camera_centre)
         line_to_camera_position = curves.LineSegment(hardware.both_axes.current_location, camera_centre)
         hardware.both_axes.follow(curve=line_to_camera_position, pen_speed=pen_speed)
 
@@ -101,8 +100,7 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
         # Change to global mm co-ordinates from co-ordinates within photo.
         displacement_x = (cX - int(photo.shape[0] / 2))*conversion_factor
         displacement_y = (cY - int(photo.shape[1] / 2))*conversion_factor
-
-        return displacement_x, displacement_y, photo
+        return displacement_x, displacement_y, hsv_image[:, :, 2]
     else:
         return -1, -1, hsv_image[:, :, 2]
 

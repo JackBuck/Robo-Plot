@@ -32,8 +32,8 @@ def save_line_approximation(debug_image, pixel_segments):
         cv2.line(debug_image, (x_start_index, y_start_index), (x_end_index, y_end_index), (255, 10, 10), 2)
         cv2.circle(debug_image, (x_start_index, y_start_index), 3, (255, 10, 10))
 
-    #cv2.imshow('LineApproximation', debug_image)
-    #cv2.waitKey(0)
+    cv2.imshow('LineApproximation', debug_image)
+    cv2.waitKey(0)
     cv2.imwrite(os.path.join(config.debug_output_folder, 'sub_image' + time.strftime("%Y%m%d-%H%M%S") + '.jpg'),
                 debug_image)
 
@@ -51,8 +51,8 @@ def save_average_rows(image, indices):
                                 int(current_average_pixel + pixel)] = (10, 10, 255)
     cv2.imwrite(os.path.join(config.debug_output_folder, 'AverageRows' + time.strftime("%Y%m%d-%H%M%S") + '.jpg'),
                 debug_image)
-    #cv2.imshow('Average Rows', debug_image)
-    #cv2.waitKey(0)
+    cv2.imshow('Average Rows', debug_image)
+    cv2.waitKey(0)
 
     return debug_image
 

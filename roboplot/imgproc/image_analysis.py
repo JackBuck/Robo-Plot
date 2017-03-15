@@ -27,6 +27,18 @@ class Direction(enum.IntEnum):
     WEST = 3
 
 
+def turn_left(current_direction):
+    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+    direction_index = (current_direction - 1) % 4
+    return direction_array[direction_index]
+
+
+def turn_right(current_direction):
+    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+    direction_index = (current_direction + 1) % 4
+    return direction_array[direction_index]
+
+
 class Turning(enum.IntEnum):
     LEFT = 0
     STRAIGHT = 1
@@ -63,7 +75,10 @@ def process_and_extract_sub_image(image, scan_direction):
     # Convert image to black and white - we cannot take the photos in black and white as we
     # must first search for the red triangle.
 
-    # Assuming the rotations below are quicker by converting to gray scale first if not already gra
+    # Assuming the rotations below are quicker by converting to gray scale first if not already gray
+
+    image = cv2.resize(image, (200, 200))
+
     if len(image.shape) == 3:
         processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     else:
@@ -79,12 +94,13 @@ def process_and_extract_sub_image(image, scan_direction):
     elif scan_direction == Direction.WEST:
         pixels = np.rot90(processed_img, 1)
 
-    sub_image = pixels[:, :int(pixels.shape[1]/2)]
+    sub_image = pixels[int(pixels.shape[0]/2):, :]
 
     # Save sub_image to debug folder if required.
     if __debug__:
         cv2.imwrite(os.path.join(config.debug_output_folder, 'sub_image' + time.strftime("%Y%m%d-%H%M%S") + '.jpg'), sub_image)
 
+    return sub_image
 
 def compute_pixel_path(image, search_width):
     """
