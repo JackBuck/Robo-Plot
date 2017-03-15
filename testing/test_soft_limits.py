@@ -115,7 +115,7 @@ class SoftLimitTest(unittest.TestCase):
         line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_lower_limit + 1], [1, hardware.both_axes.x_soft_lower_limit - 10])
         with warnings.catch_warnings(record=True) as w:
             # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
+            with self.assertRaises(limit_switches.UnexpectedLimitSwitchError):
                 self._test_soft_limit(line_segment, False)
 
             # Verify no warnings
@@ -126,7 +126,7 @@ class SoftLimitTest(unittest.TestCase):
         line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_upper_limit - 1], [1, hardware.both_axes.x_soft_upper_limit + 10])
         with warnings.catch_warnings(record=True) as w:
             # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
+            with self.assertRaises(limit_switches.UnexpectedLimitSwitchError):
                 self._test_soft_limit(line_segment, False)
 
             # Verify no warnings
@@ -137,7 +137,7 @@ class SoftLimitTest(unittest.TestCase):
         line_segment = curves.LineSegment([hardware.both_axes.x_soft_upper_limit + 1, 1], [hardware.both_axes.x_soft_upper_limit - 10, 1])
         with warnings.catch_warnings(record=True) as w:
             # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
+            with self.assertRaises(limit_switches.UnexpectedLimitSwitchError):
                 self._test_soft_limit(line_segment, False)
 
             # Verify no warnings
@@ -148,7 +148,7 @@ class SoftLimitTest(unittest.TestCase):
         line_segment = curves.LineSegment([hardware.both_axes.y_soft_upper_limit - 1, 1], [hardware.both_axes.y_soft_upper_limit + 10, 1])
         with warnings.catch_warnings(record=True) as w:
             # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
+            with self.assertRaises(limit_switches.UnexpectedLimitSwitchError):
                 self._test_soft_limit(line_segment, False)
 
             # Verify no warnings
