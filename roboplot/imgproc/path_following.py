@@ -6,8 +6,8 @@ import roboplot.imgproc.image_analysis as image_analysis
 def convert_to_global_coords(points, scan_direction, camera_position):
 
     # Scale factors
-    x_scaling = config.X_PIXELS_TO_POINTS_SCALE  # (based on a 200x200 pixel photo of a 40mm square)
-    y_scaling = config.Y_PIXELS_TO_POINTS_SCALE  # (based on a 200x200 pixel photo of a 40mm square)
+    x_scaling = config.X_PIXELS_TO_MILLIMETRE_SCALE
+    y_scaling = config.Y_PIXELS_TO_MILLIMETRE_SCALE
 
     offset = config.CAMERA_RESOLUTION[0]/2
 

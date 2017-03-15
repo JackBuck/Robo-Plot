@@ -17,8 +17,8 @@ class PathFollowingTest(unittest.TestCase):
         self.path_to_test_data = os.path.join(config.test_data_dir, 'PathFollowingTest')
 
     def testConvertFromSouth(self):
-        config.X_PIXELS_TO_POINTS_SCALE = 1
-        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.X_PIXELS_TO_MILLIMETRE_SCALE = 1
+        config.Y_PIXELS_TO_MILLIMETRE_SCALE = 1
         config.CAMERA_RESOLUTION = (20, 20)
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
@@ -29,8 +29,8 @@ class PathFollowingTest(unittest.TestCase):
         self.assertEqual(output, expected_output_points)
 
     def testConvertFromNorth(self):
-        config.X_PIXELS_TO_POINTS_SCALE = 1
-        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.X_PIXELS_TO_MILLIMETRE_SCALE = 1
+        config.Y_PIXELS_TO_MILLIMETRE_SCALE = 1
         config.CAMERA_RESOLUTION = (20, 20)
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
@@ -41,8 +41,8 @@ class PathFollowingTest(unittest.TestCase):
         self.assertEqual(output, expected_output_points)
 
     def testConvertFromEast(self):
-        config.X_PIXELS_TO_POINTS_SCALE = 1
-        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.X_PIXELS_TO_MILLIMETRE_SCALE = 1
+        config.Y_PIXELS_TO_MILLIMETRE_SCALE = 1
         config.CAMERA_RESOLUTION = (20, 20)
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
@@ -53,8 +53,8 @@ class PathFollowingTest(unittest.TestCase):
         self.assertEqual(output, expected_output_points)
 
     def testConvertFromWest(self):
-        config.X_PIXELS_TO_POINTS_SCALE = 1
-        config.Y_PIXELS_TO_POINTS_SCALE = 1
+        config.X_PIXELS_TO_MILLIMETRE_SCALE = 1
+        config.Y_PIXELS_TO_MILLIMETRE_SCALE = 1
         config.CAMERA_RESOLUTION = (20, 20)
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
@@ -65,6 +65,9 @@ class PathFollowingTest(unittest.TestCase):
         self.assertEqual(output, expected_output_points)
 
     def testConvertWithDefaultParam(self):
+        config.X_PIXELS_TO_MILLIMETRE_SCALE = 0.2
+        config.Y_PIXELS_TO_MILLIMETRE_SCALE = 0.2
+        config.CAMERA_RESOLUTION = (200, 200)
         points = [(0, 100), (13, 120), (85, 122), (27, 128), (150, 130)]
         centre = (50, 40)
 
