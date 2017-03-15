@@ -13,26 +13,21 @@ import context
 import roboplot.config as config
 import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
-from roboplot.core.limit_switches import LimitSwitch, UnexpectedLimitSwitchError
+import roboplot.core.limit_switches as limit_switches
 
-if hardware.x_home_position.forwards:
-    hardware.x_limit_switches[1]._valid_range = (5, hardware.x_limit_switches[1]._valid_range[1])
-    hardware.x_limit_switches[0]._valid_range = (hardware.x_limit_switches[0]._valid_range[0], -5)
-else:
-    hardware.x_limit_switches[1]._valid_range = (hardware.x_limit_switches[1]._valid_range[0], 5)
-    hardware.x_limit_switches[0]._valid_range = (-5, hardware.x_limit_switches[0]._valid_range[1])
 
-if hardware.y_home_position.forwards:
-    hardware.y_limit_switches[1]._valid_range = (5, hardware.y_limit_switches[1]._valid_range[1])
-    hardware.y_limit_switches[0]._valid_range = (hardware.y_limit_switches[0]._valid_range[0], -5)
-else:
-    hardware.y_limit_switches[1]._valid_range = (-5, hardware.y_limit_switches[1]._valid_range[1])
-    hardware.y_limit_switches[0]._valid_range = (hardware.y_limit_switches[0]._valid_range[0], 5)
+def _setup_small_axis_travels():
+    hardware.x_limit_switches = limit_switches.define_pretend_limit_switches(hardware.x_home_position, separation=5)
+    hardware.x_axis.current_location = hardware.x_limit_switches[0].get_location_infront_of_switch(millimetres=2.5)
+
+    hardware.y_limit_switches = limit_switches.define_pretend_limit_switches(hardware.y_home_position, separation=5)
+    hardware.y_axis.current_location = hardware.y_limit_switches[0].get_location_infront_of_switch(millimetres=2.5)
 
 
 class SoftLimitTest(unittest.TestCase):
 
     def setUp(self):
+        _setup_small_axis_travels()
         hardware.both_axes.home()
 
     def test_ExceedMinXLimit_LimitsOn(self):

@@ -10,6 +10,7 @@ It is also where the GPIO pins used for each piece of hardware are defined.
 import numpy as np
 
 import roboplot.config as config
+import roboplot.core.home_position as home_position
 import roboplot.core.limit_switches as limit_switches
 import roboplot.core.stepper_motors as stepper_motors
 import roboplot.core.stepper_control as stepper_control
@@ -26,24 +27,13 @@ x_limit_switches = (limit_switches.LimitSwitch(gpio_pin=8),  # Motor side
 y_limit_switches = (limit_switches.LimitSwitch(gpio_pin=9),  # Motor side
                     limit_switches.LimitSwitch(gpio_pin=11))  # Encoder side
 
-x_home_position = stepper_control.HomePosition(location=3)
-y_home_position = stepper_control.HomePosition(location=3)
+x_home_position = home_position.HomePosition(location=3)
+y_home_position = home_position.HomePosition(location=3)
 
 # Substitute objects
 if not config.real_hardware:
-    def _define_pretend_limit_switches(home_position, separation):
-        assert separation > 0
-
-        if home_position.forwards:
-            switch_locations = home_position.location + np.array([-separation, 0])
-        else:
-            switch_locations = home_position.location + np.array([0, separation])
-
-        return (limit_switches.PretendLimitSwitch(valid_range=(switch_locations[0], np.inf)),
-                limit_switches.PretendLimitSwitch(valid_range=(-np.inf, switch_locations[1])))
-
-    x_limit_switches = _define_pretend_limit_switches(x_home_position, 220)
-    y_limit_switches = _define_pretend_limit_switches(y_home_position, 350)
+    x_limit_switches = limit_switches.define_pretend_limit_switches(x_home_position, separation=220)
+    y_limit_switches = limit_switches.define_pretend_limit_switches(y_home_position, separation=350)
 
 # Higher level objects
 x_axis = stepper_control.Axis(

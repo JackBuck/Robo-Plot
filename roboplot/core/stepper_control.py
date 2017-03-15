@@ -6,8 +6,8 @@ This module controls the 2D drive system for the plotter.
 All distances in the module are expressed in MILLIMETRES.
 
 """
-import time
 import threading
+import time
 import warnings
 
 import numpy as np
@@ -15,17 +15,9 @@ import numpy as np
 import roboplot.config as config
 import roboplot.core.debug_movement as debug_movement
 import roboplot.core.limit_switches as limit_switches
-from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
-
-
-class HomePosition:
-    forwards = False
-    location = 0
-
-    def __init__(self, forwards=forwards, location=location):
-        self.forwards = forwards
-        self.location = location
+from roboplot.core.home_position import HomePosition
+from roboplot.core.stepper_motors import StepperMotor
 
 
 class Axis:

@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import MagicMock
 
 import context
+import roboplot.core.home_position
 import roboplot.core.stepper_control as stepper_control
 from roboplot.core.limit_switches import LimitSwitch, UnexpectedLimitSwitchError
 from roboplot.core.stepper_motors import StepperMotor
@@ -23,7 +24,7 @@ class BaseTestCases:
                                          MagicMock(name='switch_2', spec_set=LimitSwitch, is_pressed=False))
             self._mock_motor = MagicMock(name='motor', spec_set=StepperMotor, steps_per_revolution=200, clockwise=True)
             self._axis = stepper_control.Axis(self._mock_motor, 8, self._mock_limit_switches,
-                                              stepper_control.HomePosition(forwards=False, location=0))
+                                              roboplot.core.home_position.HomePosition(forwards=False, location=0))
 
 
 class AxisStepTests(BaseTestCases.Axis):
@@ -161,9 +162,9 @@ class AxisHomingTest(BaseTestCases.Axis):
 class AxisPairHomingTest(unittest.TestCase):
     def setUp(self):
         self._mock_x_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False,
-                                      home_position=stepper_control.HomePosition())
+                                      home_position=roboplot.core.home_position.HomePosition())
         self._mock_y_axis = MagicMock(name='y_axis', spec_set=stepper_control.Axis, is_homed=False,
-                                      home_position=stepper_control.HomePosition())
+                                      home_position=roboplot.core.home_position.HomePosition())
         self._both_axes = stepper_control.AxisPair(y_axis=self._mock_y_axis, x_axis=self._mock_x_axis)
 
         def home_x():

@@ -4,6 +4,7 @@ This module defines the class(es) interfacing the limit switches.
 
 import numpy as np
 
+from roboplot.core.home_position import HomePosition
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
 
@@ -59,6 +60,35 @@ class PretendLimitSwitch:
     @LimitSwitch.is_pressed.getter
     def is_pressed(self):
         return not self._valid_range[0] < self._parent_axis.current_location < self._valid_range[1]
+
+    def get_location_infront_of_switch(self, millimetres):
+        """Compute a location on the non-pressed side of the switch."""
+        if np.isinf(self._valid_range[1]):
+            return self._valid_range[0] + millimetres
+        else:
+            return self._valid_range[1] - millimetres
+
+
+def define_pretend_limit_switches(home_position: HomePosition, separation: float) -> tuple:
+    """A factory method for defining a pair of limit switches.
+
+    Args:
+        home_position (HomePosition): the homing configuration for the axis
+        separation (float): the (positive) distance between the limit switches
+
+    Returns:
+        tuple: a pair of PretendLimitSwitch objects
+    """
+
+    assert separation > 0
+
+    if home_position.forwards:
+        switch_locations = home_position.location + np.array([-separation, 0])
+    else:
+        switch_locations = home_position.location + np.array([0, separation])
+
+    return (PretendLimitSwitch(valid_range=(switch_locations[0], np.inf)),
+            PretendLimitSwitch(valid_range=(-np.inf, switch_locations[1])))
 
 
 class UnexpectedLimitSwitchError(Exception):
