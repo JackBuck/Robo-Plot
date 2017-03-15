@@ -241,40 +241,41 @@ class AxisPair:
         if not self.is_homed:
             warnings.warn("Attempting to follow curve without having been homed!!")
 
+        # Compute target points and target times
         points = curve.to_series_of_points(resolution)
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
 
-        # Bool to indicate whether soft limits have been exceeded.
-        soft_limits_exceeded = False
-
+        # Move, keeping a record of whether the
         for pt, target_time in zip(points[1:], target_times):
-
-            # If required, check whether the target location is within the soft limits if not reposition the point to
-            # the closest valid point.  
-            if use_soft_limits:
-                if pt[0] > self.y_soft_upper_limit:
-                    soft_limits_exceeded = True
-                    pt[0] = self.y_soft_upper_limit
-
-                if pt[1] > self.x_soft_upper_limit:
-                    soft_limits_exceeded = True
-                    pt[1] = self.x_soft_upper_limit
-
-                if pt[0] < self.y_soft_lower_limit:
-                    soft_limits_exceeded = True
-                    pt[0] = self.y_soft_lower_limit
-
-                if pt[1] < self.x_soft_lower_limit:
-                    soft_limits_exceeded = True
-                    pt[1] = self.x_soft_lower_limit
-
+            pt = self._apply_soft_limits(pt, suppress_limit_warnings, use_soft_limits)
             self.move_linearly(pt, target_time)
 
-        # Display warning if part of the curve lay outside of the soft limits.
-        if soft_limits_exceeded and not suppress_limit_warnings:
-            warnings.warn('Part of the curve lay outside of the soft limits')
+    def _apply_soft_limits(self, pt, suppress_limit_warnings, use_soft_limits):
+        if use_soft_limits:
+            old_pt = pt
+            pt = self._clip_point_to_soft_limits(pt)
+            if any(pt != old_pt) and not suppress_limit_warnings:
+                # Note that by default, warnings are only raised once
+                warnings.warn('Part of the curve lay outside of the soft limits')
+        return pt
+
+    def _clip_point_to_soft_limits(self, pt):
+        pt = pt.copy()
+
+        if pt[0] > self.y_soft_upper_limit:
+            pt[0] = self.y_soft_upper_limit
+
+        if pt[1] > self.x_soft_upper_limit:
+            pt[1] = self.x_soft_upper_limit
+
+        if pt[0] < self.y_soft_lower_limit:
+            pt[0] = self.y_soft_lower_limit
+
+        if pt[1] < self.x_soft_lower_limit:
+            pt[1] = self.x_soft_lower_limit
+        return pt
 
     def move_linearly(self, target_location: np.ndarray, target_completion_time: float) -> None:
         """
