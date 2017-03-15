@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-import contextlib
 import warnings
-from io import StringIO
 
 import context
 import roboplot.core.curves as curves
