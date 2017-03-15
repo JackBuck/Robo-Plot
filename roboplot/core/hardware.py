@@ -26,8 +26,8 @@ x_limit_switches = (limit_switches.LimitSwitch(gpio_pin=8),  # Motor side
 y_limit_switches = (limit_switches.LimitSwitch(gpio_pin=9),  # Motor side
                     limit_switches.LimitSwitch(gpio_pin=11))  # Encoder side
 
-x_home_position = stepper_control.HomePosition()
-y_home_position = stepper_control.HomePosition()
+x_home_position = stepper_control.HomePosition(location=3)
+y_home_position = stepper_control.HomePosition(location=3)
 
 # Substitute objects
 if not config.real_hardware:
