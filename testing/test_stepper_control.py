@@ -169,13 +169,13 @@ class AxisPairHomingTest(unittest.TestCase):
 
         def home_x():
             self._mock_x_axis.is_homed = True
-            return 210
+            self._mock_x_axis.secondary_home_position.location = 210
 
         self._mock_x_axis.home.side_effect = home_x
 
         def home_y():
             self._mock_y_axis.is_homed = True
-            return 279
+            self._mock_y_axis.secondary_home_position.location = 279
 
         self._mock_y_axis.home.side_effect = home_y
 
