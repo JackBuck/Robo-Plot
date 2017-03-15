@@ -152,7 +152,7 @@ class AxisHomingTest(BaseTestCases.Axis):
         self._axis.home()
         self.assertTrue(self._axis.is_homed)
 
-    def test_returns_secondary_limit_switch_location(self):
+    def test_records_secondary_limit_switch_location(self):
         self._axis.home()
         self.assertAlmostEqual(self._axis.secondary_home_position.location,
                                200 * self._axis.millimetres_per_step,
