@@ -6,8 +6,8 @@ This module controls the 2D drive system for the plotter.
 All distances in the module are expressed in MILLIMETRES.
 
 """
-import time
 import threading
+import time
 import warnings
 
 import numpy as np
@@ -15,23 +15,16 @@ import numpy as np
 import roboplot.config as config
 import roboplot.core.debug_movement as debug_movement
 import roboplot.core.limit_switches as limit_switches
-from roboplot.core.stepper_motors import StepperMotor
 from roboplot.core.curves import Curve
-
-
-class HomePosition:
-    forwards = False
-    location = 0
-
-    def __init__(self, forwards=forwards, location=location):
-        self.forwards = forwards
-        self.location = location
+from roboplot.core.home_position import HomePosition
+from roboplot.core.stepper_motors import StepperMotor
 
 
 class Axis:
+    # Class variables, present so that we can use spec_set with unittest.Mock
     current_location = 0
-    home_position = HomePosition()
-    upper_limit = HomePosition()
+    home_position = None
+    secondary_home_position = None
     _is_homed = False
 
     # Small enough that if we back off in the wrong direction, we don't go through the whole travel of the switch.
@@ -58,9 +51,9 @@ class Axis:
 
         self._motor = motor
         self._lead = lead
-        self._limit_switches = limit_switch_pair
-        self._home_position = home_position
+        self.limit_switches = limit_switch_pair
         self._invert_axis = invert_axis
+        self.home_position = home_position
 
     @property
     def back_off_millimetres(self):
@@ -94,7 +87,7 @@ class Axis:
         self.forwards = self.home_position.forwards
 
         # Check that a limit switch is not currently pressed
-        if any([switch.is_pressed for switch in self._limit_switches]):
+        if any([switch.is_pressed for switch in self.limit_switches]):
             raise limit_switches.UnexpectedLimitSwitchError("Cannot home if switch is already pressed!")
 
         # Step until a switch is hit
@@ -115,7 +108,7 @@ class Axis:
             hit_location = self._step_expecting_limit_switch()
 
         # Set the upper home limits of the home position at the point where the limit switch is hit.
-        self.upper_limit.location = hit_location
+        self.secondary_home_position = HomePosition(location=hit_location, forwards=not self.home_position.forwards)
 
         self._is_homed = True
 
@@ -127,10 +120,10 @@ class Axis:
         Returns:
             The current_location when the switch press occurred.
         """
-        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
         if not a_switch_is_pressed:
             self._step_unsafe()
-            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+            a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
 
         if a_switch_is_pressed:
             hit_location = self.current_location
@@ -138,10 +131,10 @@ class Axis:
             return hit_location  # Allow the caller the make use of the hit location, e.g. for homing
 
     def step(self) -> None:
-        a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+        a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
         if not a_switch_is_pressed:
             self._step_unsafe()
-            a_switch_is_pressed = any(switch.is_pressed for switch in self._limit_switches)
+            a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
 
         if a_switch_is_pressed:
             self._back_off()
@@ -164,7 +157,7 @@ class Axis:
         finally:
             self.forwards = originally_forwards
 
-        if any(switch.is_pressed for switch in self._limit_switches):
+        if any(switch.is_pressed for switch in self.limit_switches):
             raise limit_switches.UnexpectedLimitSwitchError(message='Limit switch is still pressed after backoff!')
 
     def _step_unsafe(self):
@@ -204,18 +197,6 @@ class AxisPair:
         self.x_axis.current_location = value[1]
 
     def home(self):
-
-        # Set margin for soft limits with the hard limit switches.
-        if self.x_axis.home_position.forwards:
-            x_margin = - 0.5
-        else:
-            x_margin = 0.5
-
-        if self.y_axis.home_position.forwards:
-            y_margin = - 0.5
-        else:
-            y_margin = 0.5
-
         # Home the switches
         home_x = threading.Thread(target=self.x_axis.home)
         home_y = threading.Thread(target=self.y_axis.home)
@@ -225,12 +206,16 @@ class AxisPair:
         home_x.join()
         home_y.join()
 
-        # Set soft limits.
-        self.x_soft_upper_limit = self.x_axis.upper_limit.location - x_margin
-        self.y_soft_upper_limit = self.y_axis.upper_limit.location - y_margin
+        # Set soft limits
+        margin = 0.5
 
-        self.x_soft_lower_limit = self.x_axis.home_position.location + x_margin
-        self.y_soft_lower_limit = self.y_axis.home_position.location + y_margin
+        self.x_soft_lower_limit, self.x_soft_upper_limit = \
+            sorted([self.x_axis.home_position.location, self.x_axis.secondary_home_position.location]) + \
+            margin * np.array([1, -1])
+
+        self.y_soft_lower_limit, self.y_soft_upper_limit = \
+            sorted([self.y_axis.home_position.location, self.y_axis.secondary_home_position.location]) + \
+            margin * np.array([1, -1])
 
     @property
     def is_homed(self):
@@ -257,40 +242,41 @@ class AxisPair:
         if not self.is_homed:
             warnings.warn("Attempting to follow curve without having been homed!!")
 
+        # Compute target points and target times
         points = curve.to_series_of_points(resolution)
         distances_between_points = np.linalg.norm(points[1:] - points[0:-1], axis=1)
         cumulative_distances = np.cumsum(distances_between_points)
         target_times = time.time() + cumulative_distances / pen_speed
 
-        # Bool to indicate whether soft limits have been exceeded.
-        soft_limits_exceeded = False
-
+        # Move, keeping a record of whether the
         for pt, target_time in zip(points[1:], target_times):
-
-            # If required, check whether the target location is within the soft limits if not reposition the point to
-            # the closest valid point.  
-            if use_soft_limits:
-                if pt[0] > self.y_soft_upper_limit:
-                    soft_limits_exceeded = True
-                    pt[0] = self.y_soft_upper_limit
-
-                if pt[1] > self.x_soft_upper_limit:
-                    soft_limits_exceeded = True
-                    pt[1] = self.x_soft_upper_limit
-
-                if pt[0] < self.y_soft_lower_limit:
-                    soft_limits_exceeded = True
-                    pt[0] = self.y_soft_lower_limit
-
-                if pt[1] < self.x_soft_lower_limit:
-                    soft_limits_exceeded = True
-                    pt[1] = self.x_soft_lower_limit
-
+            pt = self._apply_soft_limits(pt, suppress_limit_warnings, use_soft_limits)
             self.move_linearly(pt, target_time)
 
-        # Display warning if part of the curve lay outside of the soft limits.
-        if soft_limits_exceeded and not suppress_limit_warnings:
-            warnings.warn('Part of the curve lay outside of the soft limits')
+    def _apply_soft_limits(self, pt, suppress_limit_warnings, use_soft_limits):
+        if use_soft_limits:
+            old_pt = pt
+            pt = self._clip_point_to_soft_limits(pt)
+            if any(pt != old_pt) and not suppress_limit_warnings:
+                # Note that by default, warnings are only raised once
+                warnings.warn('Part of the curve lay outside of the soft limits')
+        return pt
+
+    def _clip_point_to_soft_limits(self, pt):
+        pt = pt.copy()
+
+        if pt[0] > self.y_soft_upper_limit:
+            pt[0] = self.y_soft_upper_limit
+
+        if pt[1] > self.x_soft_upper_limit:
+            pt[1] = self.x_soft_upper_limit
+
+        if pt[0] < self.y_soft_lower_limit:
+            pt[0] = self.y_soft_lower_limit
+
+        if pt[1] < self.x_soft_lower_limit:
+            pt[1] = self.x_soft_lower_limit
+        return pt
 
     def move_linearly(self, target_location: np.ndarray, target_completion_time: float) -> None:
         """

@@ -24,7 +24,7 @@ class DummyCamera:
         self._map_height = self._map.shape[1]
 
         self._conversion_factor = 0.05  # This converts pixels to mm, 1mm  is 20 pixels
-        self._photo_size = 800
+        self._photo_size = config.CAMERA_RESOLUTION[0]*self._conversion_factor
         self._photo_index = 0
 
     def take_photo_at(self, camera_centre):

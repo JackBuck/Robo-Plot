@@ -22,7 +22,7 @@ class Camera:
 
     def take_photo_at(self, camera_centre):
         with picamera.PiCamera() as camera:
-            camera.resolution = (200, 200)
+            camera.resolution = config.CAMERA_RESOLUTION
             camera.framerate = 24
             with picamera.array.PiRGBArray(camera) as output:
                 camera.capture(output, 'bgr', use_video_port=True)

@@ -1,169 +1,170 @@
 #!/usr/bin/env python3
 
-import os
-import time
 import unittest
-import contextlib
 import warnings
-from io import StringIO
-
-import numpy as np
 
 import context
-import roboplot.config as config
 import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
-from roboplot.core.limit_switches import LimitSwitch, UnexpectedLimitSwitchError
+import roboplot.core.limit_switches as limit_switches
+from roboplot.core.stepper_control import Axis
 
-if hardware.x_home_position.forwards:
-    hardware.x_limit_switches[1]._valid_range = (5, hardware.x_limit_switches[1]._valid_range[1])
-    hardware.x_limit_switches[0]._valid_range = (hardware.x_limit_switches[0]._valid_range[0], -5)
-else:
-    hardware.x_limit_switches[1]._valid_range = (hardware.x_limit_switches[1]._valid_range[0], 5)
-    hardware.x_limit_switches[0]._valid_range = (-5, hardware.x_limit_switches[0]._valid_range[1])
 
-if hardware.y_home_position.forwards:
-    hardware.y_limit_switches[1]._valid_range = (5, hardware.y_limit_switches[1]._valid_range[1])
-    hardware.y_limit_switches[0]._valid_range = (hardware.y_limit_switches[0]._valid_range[0], -5)
-else:
-    hardware.y_limit_switches[1]._valid_range = (-5, hardware.y_limit_switches[1]._valid_range[1])
-    hardware.y_limit_switches[0]._valid_range = (hardware.y_limit_switches[0]._valid_range[0], 5)
+def _setup_small_axis_travels():
+    # TODO: This is less than ideal because this method may need to change if we update the PretendLimitSwitch (a
+    # hidden dependence). But I've spent too long on this already!
+    x_limit_switches = limit_switches.define_pretend_limit_switches(hardware.x_home_position, separation=5)
+    _replace_limit_switches_on_axis(hardware.x_axis, x_limit_switches)
+
+    y_limit_switches = limit_switches.define_pretend_limit_switches(hardware.y_home_position, separation=5)
+    _replace_limit_switches_on_axis(hardware.y_axis, y_limit_switches)
+
+
+def _replace_limit_switches_on_axis(axis: Axis, switches):
+    for i in (0, 1):
+        axis.limit_switches[i].valid_range = switches[i].valid_range
+
+
+def _set_current_location_between_switches():
+    hardware.x_axis.current_location = hardware.x_limit_switches[0].get_location_infront_of_switch(millimetres=2.5)
+    hardware.y_axis.current_location = hardware.y_limit_switches[0].get_location_infront_of_switch(millimetres=2.5)
 
 
 class SoftLimitTest(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super(SoftLimitTest, self).__init__(*args, **kwargs)
+
+    def setUp(self):
+        _setup_small_axis_travels()
+        _set_current_location_between_switches()
         hardware.both_axes.home()
 
-    def test_ExceedMinXLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (1, hardware.both_axes.x_soft_lower_limit + 1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_lower_limit + 1], [1, hardware.both_axes.x_soft_lower_limit - 1])
+    def test_exceeding_min_x_soft_limit_raises_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_crossing_min_x_soft_limit()
+        self._follow_line_and_assert_soft_limit_warning(line_segment)
+
+    def test_exceeding_max_x_soft_limit_raises_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_crossing_max_x_soft_limit()
+        self._follow_line_and_assert_soft_limit_warning(line_segment)
+
+    def test_exceeding_min_y_soft_limit_raises_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_crossing_min_y_soft_limit()
+        self._follow_line_and_assert_soft_limit_warning(line_segment)
+
+    def test_exceeding_max_y_soft_limit_raises_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_crossing_max_y_soft_limit()
+        self._follow_line_and_assert_soft_limit_warning(line_segment)
+
+    def _follow_line_and_assert_soft_limit_warning(self, line_segment):
+        hardware.current_location = line_segment.start
+
         with warnings.catch_warnings(record=True) as w:
-            # Run test.
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
+
+            hardware.both_axes.follow(line_segment, pen_speed=100, use_soft_limits=True, suppress_limit_warnings=False)
+
             self.assertEqual(len(w), 1)
             self.assertTrue(issubclass(w[-1].category, UserWarning))
             self.assertTrue("Part of the curve lay outside of the soft limits" in str(w[-1].message))
 
-    def test_ExceedMaxXLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (1, hardware.both_axes.x_soft_upper_limit - 1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_upper_limit - 1], [1, hardware.both_axes.x_soft_upper_limit + 1])
+    def test_touching_min_x_soft_limit_does_not_raise_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_touching_min_x_soft_limit()
+        self._follow_line_and_assert_no_warning(line_segment)
+
+    def test_touching_max_x_soft_limit_does_not_raise_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_touching_max_x_soft_limit()
+        self._follow_line_and_assert_no_warning(line_segment)
+
+    def test_touching_min_y_soft_limit_does_not_raise_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_touching_min_y_soft_limit()
+        self._follow_line_and_assert_no_warning(line_segment)
+
+    def test_touching_max_y_soft_limit_does_not_raise_warning_when_limits_are_on(self):
+        line_segment = self._build_segment_touching_max_x_soft_limit()
+        self._follow_line_and_assert_no_warning(line_segment)
+
+    def _follow_line_and_assert_no_warning(self, line_segment):
+        hardware.current_location = line_segment.start
         with warnings.catch_warnings(record=True) as w:
-            # Run test.
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[-1].category, UserWarning))
-            self.assertTrue("Part of the curve lay outside of the soft limits" in str(w[-1].message))
-
-    def test_ExceedMinYLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (hardware.both_axes.y_soft_lower_limit + 1, 1)
-        line_segment = curves.LineSegment([hardware.both_axes.y_soft_lower_limit + 1, 1], [hardware.both_axes.y_soft_lower_limit - 1, 1])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test.
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[-1].category, UserWarning))
-            self.assertTrue("Part of the curve lay outside of the soft limits" in str(w[-1].message))
-
-    def test_ExceedMaxYLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (hardware.both_axes.x_soft_upper_limit - 1, 1)
-        line_segment = curves.LineSegment([hardware.both_axes.x_soft_upper_limit - 1, 1], [hardware.both_axes.x_soft_upper_limit + 1, 1])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test.
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[-1].category, UserWarning))
-            self.assertTrue("Part of the curve lay outside of the soft limits" in str(w[-1].message))
-
-    def test_TouchMinXLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (1, hardware.both_axes.x_soft_lower_limit + 1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_lower_limit + 1], [1, hardware.both_axes.x_soft_lower_limit])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
-            self.assertEqual(len(w), 0)
-
-    def test_TouchMaxXLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (1, hardware.both_axes.x_soft_upper_limit - 1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_upper_limit - 1], [1, hardware.both_axes.x_soft_upper_limit])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
-            self.assertEqual(len(w), 0)
-
-    def test_TouchMinYLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (hardware.both_axes.x_soft_lower_limit + 1, 1)
-        line_segment = curves.LineSegment([hardware.both_axes.x_soft_lower_limit + 1, 1], [hardware.both_axes.x_soft_lower_limit, 1])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
-            self.assertEqual(len(w), 0)
-
-    def test_TouchMaxYLimit_LimitsOn(self):
-        hardware.both_axes.current_position = (1, hardware.both_axes.x_soft_upper_limit -1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_upper_limit - 1], [hardware.both_axes.y_soft_upper_limit, 1])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            self._test_soft_limit(line_segment, True)
-            # Verify warnings
-            self.assertEqual(len(w), 0)
-        
-    def test_ExceedMinXLimit_SoftLimitsOff(self):
-        hardware.both_axes.current_position = (1, hardware.both_axes.x_soft_lower_limit + 1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_lower_limit + 1], [1, hardware.both_axes.x_soft_lower_limit - 10])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
-                self._test_soft_limit(line_segment, False)
-
-            # Verify no warnings
-            self.assertEqual(len(w), 0)
-
-    def test_ExceedMaxXLimit_SoftLimitsOff(self):
-        hardware.both_axes.current_position = (1, hardware.both_axes.x_soft_upper_limit - 1)
-        line_segment = curves.LineSegment([1, hardware.both_axes.x_soft_upper_limit - 1], [1, hardware.both_axes.x_soft_upper_limit + 10])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
-                self._test_soft_limit(line_segment, False)
-
-            # Verify no warnings
-            self.assertEqual(len(w), 0)
-
-    def test_ExceedMinYLimit_SoftLimitsOff(self):
-        hardware.both_axes.current_position = (hardware.both_axes.x_soft_upper_limit + 1, 1)
-        line_segment = curves.LineSegment([hardware.both_axes.x_soft_upper_limit + 1, 1], [hardware.both_axes.x_soft_upper_limit - 10, 1])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
-                self._test_soft_limit(line_segment, False)
-
-            # Verify no warnings
-            self.assertEqual(len(w), 0)
-
-    def test_ExceedMaxYLimit_SoftLimitsOff(self):
-        hardware.both_axes.current_position = (hardware.both_axes.y_soft_upper_limit - 1, 1)
-        line_segment = curves.LineSegment([hardware.both_axes.y_soft_upper_limit - 1, 1], [hardware.both_axes.y_soft_upper_limit + 10, 1])
-        with warnings.catch_warnings(record=True) as w:
-            # Run test
-            with self.assertRaises(UnexpectedLimitSwitchError):
-                self._test_soft_limit(line_segment, False)
-
-            # Verify no warnings
+            hardware.both_axes.follow(line_segment, pen_speed=100, use_soft_limits=True, suppress_limit_warnings=False)
             self.assertEqual(len(w), 0)
 
     @staticmethod
-    def _test_soft_limit(curve, use_limits=True, suppress_warnings=False):
-        temp_stdout = StringIO()
-        with contextlib.redirect_stdout(temp_stdout):
-            hardware.both_axes.follow(curve, pen_speed=100, use_soft_limits=use_limits, suppress_limit_warnings=suppress_warnings)
+    def _build_segment_touching_min_x_soft_limit():
+        start_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_lower_limit + 1)
+        target_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_lower_limit)
+        return curves.LineSegment(start_location, target_location)
+
+    @staticmethod
+    def _build_segment_touching_max_x_soft_limit():
+        start_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_upper_limit - 1)
+        target_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_upper_limit)
+        return curves.LineSegment(start_location, target_location)
+
+    @staticmethod
+    def _build_segment_touching_min_y_soft_limit():
+        start_location = (hardware.both_axes.y_soft_lower_limit + 1, hardware.x_axis.current_location)
+        target_location = (hardware.both_axes.y_soft_lower_limit, hardware.x_axis.current_location)
+        return curves.LineSegment(start_location, target_location)
+
+    @staticmethod
+    def _build_segment_touching_max_y_soft_limit():
+        start_location = (hardware.both_axes.y_soft_upper_limit - 1, hardware.x_axis.current_location)
+        target_location = (hardware.both_axes.y_soft_upper_limit, hardware.x_axis.current_location)
+        return curves.LineSegment(start_location, target_location)
+
+    def test_exceeding_min_x_soft_limit_does_not_raise_warning_when_limits_are_off(self):
+        line_segment = self._build_segment_crossing_min_x_soft_limit()
+        self._follow_line_with_soft_limits_off_and_assert_no_warning(line_segment)
+
+    def test_exceeding_max_x_soft_limit_does_not_raise_warning_when_limits_are_off(self):
+        line_segment = self._build_segment_crossing_max_x_soft_limit()
+        self._follow_line_with_soft_limits_off_and_assert_no_warning(line_segment)
+
+    def test_exceeding_min_y_soft_limit_does_not_raise_warning_when_limits_are_off(self):
+        line_segment = self._build_segment_crossing_min_y_soft_limit()
+        self._follow_line_with_soft_limits_off_and_assert_no_warning(line_segment)
+
+    def test_exceeding_max_y_soft_limit_does_not_raise_warning_when_limits_are_off(self):
+        line_segment = self._build_segment_crossing_max_y_soft_limit()
+        self._follow_line_with_soft_limits_off_and_assert_no_warning(line_segment)
+
+    def _follow_line_with_soft_limits_off_and_assert_no_warning(self, line_segment):
+        hardware.current_location = line_segment.start
+        with warnings.catch_warnings(record=True) as w:
+            try:
+                hardware.both_axes.follow(line_segment, pen_speed=100, use_soft_limits=False, suppress_limit_warnings=False)
+            except limit_switches.UnexpectedLimitSwitchError:
+                pass
+
+            self.assertEqual(len(w), 0)
+
+    @staticmethod
+    def _build_segment_crossing_min_x_soft_limit():
+        start_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_lower_limit + 1)
+        target_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_lower_limit - 1)
+        return curves.LineSegment(start_location, target_location)
+
+    @staticmethod
+    def _build_segment_crossing_max_x_soft_limit():
+        start_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_upper_limit - 1)
+        target_location = (hardware.y_axis.current_location, hardware.both_axes.x_soft_upper_limit + 1)
+        return curves.LineSegment(start_location, target_location)
+
+    @staticmethod
+    def _build_segment_crossing_min_y_soft_limit():
+        start_location = (hardware.both_axes.y_soft_lower_limit + 1, hardware.x_axis.current_location)
+        target_location = (hardware.both_axes.y_soft_lower_limit - 1, hardware.x_axis.current_location)
+        return curves.LineSegment(start_location, target_location)
+
+    @staticmethod
+    def _build_segment_crossing_max_y_soft_limit():
+        start_location = (hardware.both_axes.y_soft_upper_limit - 1, hardware.x_axis.current_location)
+        target_location = (hardware.both_axes.y_soft_upper_limit + 1, hardware.x_axis.current_location)
+        return curves.LineSegment(start_location, target_location)
+
+    # @staticmethod
+    # def _test_soft_limit(curve, use_limits=True, suppress_warnings=False):
+    #     temp_stdout = StringIO()
+    #     with contextlib.redirect_stdout(temp_stdout):
+    #         hardware.both_axes.follow(curve, pen_speed=100, use_soft_limits=use_limits, suppress_limit_warnings=suppress_warnings)
 
 
 def main():
