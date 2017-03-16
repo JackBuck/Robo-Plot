@@ -39,10 +39,6 @@ try:
         print(cY)
         print(cX)
 
-        l
-
-
-
     else:
         cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
         cv2.waitKey(0)
