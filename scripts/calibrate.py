@@ -11,7 +11,7 @@ import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
 
 a_camera = camera_wrapper.Camera()
-photo = a_camera.take_photo_at(0,0)
+photo = a_camera.take_photo_at((0 ,0))
 
 hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
 (cX, cY) = cd.detect_green(hsv_image, 0, False)
