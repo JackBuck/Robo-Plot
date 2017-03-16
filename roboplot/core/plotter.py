@@ -1,3 +1,5 @@
+import numpy as np
+
 import roboplot.core.curves as curves
 import roboplot.core.debug_movement as debug_movement
 import roboplot.core.liftable_pen as liftable_pen
@@ -5,7 +7,7 @@ import roboplot.core.stepper_control as stepper_control
 
 
 class Plotter:
-    default_pen_speed = 100  # I.e. as fast as possible
+    default_pen_speed = np.inf  # I.e. as fast as possible
     default_resolution = 0.1
 
     def __init__(self, axes: stepper_control.AxisPair, pen: liftable_pen.LiftablePen):

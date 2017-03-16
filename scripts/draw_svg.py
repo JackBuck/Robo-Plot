@@ -3,6 +3,8 @@
 import argparse
 import time
 
+import numpy as np
+
 import context
 import roboplot.core.hardware as hardware
 import roboplot.svg.svg_parsing as svg
@@ -19,7 +21,7 @@ try:
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
                         help='an initial sleep time in seconds (default: %(default)s)')
-    parser.add_argument('-f', '--filepath', type=str,
+    parser.add_argument('filepath', type=str,
                         help='a (relative or absolute) path to the svg file')
 
     args = parser.parse_args()
