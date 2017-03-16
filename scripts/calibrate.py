@@ -10,33 +10,38 @@ import roboplot.imgproc.colour_detection as cd
 import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
 
-a_camera = camera_wrapper.Camera()
-photo = a_camera.take_photo_at((0 ,0))
 
-hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
-(cX, cY) = cd.detect_green(hsv_image, 0, False)
-
-if cX != -1:
-    cv2.circle(photo, (cX, cY), 2, (255, 10, 10), 1)
-    cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
-    cv2.waitKey(0)
-    print("Point Found")
-
-    target_location = [hardware.both_axes.current_location[0] + cX * config.X_PIXELS_TO_MILLIMETRE_SCALE,
-                       hardware.both_axes.current_location[1] + cY * config.Y_PIXELS_TO_MILLIMETRE_SCALE]
+try:
+    a_camera = camera_wrapper.Camera()
+    photo = a_camera.take_photo_at((0 ,0))
 
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
     (cX, cY) = cd.detect_green(hsv_image, 0, False)
 
-    print(cY)
-    print(cX)
+    if cX != -1:
+        cv2.circle(photo, (cX, cY), 2, (255, 10, 10), 1)
+        cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
+        cv2.waitKey(0)
+        print("Point Found")
 
-    line_segment = curves.LineSegment(hardware.both_axes.current_location, target_location)
+        target_location = [hardware.both_axes.current_location[0] + cX * config.X_PIXELS_TO_MILLIMETRE_SCALE,
+                           hardware.both_axes.current_location[1] + cY * config.Y_PIXELS_TO_MILLIMETRE_SCALE]
 
-else:
-    cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
-    cv2.waitKey(0)
-    print("Point Not Found")
+        hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
+        (cX, cY) = cd.detect_green(hsv_image, 0, False)
+
+        print(cY)
+        print(cX)
+
+        line_segment = curves.LineSegment(hardware.both_axes.current_location, target_location)
+
+    else:
+        cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
+        cv2.waitKey(0)
+        print("Point Not Found")
+
+finally:
+    GPIO.cleanup()
 
 
 
