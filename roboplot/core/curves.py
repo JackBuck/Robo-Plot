@@ -14,6 +14,11 @@ class Curve:
         """The total length of the curve (in MILLIMETRES)."""
         raise NotImplementedError("The total length property must be overriden in derived classes.")
 
+    @property
+    def first_point(self) -> np.ndarray:
+        """The first point on the curve"""
+        return self.evaluate_at(arc_length=0)
+
     def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
         """
         This method should be overridden in derived classes to return the coordinates on the curve at (a) given

@@ -119,7 +119,8 @@ class SVGPath(Curve):
     def evaluate_at(self, arc_length, evaluation_tolerance_mm=_default_evaluation_tolerance_mm) -> np.ndarray:
         # First use ilength(...) to map curve lengths to the built-in parameterisation
         tol = evaluation_tolerance_mm / self._mm_per_unit
-        t_values = [self._path.ilength(s, s_tol=tol) for s in np.array(arc_length) / self._mm_per_unit]
+        t_values = [self._path.ilength(s, s_tol=tol)
+                    for s in np.array(arc_length, copy=False, ndmin=1) / self._mm_per_unit]
 
         # Then evaluate the curve at these points
         points_as_complex = np.array([self._path.point(t) for t in t_values]) * self._mm_per_unit

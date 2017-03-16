@@ -234,6 +234,7 @@ class AxisPair:
             a soft limits and if they lie outside of these a Warning message is printed and the curve will be adjusted to draw as close
             as possible to the target points.
             suppress_limit_warnings (bool): If true suppress the warnings given in when using the soft limits.
+            
         Returns:
             None
 
@@ -326,9 +327,14 @@ class AxisPair:
 
 
 class AxisPairWithDebugImage(AxisPair):
+    @staticmethod
+    def create_from(axes: AxisPair):
+        return AxisPairWithDebugImage(y_axis=axes.y_axis, x_axis=axes.x_axis)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.debug_image = debug_movement.DebugImage(self.x_axis.millimetres_per_step, config.debug_image_file_path)
+        self.debug_image = debug_movement.DebugImage(millimetres_per_step=self.x_axis.millimetres_per_step,
+                                                     bgimage_path=config.debug_image_file_path)
 
     @property
     def current_location(self):
