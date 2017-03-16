@@ -32,6 +32,7 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     """
 
     (lower, upper) = hsv_boundary
+    cX, cY = -1
 
     # Convert boundaries to np arrays
     lower = np.array(lower, dtype="uint8")
