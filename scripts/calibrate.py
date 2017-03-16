@@ -13,24 +13,25 @@ import roboplot.core.hardware as hardware
 
 try:
     a_camera = camera_wrapper.Camera()
-    photo = a_camera.take_photo_at((0 ,0))
+    photo = a_camera.take_photo_at((60, 20))
 
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
     (cX, cY) = cd.detect_green(hsv_image, 0, False)
 
     if cX != -1:
-        cv2.circle(photo, (cX, cY), 2, (255, 10, 10), 1)
+        # For some reason objects to putting this on a rotated image.??
+        #cv2.circle(photo, (cX, cY), 2, (255, 10, 10), 1)
         cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
         cv2.waitKey(0)
         print("Point Found")
 
-        target_location = [hardware.both_axes.current_location[0] + cX * config.X_PIXELS_TO_MILLIMETRE_SCALE,
-                           hardware.both_axes.current_location[1] + cY * config.Y_PIXELS_TO_MILLIMETRE_SCALE]
+        target_location = [hardware.both_axes.current_location[0] + (cY - photo.shape[0]/2) * config.X_PIXELS_TO_MILLIMETRE_SCALE,
+                           hardware.both_axes.current_location[1] + (cX - photo.shape[1]/2) * config.Y_PIXELS_TO_MILLIMETRE_SCALE]
 
         line_segment = curves.LineSegment(hardware.both_axes.current_location, target_location)
         hardware.both_axes.follow(curve=line_segment, pen_speed=np.Inf)
 
-        photo = a_camera.take_photo_at((0, 0))
+        photo = a_camera.take_photo_at((60, 20))
         hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
         (cX, cY) = cd.detect_green(hsv_image, 2, False)
 
