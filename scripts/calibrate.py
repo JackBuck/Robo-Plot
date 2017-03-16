@@ -22,8 +22,8 @@ if cX != -1:
     cv2.waitKey(0)
     print("Point Found")
 
-    target_location = [hardware.both_axes.current_location[0] + cX * config.X_PIXELS_TO_POINTS_SCALE,
-                       hardware.both_axes.current_location[1] + cY * config.Y_PIXELS_TO_POINTS_SCALE]
+    target_location = [hardware.both_axes.current_location[0] + cX * config.X_PIXELS_TO_MILLIMETRE_SCALE,
+                       hardware.both_axes.current_location[1] + cY * config.Y_PIXELS_TO_MILLIMETRE_SCALE]
 
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
     (cX, cY) = cd.detect_green(hsv_image, 0, False)

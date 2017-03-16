@@ -63,8 +63,8 @@ def find_green_triangle(pen_speed, min_size):
     if not green_found:
         raise AssertionError("No green was found on paper")
 
-    return camera_centre[0] + displacement_y * config.Y_PIXELS_TO_POINTS_SCALE, \
-           camera_centre[1] + displacement_x * config.X_PIXELS_TO_POINTS_SCALE
+    return camera_centre[0] + displacement_y * config.Y_PIXELS_TO_MILLIMETRE_SCALE, \
+           camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE
 
 
 def find_green_at_position(camera_centre, pen_speed, min_size):
@@ -111,8 +111,8 @@ def find_green_centre(initial_centre, pen_speed, min_size):
 
         # Find the centre of the largest green contour found on the image (if one exists)
         displacement_x, displacement_y, photo = find_green_at_position(camera_centre, pen_speed, min_size)
-        new_centre = (camera_centre[0] + displacement_y * config.Y_PIXELS_TO_POINTS_SCALE,
-                      camera_centre[1] + displacement_x * config.X_PIXELS_TO_POINTS_SCALE)
+        new_centre = (camera_centre[0] + displacement_y * config.Y_PIXELS_TO_MILLIMETRE_SCALE,
+                      camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE)
 
         # Calculate the error between old centre and new centre
         error = math.sqrt((new_centre[0] - camera_centre[0])**2 + (new_centre[1] - camera_centre[1])**2)
