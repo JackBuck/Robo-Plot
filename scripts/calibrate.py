@@ -30,11 +30,12 @@ try:
         line_segment = curves.LineSegment(hardware.both_axes.current_location, target_location)
         hardware.both_axes.follow(curve=line_segment, pen_speed=2)
 
-        cv2.imshow('Centre2', cv2.resize(photo, (500, 500)))
-        cv2.waitKey(0)
-
+        photo = a_camera.take_photo_at((0, 0))
         hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
         (cX, cY) = cd.detect_green(hsv_image, 0, False)
+
+        cv2.imshow('Centre2', cv2.resize(photo, (500, 500)))
+        cv2.waitKey(0)
 
         print(cY)
         print(cX)

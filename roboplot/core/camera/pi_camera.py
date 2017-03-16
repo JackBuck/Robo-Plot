@@ -28,6 +28,9 @@ class Camera:
                 camera.capture(output, 'bgr', use_video_port=True)
                 outputarray = output.array
 
+            pixels = np.rot90(outputarray, 2)
+
+
             # Save photo.
             cv2.imwrite(os.path.join(config.debug_output_folder, "Photo_" + str(self._photo_index) + ".jpg"),
                         outputarray)
