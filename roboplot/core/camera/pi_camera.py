@@ -28,7 +28,7 @@ class Camera:
                 camera.capture(output, 'bgr', use_video_port=True)
                 outputarray = output.array
 
-            pixels = np.rot90(outputarray, 2)
+                outputarray = np.rot90(outputarray, 2)
 
 
             # Save photo.
