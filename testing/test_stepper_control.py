@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import MagicMock
 
 import context
+import roboplot.core.home_position
 import roboplot.core.stepper_control as stepper_control
 from roboplot.core.limit_switches import LimitSwitch, UnexpectedLimitSwitchError
 from roboplot.core.stepper_motors import StepperMotor
@@ -48,6 +49,7 @@ class BaseTestCases:
     """
 
     class Axis(unittest.TestCase):
+
         def setUp(self):
             self._mock_limit_switches = (MagicMock(name='switch_1', spec_set=LimitSwitch, is_pressed=False),
                                          MagicMock(name='switch_2', spec_set=LimitSwitch, is_pressed=False))
@@ -62,7 +64,9 @@ class BaseTestCases:
             self._axis = stepper_control.Axis(motor=self._mock_motor,
                                               encoder=self._mock_encoder,
                                               lead=8,
-                                              limit_switch_pair=self._mock_limit_switches)
+                                              limit_switch_pair=self._mock_limit_switches,
+                                              home_position=roboplot.core.home_position.HomePosition(forwards=False,
+                                                                                                     location=0))
 
         def _add_to_motor_step_side_effect(self, *extra_effects):
             _add_side_effect(self._mock_motor.step, *extra_effects)
@@ -135,7 +139,7 @@ class AxisStepTests(BaseTestCases.Axis):
         # Verify that we backed off the correct number of steps
         steps_in_2mm = 2 / self._axis.millimetres_per_step
         self.assertEqual(self._mock_motor.step.call_count,
-                         steps_in_2mm+1)  # NB the first step is forwards since it's the one which triggers the switch!
+                         steps_in_2mm + 1)  # NB the first step is forwards since it's the one which triggers the switch!
 
     def test_stepping_raises_when_a_limit_switch_is_pressed(self):
         for i in 0, 1:
@@ -179,10 +183,10 @@ class AxisHomingTest(BaseTestCases.Axis):
         self._add_to_motor_step_side_effect(lambda: self.assertTrue(0 <= self.true_motor_location_in_steps <= 200))
         self._axis.home()
 
-    def test_ends_2mm_behind_limit_switch(self):
+    def test_ends_2mm_behind_secondary_limit_switch(self):
         self._axis.home()
         steps_in_2mm = 2 / self._axis.millimetres_per_step
-        self.assertEqual(self.true_motor_location_in_steps, steps_in_2mm)
+        self.assertEqual(self.true_motor_location_in_steps, 200 - steps_in_2mm)
 
     def test_current_location_would_be_home_location_at_limit_switch(self):
         self._axis.home()
@@ -197,20 +201,32 @@ class AxisHomingTest(BaseTestCases.Axis):
         self._axis.home()
         self.assertTrue(self._axis.is_homed)
 
+    def test_records_secondary_limit_switch_location(self):
+        self._axis.home()
+        self.assertAlmostEqual(self._axis.secondary_home_position.location,
+                               200 * self._axis.millimetres_per_step,
+                               delta=self._axis.millimetres_per_step / 2)
+
 
 class AxisPairHomingTest(unittest.TestCase):
+    """Tests the behaviour of the AxisPair.home() method."""
+
     def setUp(self):
-        self._mock_x_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False)
-        self._mock_y_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False)
+        self._mock_x_axis = MagicMock(name='x_axis', spec_set=stepper_control.Axis, is_homed=False,
+                                      home_position=roboplot.core.home_position.HomePosition())
+        self._mock_y_axis = MagicMock(name='y_axis', spec_set=stepper_control.Axis, is_homed=False,
+                                      home_position=roboplot.core.home_position.HomePosition())
         self._both_axes = stepper_control.AxisPair(y_axis=self._mock_y_axis, x_axis=self._mock_x_axis)
 
         def home_x():
             self._mock_x_axis.is_homed = True
+            self._mock_x_axis.secondary_home_position.location = 210
 
         self._mock_x_axis.home.side_effect = home_x
 
         def home_y():
             self._mock_y_axis.is_homed = True
+            self._mock_y_axis.secondary_home_position.location = 279
 
         self._mock_y_axis.home.side_effect = home_y
 

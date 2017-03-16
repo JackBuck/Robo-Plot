@@ -18,6 +18,7 @@ GPIONames = ["14", "15", "18", "23", "24", "25", "8", "7", "12", "16", "20", "21
 
 class App(threading.Thread):
     def __init__(self):
+        self.loaded_event = threading.Event()
         threading.Thread.__init__(self, daemon=True)
         self.start()
 
@@ -271,6 +272,7 @@ class App(threading.Thread):
 
         self.root.geometry('%dx%d+%d+%d' % (1300, 100, 0, 0))
 
+        self.loaded_event.set()
         self.root.mainloop()
 
     ##        button1.unbind("<Button-1>")
@@ -365,7 +367,7 @@ class GPIO:
     @staticmethod
     @typeassert(int)
     def setmode(mode):
-        time.sleep(1)
+        app.loaded_event.wait()  # So that we wait for the minimum possible time
         if mode == GPIO.BCM:
             GPIO.setModeDone = True
         else:

@@ -35,7 +35,7 @@ class Encoder(threading.Thread):
         """
 
         # Initialise thread object (base class initialiser)
-        threading.Thread.__init__(self, group=None, target=self._encoder_loop, name=thread_name)
+        threading.Thread.__init__(self, group=None, target=self._encoder_loop, name=thread_name, daemon=True)
 
         # Default members
         self.state_sequence = ((0, 1), (0, 0), (1, 0), (1, 1))
@@ -56,6 +56,11 @@ class Encoder(threading.Thread):
         # Setup gpio_pins
         for pin in (self.a_pin, self.b_pin):
             GPIO.setup(pin, GPIO.IN)
+
+    @staticmethod
+    def new_update_event() -> threading.Event:
+        """Creates a new update event which is suitable for storing on the encoder."""
+        return threading.Event()
 
     @property
     def update_events(self) -> set:
