@@ -16,11 +16,12 @@ try:
     parser.add_argument('-r', '--resolution', type=float, default=1,
                         help='the resolution in millimetres to use when splitting the image into linear moves ('
                              'default: %(default)smm)')
-    parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=np.inf,
+    parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float,
+                        default=hardware.plotter.default_pen_speed,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
                         help='an initial sleep time in seconds (default: %(default)s)')
-    parser.add_argument('-f', '--filepath', type=str,
+    parser.add_argument('filepath', type=str,
                         help='a (relative or absolute) path to the svg file')
 
     args = parser.parse_args()
@@ -30,13 +31,13 @@ try:
 
     time.sleep(args.wait)
 
-    hardware.both_axes.home()
+    hardware.plotter.home()
 
     start_time = time.time()
 
     distance_travelled = 0
     for curve in svg_curves:
-        hardware.both_axes.follow(curve, pen_speed=args.pen_millimetres_per_second, resolution=args.resolution)
+        hardware.plotter.draw(curve, pen_speed=args.pen_millimetres_per_second, resolution=args.resolution)
         distance_travelled += curve.total_millimetres
 
     end_time = time.time()

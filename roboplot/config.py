@@ -20,9 +20,18 @@ else:
     print("Using simulated hardware")
 
 # Debugging image paths
+debug_image_file_path = os.path.join(resources_dir, 'Challenge_2_Test_Images', 'HackspacePath_Sample3.png')
+debug_output_folder = os.path.join(resources_dir, 'DebugImages')
+
+# Debugging image paths
 debug_image_file_path = os.path.normpath(os.path.join(resources_dir, 'Challenge_2_Test_Images', 'HackspacePath_Sample3.png'))
 debug_output_folder = os.path.normpath(os.path.join(resources_dir, 'DebugImages'))
 
 
-# Camera variables.
+# Camera constants
+X_PIXELS_TO_MILLIMETRE_SCALE = 0.2
+Y_PIXELS_TO_MILLIMETRE_SCALE = 0.2
+
+CAMERA_RESOLUTION = (200, 200)
+
 camera_offset = (0.0, 2.0)  # Needs calibration. This is translation to move from pen centre to camera centre.
