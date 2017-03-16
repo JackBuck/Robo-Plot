@@ -28,12 +28,8 @@ class Camera:
                 camera.capture(output, 'bgr', use_video_port=True)
                 outputarray = output.array
 
+        # Rotate image to oriente it with paper.
         outputarray = np.rot90(outputarray, 1)
-        cv2.imshow('Rotate1', outputarray)
-        outputarray = np.rot90(outputarray, 2)
-        cv2.imshow('Rotate2', outputarray)
-        outputarray = np.rot90(outputarray, 3)
-        cv2.imshow('Rotate3', outputarray)
 
         # Save photo.
         cv2.imwrite(os.path.join(config.debug_output_folder, "Photo_" + str(self._photo_index) + ".jpg"),
