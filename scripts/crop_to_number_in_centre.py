@@ -49,7 +49,7 @@ def dist_between_contours(cnt1, cnt2):
     return min([min(np.linalg.norm(cnt1 - pt, axis=2)) for pt in cnt2])
 
 
-contours = [cv2.convexHull(c, returnPoints=True) for c in contours]
+# contours = [cv2.convexHull(c, returnPoints=True) for c in contours]
 
 spot_location_as_contour = np.reshape(spot_closest_to_centre.pt, (-1, 1, 2))
 central_contours = [spot_location_as_contour]
@@ -68,3 +68,10 @@ central_contours = central_contours[1:]
 
 draw_image_with_contours(img, central_contours)
 
+
+#  Mask the image based on the central contours
+mask = np.zeros(img.shape, np.uint8)
+cv2.drawContours(mask, central_contours, contourIdx=-1, color=255, thickness=-1)
+img[np.where(mask == 0)] = 255
+cv2.imshow("Masked", img)
+cv2.waitKey(0)
