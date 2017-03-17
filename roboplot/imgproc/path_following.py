@@ -28,7 +28,7 @@ def compute_complete_path(image, current_direction):
     computed_path =[]
 
     i = 0
-    while True:  # Should be true but restricting path for debugging.
+    while i<50:  # Should be true but restricting path for debugging.
         i += 1
 
         # Analyse photo to check if red is found.
@@ -68,7 +68,7 @@ def compute_complete_path(image, current_direction):
             current_direction = image_analysis.turn_right(current_direction)
 
     if __debug__:
-        iadebug.save_line_approximation(hardware.both_axes.debug_image.debug_image, computed_path)
+        iadebug.save_line_approximation(hardware.both_axes.debug_image.debug_image, computed_path, False)
 
     return computed_path
 

@@ -1,7 +1,7 @@
 import enum
 import os
 import math
-import time
+import datetime
 import operator
 
 import numpy as np
@@ -95,9 +95,12 @@ def process_and_extract_sub_image(image, scan_direction):
 
     # Save sub_image to debug folder if required.
     if __debug__:
-        cv2.imwrite(os.path.join(config.debug_output_folder, 'sub_image' + time.strftime("%Y%m%d-%H%M%S") + '.jpg'), sub_image)
+        cv2.imwrite(os.path.join(config.debug_output_folder,
+                                 datetime.datetime.now().strftime("%Y%m%d-%H%M%S.%f") + 'aa_sub_image' + '.jpg'),
+                    sub_image)
 
     return sub_image
+
 
 def compute_pixel_path(image, search_width):
     """
@@ -116,7 +119,7 @@ def compute_pixel_path(image, search_width):
     indices, turn_to_next_scan = analyse_rows(image, search_width)
 
     if __debug__:
-        debug_image = iadebug.save_average_rows(image, indices)
+        debug_image = iadebug.save_average_rows(image, indices, False)
     else:
         debug_image = None
 
@@ -124,47 +127,82 @@ def compute_pixel_path(image, search_width):
 
     # Show current state if debug is set to true.
     if __debug__:
-        iadebug.save_line_approximation(debug_image, pixel_segments)
+        iadebug.save_line_approximation(debug_image, pixel_segments, False)
 
     # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
     if (len(indices) < image.shape[0]) and (turn_to_next_scan is not Turning.STRAIGHT):
 
+        #last_line = image[-1, :]
+#
+        #is_valid_rotation = True
+#
+        #if turn_to_next_scan is Turning.RIGHT:
+        #    white_found = False
+        #    pixel_index = last_line.shape[0]-1
+#
+        #    while not white_found and pixel_index >= 0:
+        #        white_found = last_line[pixel_index] > white_threshold
+        #        pixel_index -= 1
+#
+        #    if pixel_index > last_line.shape[0]/2:
+        #        is_valid_rotation = False
+        #    else:
+        #        length_from_centre = (last_line.shape[0] / 2) - pixel_index
+        #        angle_rad = min(2 * math.atan(length_from_centre / image.shape[0]),  np.deg2rad(60))
+#
+        #else:
+        #    white_found = False
+        #    pixel_index = 0
+#
+        #    while not white_found and pixel_index < last_line.shape[0]:
+        #        white_found = last_line[pixel_index] > white_threshold
+        #        pixel_index += 1
+#
+        #    if pixel_index < last_line.shape[0]/2:
+        #        is_valid_rotation = False
+        #    else:
+        #        length_from_centre = (pixel_index - last_line.shape[0]/2)
+        #        angle_rad = min(2*math.atan(length_from_centre/image.shape[0]),  np.deg2rad(60))
+        #        angle_rad *= -1
+
+        is_valid_rotation = True
         if turn_to_next_scan is Turning.LEFT:
-            angle = -60
+            angle_rad = np.deg2rad(-60)
         else:
-            angle = 60
+            angle_rad =  np.deg2rad(60)
 
-        # Create rotated sub_image to analyse
-        sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle)
+        if is_valid_rotation:
+            # Create rotated sub_image to analyse
+            sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle_rad)
 
-        # Analyse sub image
-        rotated_indices, _ = analyse_rows(sub_image, search_width)
+            # Analyse sub image
+            rotated_indices, _ = analyse_rows(sub_image, search_width)
 
-        if __debug__:
-            debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices)
-        else:
-            debug_sub_image = None
+            if __debug__:
+                debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices, True)
+            else:
+                debug_sub_image = None
 
-        # Compute approximate lines on sub_image
-        rotated_pixel_segments = approximate_path(rotated_indices)
+            # Compute approximate lines on sub_image
+            rotated_pixel_segments = approximate_path(rotated_indices)
 
-        # Show current state if debug is set to true and reset indices.
-        if __debug__:
-            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments)
+            # Show current state if debug is set to true and reset indices.
+            if __debug__:
+                iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, True)
 
-        # Rotate line indices back.
+            # Rotate line indices back.
 
-            extra_pixel_segments = [list(map(operator.add,
-                                             (int(pixel_segments[-1][0]), int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
-                                             rotate(rotated_pixel_segments[0], point, math.radians(-angle))))
-                                    for point in rotated_pixel_segments]
+                extra_pixel_segments = [list(map(operator.add,
+                                                 (int(pixel_segments[-1][0]), int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
+                                                 rotate(rotated_pixel_segments[0], point, -angle_rad)))
+                                        for point in rotated_pixel_segments]
 
-        # Add segments to list.
-        pixel_segments += extra_pixel_segments
+            # Add segments to list.
+            pixel_segments += extra_pixel_segments
 
-        if __debug__:
-            debug_image = iadebug.create_debug_image(image)
-            iadebug.save_line_approximation(debug_image, pixel_segments)
+    if __debug__:
+        debug_image = iadebug.create_debug_image(image)
+        iadebug.save_line_approximation(debug_image, pixel_segments, False)
 
     return pixel_segments, turn_to_next_scan
 
@@ -388,13 +426,13 @@ def approximate_path(pixel_indices):
     return pixel_segments
 
 
-def create_rotated_sub_image(image, centre, search_width, angle):
+def create_rotated_sub_image(image, centre, search_width, angle_rad):
 
     # Rotation transform requires x then y.
-    M = cv2.getRotationMatrix2D((centre[1], centre[0]), angle, 1.0)
+    M = cv2.getRotationMatrix2D((centre[1], centre[0]), np.rad2deg(angle_rad), 1.0)
 
     w = image.shape[1]
-    h = int(centre[0] + (w/2 - abs(centre[1] - w/2))*abs(math.sin(math.radians(angle))))
+    h = int(centre[0] + (w/2 - abs(centre[1] - w/2)) * abs(math.sin(angle_rad)))
 
     rotated = cv2.warpAffine(image, M, (w, h))
 
