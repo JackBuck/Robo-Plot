@@ -18,9 +18,12 @@ import roboplot.core.curves as curves
 
 def compute_complete_path(image, current_direction):
     # Set up variables.
-    search_width = int(config.CAMERA_RESOLUTION[0]/2)
+    search_width = int(config.CAMERA_RESOLUTION[0]/5)
     red_triangle_found = False
     red_min_size = 30
+
+    kernel = np.ones((5, 5), np.uint8)
+    image = cv2.dilate(image, kernel, iterations=10)
 
     # Set up camera.
     a_camera = camera_wrapper.Camera()
@@ -28,7 +31,7 @@ def compute_complete_path(image, current_direction):
     computed_path =[]
 
     i = 0
-    while i<50:  # Should be true but restricting path for debugging.
+    while i<60:  # Should be true but restricting path for debugging.
         i += 1
 
         # Analyse photo to check if red is found.

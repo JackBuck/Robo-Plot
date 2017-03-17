@@ -83,7 +83,7 @@ class DummyCamera:
 
         # Get dummy photo as sub array of the map.
         dummy_photo[image_x_min_placement:image_x_max_placement, image_y_min_placement:image_y_max_placement] = \
-            self._map[image_x_min:image_x_max, image_y_min:image_y_max]
+         self._map[image_x_min:image_x_max, image_y_min:image_y_max]
 
         if __debug__:
             # Save photo.
@@ -96,5 +96,5 @@ class DummyCamera:
             cv2.rectangle(self._debug_map, (image_y_min, image_x_min), (image_y_max, image_x_max), (200, 10, 255), 40)
             cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_Positions_Debug.jpg'), self._debug_map)
 
-        return cv2.resize(dummy_photo, config.CAMERA_RESOLUTION)
+        return np.copy(cv2.resize(dummy_photo, config.CAMERA_RESOLUTION))
 

@@ -8,6 +8,7 @@ import numpy as np
 import cv2
 
 import roboplot.config as config
+import roboplot.core.hardware as hardware
 
 # Debugging scale factor
 DEBUG_SCALE_FACTOR = 3
@@ -30,15 +31,18 @@ def save_line_approximation(debug_image, pixel_segments, is_rotated):
         y_end_index = int(pixel_segments[index + 1][0]*DEBUG_SCALE_FACTOR)
 
         # Note these functions need the co-ordinates ordered (x, y)
-        cv2.line(debug_image, (x_start_index, y_start_index), (x_end_index, y_end_index), (255, 10, 10), 2)
-        cv2.circle(debug_image, (x_start_index, y_start_index), 3, (255, 10, 10))
+        cv2.line(debug_image, (x_start_index, y_start_index), (x_end_index, y_end_index), (255, 10, 10), 1)
+        cv2.circle(debug_image, (x_start_index, y_start_index), 2, (255, 10, 10))
 
-    #cv2.imshow('LineApproximation', debug_image)
-    #cv2.waitKey(0)
+    filename = datetime.datetime.now().strftime("%M%S.%f_") \
+               + str(hardware.both_axes.current_location[0]) \
+               + '_' \
+               + str(hardware.both_axes.current_location[1]) + '_'
+
     if is_rotated:
-        filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.%f") + 'line_approximation_rotated' + '.jpg'
+        filename += 'line_approximation_rotated' + '.jpg'
     else:
-        filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.%f") + 'line_approximation' + '.jpg'
+        filename += 'line_approximation' + '.jpg'
 
     cv2.imwrite(os.path.join(config.debug_output_folder, filename), debug_image)
 
@@ -55,10 +59,15 @@ def save_average_rows(image, indices, is_rotated):
                     debug_image[int(DEBUG_SCALE_FACTOR * indices[i][0] + j),
                                 int(current_average_pixel + pixel)] = (10, 10, 255)
 
+    filename = datetime.datetime.now().strftime("%M%S.%f_") \
+               + str(hardware.both_axes.current_location[0]) \
+               + '_' \
+               + str(hardware.both_axes.current_location[1]) + '_'
+
     if is_rotated:
-        filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.%f") + 'average_rows_rotated' + '.jpg'
+        filename += 'average_rows_rotated' + '.jpg'
     else:
-        filename =datetime.datetime.now().strftime("%Y%m%d-%H%M%S.%f") + 'average_rows' + '.jpg'
+        filename += 'average_rows' + '.jpg'
     cv2.imwrite(os.path.join(config.debug_output_folder, filename),
                 debug_image)
 

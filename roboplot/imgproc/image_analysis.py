@@ -91,7 +91,21 @@ def process_and_extract_sub_image(image, scan_direction):
     elif scan_direction == Direction.WEST:
         pixels = np.rot90(processed_img, 1)
 
-    sub_image = pixels[int(pixels.shape[0]/2):, :]
+    pixels = cv2.GaussianBlur(pixels, (21, 21), 0)
+    _, pixels = cv2.threshold(pixels, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    kernel = np.array([[0, 1, 1, 1, 0],
+                       [1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1],
+                       [0, 1, 1, 1, 0]], np.uint8)
+
+    pixels = cv2.erode(pixels, kernel, iterations=10)
+
+    # cv2.imshow('full processed image', pixels)
+    # cv2.waitKey(0)
+
+    sub_image = pixels[int(pixels.shape[0] / 2):, :]
 
     # Save sub_image to debug folder if required.
     if __debug__:
@@ -116,7 +130,7 @@ def compute_pixel_path(image, search_width):
     """
 
     # Get average pixel positions and next path direction for photo.
-    indices, turn_to_next_scan = analyse_rows(image, search_width)
+    indices, turn_to_next_scan = analyse_rows(image, search_width, False)
 
     if __debug__:
         debug_image = iadebug.save_average_rows(image, indices, False)
@@ -132,73 +146,46 @@ def compute_pixel_path(image, search_width):
     # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
     if (len(indices) < image.shape[0]) and (turn_to_next_scan is not Turning.STRAIGHT):
 
-        #last_line = image[-1, :]
-#
-        #is_valid_rotation = True
-#
-        #if turn_to_next_scan is Turning.RIGHT:
-        #    white_found = False
-        #    pixel_index = last_line.shape[0]-1
-#
-        #    while not white_found and pixel_index >= 0:
-        #        white_found = last_line[pixel_index] > white_threshold
-        #        pixel_index -= 1
-#
-        #    if pixel_index > last_line.shape[0]/2:
-        #        is_valid_rotation = False
-        #    else:
-        #        length_from_centre = (last_line.shape[0] / 2) - pixel_index
-        #        angle_rad = min(2 * math.atan(length_from_centre / image.shape[0]),  np.deg2rad(60))
-#
-        #else:
-        #    white_found = False
-        #    pixel_index = 0
-#
-        #    while not white_found and pixel_index < last_line.shape[0]:
-        #        white_found = last_line[pixel_index] > white_threshold
-        #        pixel_index += 1
-#
-        #    if pixel_index < last_line.shape[0]/2:
-        #        is_valid_rotation = False
-        #    else:
-        #        length_from_centre = (pixel_index - last_line.shape[0]/2)
-        #        angle_rad = min(2*math.atan(length_from_centre/image.shape[0]),  np.deg2rad(60))
-        #        angle_rad *= -1
-
-        is_valid_rotation = True
         if turn_to_next_scan is Turning.LEFT:
             angle_rad = np.deg2rad(-60)
         else:
-            angle_rad =  np.deg2rad(60)
+            angle_rad = np.deg2rad(60)
 
-        if is_valid_rotation:
-            # Create rotated sub_image to analyse
-            sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle_rad)
+        # Create rotated sub_image to analyse
+        sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle_rad)
 
-            # Analyse sub image
-            rotated_indices, _ = analyse_rows(sub_image, search_width)
+        # Analyse sub image
+        rotated_indices, rotated_turn_to_next_scan = analyse_rows(sub_image, search_width, True)
+        if __debug__:
+            debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices, True)
+        else:
+            debug_sub_image = None
 
-            if __debug__:
-                debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices, True)
-            else:
-                debug_sub_image = None
+        # Check that the turns do not disagree. If neither are straight and the disagree compromise on
+        # straight.
 
-            # Compute approximate lines on sub_image
-            rotated_pixel_segments = approximate_path(rotated_indices)
+        x=0
 
-            # Show current state if debug is set to true and reset indices.
-            if __debug__:
-                iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, True)
+        if turn_to_next_scan is not Turning.STRAIGHT \
+                and rotated_turn_to_next_scan is not Turning.STRAIGHT \
+                and turn_to_next_scan is not rotated_turn_to_next_scan:
+            turn_to_next_scan = Turning.STRAIGHT
+
+        # Compute approximate lines on sub_image
+        rotated_pixel_segments = approximate_path(rotated_indices)
+
+        # Show current state if debug is set to true and reset indices.
+        if __debug__:
+            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, True)
 
             # Rotate line indices back.
-
-                extra_pixel_segments = [list(map(operator.add,
-                                                 (int(pixel_segments[-1][0]), int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
-                                                 rotate(rotated_pixel_segments[0], point, -angle_rad)))
-                                        for point in rotated_pixel_segments]
-
-            # Add segments to list.
-            pixel_segments += extra_pixel_segments
+            extra_pixel_segments = [list(map(operator.add,
+                                             (int(pixel_segments[-1][0]),
+                                              int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
+                                             rotate(rotated_pixel_segments[0], point, -angle_rad)))
+                                    for point in rotated_pixel_segments]
+        # Add segments to list.
+        pixel_segments += extra_pixel_segments
 
     if __debug__:
         debug_image = iadebug.create_debug_image(image)
@@ -207,7 +194,7 @@ def compute_pixel_path(image, search_width):
     return pixel_segments, turn_to_next_scan
 
 
-def analyse_rows(pixels, search_width):
+def analyse_rows(pixels, search_width, is_rotated):
     """
 
     Args:
@@ -223,7 +210,7 @@ def analyse_rows(pixels, search_width):
     indices = []
 
     # Always assume the start of the path lies in the centre - this is so the path is not disjoint.
-    indices.append([0, int(pixels.shape[1]/2)])
+    indices.append([0, int(pixels.shape[1] / 2)])
 
     # Initially assume that the scan direction for the next image is the same as the current direction
     turn_to_next_scan = Turning.STRAIGHT
@@ -236,6 +223,7 @@ def analyse_rows(pixels, search_width):
     next_camera_position = (-1, -1)
 
     # Analyse each row at a time from the top moving down the image.
+
     for rr in range(1, pixels.shape[0]):
 
         # Determine the indices to average based on the last valid index.
@@ -243,19 +231,25 @@ def analyse_rows(pixels, search_width):
         # might be at the edge of the image.
         min_index = int(max(0, indices[-1][1] - search_width/2))
         max_index = int(min(pixels.shape[1], indices[-1][1] + search_width / 2))
-        sub_array = pixels[rr, min_index:max_index]
+        current_row = pixels[rr, min_index:max_index]
 
         # Compute the average of the given row portion.
-        next_centroid = min_index + compute_weighted_centroid(sub_array)
+        next_centroid = min_index + compute_weighted_centroid(current_row)
+
+        # EXPERIMENTAL -can cause rotations to not give much.
+        if is_rotated \
+                and rr > pixels.shape[0] - 25 \
+                and (next_centroid < 25 or next_centroid > current_row.shape[0] - 25):
+            break
 
         # Only continue if the its the first index or the line as not got too flat. 2 means cannot go above
         # 45 degrees
-        if rr == 1 or abs(next_centroid - indices[-1][1]) < 2:
+        if rr == 1 or abs(next_centroid - indices[-1][1]) < 3:
             # Valid result, add result to arrays
             indices.append([rr, next_centroid])
             last_centroid = Centroid.VALID
 
-        elif abs(next_centroid - indices[-1][1]) >= 2:
+        elif abs(next_centroid - indices[-1][1]) >= 3:
             # Invalid result - too much of a gap created.
             # If the last row was also invalid then we stop as another picture needs to be taken.
             if last_centroid != Centroid.VALID:
@@ -302,7 +296,7 @@ def find_first_black_row(image, current_row, column):
     count = 0
 
     # While the pixel is classed as white move down a row
-    while pixel > white_threshold and current_row < image.shape[0]-1:
+    while pixel > white_threshold and current_row < image.shape[0] - 1:
         current_row += 1
         pixel = image[current_row, column]
         count += 1
@@ -323,7 +317,7 @@ def approximate_with_line(indices):
     y_translated = y_translated[:, np.newaxis]
     a, _, _, _ = np.linalg.lstsq(y_translated, x_translated)
 
-    c = indices[0][1] - indices[0][0]*a[0]
+    c = indices[0][1] - indices[0][0] * a[0]
     return a[0], c
 
 
@@ -333,8 +327,8 @@ def error_from_line(line, indices, max_error):
     This functions finds the first index along the line where the error is greater than the max error bound.
     """
     if line[0]:
-        line_normal = np.array([1, -1/line[0]])
-        line_normal /= math.sqrt(1+1/(line[0] * line[0]))
+        line_normal = np.array([1, -1 / line[0]])
+        line_normal /= math.sqrt(1 + 1 / (line[0] * line[0]))
     else:
         line_normal = np.array([0, 1])
 
@@ -375,7 +369,6 @@ def rotate(origin, point, angle):
 
 
 def approximate_path(pixel_indices):
-
     # Approximate the pixels with a line. Start with a line between first and last average pixel.
     # Pixels in the segment index are ordered y, x
 
@@ -427,12 +420,13 @@ def approximate_path(pixel_indices):
 
 
 def create_rotated_sub_image(image, centre, search_width, angle_rad):
-
     # Rotation transform requires x then y.
     M = cv2.getRotationMatrix2D((centre[1], centre[0]), np.rad2deg(angle_rad), 1.0)
 
     w = image.shape[1]
-    h = int(centre[0] + (w/2 - abs(centre[1] - w/2)) * abs(math.sin(angle_rad)))
+
+    h = centre[0] + int((image.shape[0] - centre[0]) * abs(math.sin(angle_rad)))
+    #int(centre[0] + (w / 2 - abs(centre[1] - w / 2)) * abs(math.sin(angle_rad)))
 
     rotated = cv2.warpAffine(image, M, (w, h))
 
@@ -441,14 +435,13 @@ def create_rotated_sub_image(image, centre, search_width, angle_rad):
                                    min(rotated.shape[1] - centre[1], search_width)))
 
     sub_image = rotated[centre[0]:,
-                        centre[1] - half_sub_image_width: centre[1] + half_sub_image_width]
+                centre[1] - half_sub_image_width: centre[1] + half_sub_image_width]
 
     return sub_image
 
 
 def search_for_red_triangle_near_centre(photo, min_size):
-
-    mid_point = int(photo.shape[0]/2)
+    mid_point = int(photo.shape[0] / 2)
     restricted_image = photo[mid_point - 20:mid_point + 20, mid_point - 20:mid_point + 20]
     hsv_restricted_image = cv2.cvtColor(restricted_image, cv2.COLOR_BGR2HSV)
     (cX, cY) = cd.detect_red(hsv_restricted_image, min_size, False)
@@ -480,7 +473,7 @@ def find_start_direction(img):
     img_height = img.shape[0]
     img_width = img.shape[1]
 
-    sub_array = img[int(img_height/3):int(2*img_height/3), int(img_width/3):int(2*img_width/3)]
+    sub_array = img[int(img_height / 3):int(2 * img_height / 3), int(img_width / 3):int(2 * img_width / 3)]
 
     # Determine which orientation contains the most white pixels.
     # North
@@ -513,7 +506,3 @@ def find_start_direction(img):
 
     if max_num_pixels == west_whiteness_total:
         return Direction.WEST
-        
-        
-        
-        
