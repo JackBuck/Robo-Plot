@@ -31,7 +31,7 @@ def compute_complete_path(image, current_direction):
     computed_path =[]
 
     i = 0
-    while i<60:  # Should be true but restricting path for debugging.
+    while i<70:  # Should be true but restricting path for debugging.
         i += 1
 
         # Analyse photo to check if red is found.
