@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 
 import cv2
@@ -66,12 +68,17 @@ while still_adding_contours:
 
 central_contours = central_contours[1:]
 
-draw_image_with_contours(img, central_contours)
+# draw_image_with_contours(img, central_contours)
 
 
 #  Mask the image based on the central contours
 mask = np.zeros(img.shape, np.uint8)
 cv2.drawContours(mask, central_contours, contourIdx=-1, color=255, thickness=-1)
 img[np.where(mask == 0)] = 255
-cv2.imshow("Masked", img)
-cv2.waitKey(0)
+
+
+# Try to recognise the number
+recognised_number = number_recognition.recognise_rotated_number(img)
+
+print("Recognised number: {!r}".format(recognised_number.numeric_value))
+print("Probable spot location: {!r}".format(recognised_number.dot_location_yx))
