@@ -208,10 +208,10 @@ def compute_pixel_path(image, search_width):
     """
 
     # Get average pixel positions and next path direction for photo.
-    indices, turn_to_next_scan = analyse_rows(image, search_width, False)
+    indices, turn_to_next_scan = analyse_rows(image, search_width, is_rotated=False)
 
     if __debug__:
-        debug_image = iadebug.save_average_rows(image, indices, False)
+        debug_image = iadebug.save_average_rows(image, indices, is_rotated=False)
     else:
         debug_image = None
 
@@ -219,7 +219,7 @@ def compute_pixel_path(image, search_width):
 
     # Show current state if debug is set to true.
     if __debug__:
-        iadebug.save_line_approximation(debug_image, pixel_segments, False)
+        iadebug.save_line_approximation(debug_image, pixel_segments, is_rotated=False)
 
     # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
     if (len(indices) < image.shape[0]) and (turn_to_next_scan is not Turning.STRAIGHT):
@@ -233,9 +233,9 @@ def compute_pixel_path(image, search_width):
         sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle_rad)
 
         # Analyse sub image
-        rotated_indices, rotated_turn_to_next_scan = analyse_rows(sub_image, search_width, True)
+        rotated_indices, rotated_turn_to_next_scan = analyse_rows(sub_image, search_width, is_rotated=True)
         if __debug__:
-            debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices, True)
+            debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices, is_rotated=True)
         else:
             debug_sub_image = None
 
@@ -251,7 +251,7 @@ def compute_pixel_path(image, search_width):
 
         # Show current state if debug is set to true and reset indices.
         if __debug__:
-            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, True)
+            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments,is_rotated=True)
 
             # Rotate line indices back.
             extra_pixel_segments = [list(map(operator.add,
@@ -264,7 +264,7 @@ def compute_pixel_path(image, search_width):
 
     if __debug__:
         debug_image = iadebug.create_debug_image(image)
-        iadebug.save_line_approximation(debug_image, pixel_segments, False)
+        iadebug.save_line_approximation(debug_image, pixel_segments,is_rotated=False)
 
     return pixel_segments, turn_to_next_scan
 
@@ -277,8 +277,9 @@ def analyse_rows(pixels, search_width, is_rotated):
         search_width: The width around the path to be analysed.
         is_rotated: Whether the image being analysed has been rotated.
 
-    Returns: The indices of the average white pixels found  (centre of the path) and the
-                direction to turn to continue analysing the path.
+    Returns:
+        The indices of the average white pixels found  (centre of the path) and the direction to turn to continue
+        analysing the path.
 
     """
     # Create two lists containing the average index of the white in the given row and the row index of
@@ -505,7 +506,7 @@ def search_for_red_triangle_near_centre(photo, min_size):
     mid_point = int(photo.shape[0] / 2)
     restricted_image = photo[mid_point - 20:mid_point + 20, mid_point - 20:mid_point + 20]
     hsv_restricted_image = cv2.cvtColor(restricted_image, cv2.COLOR_BGR2HSV)
-    (cX, cY) = cd.detect_red(hsv_restricted_image, min_size, False)
+    (cX, cY) = cd.detect_red(hsv_restricted_image, min_size, change_to_white=False)
 
     if cX == -1:
         return False, [cX, cY]
