@@ -13,6 +13,7 @@ import warnings
 import numpy as np
 
 import roboplot.config as config
+import roboplot.core.curves as curves
 import roboplot.core.debug_movement as debug_movement
 import roboplot.core.limit_switches as limit_switches
 from roboplot.core.curves import Curve
@@ -220,6 +221,10 @@ class AxisPair:
     @property
     def is_homed(self):
         return self.x_axis.is_homed and self.y_axis.is_homed
+
+    def move_to(self, target_location, pen_speed: float) -> None:
+        line_to_target = curves.LineSegment(start=self.current_location, end=target_location)
+        self.follow(line_to_target, pen_speed)
 
     def follow(self, curve: Curve, pen_speed: float, resolution: float = 0.1, use_soft_limits: bool = True,
                suppress_limit_warnings: bool = False) -> None:
