@@ -160,12 +160,6 @@ class SoftLimitTest(unittest.TestCase):
         target_location = (hardware.both_axes.y_soft_upper_limit + 1, hardware.x_axis.current_location)
         return curves.LineSegment(start_location, target_location)
 
-    # @staticmethod
-    # def _test_soft_limit(curve, use_limits=True, suppress_warnings=False):
-    #     temp_stdout = StringIO()
-    #     with contextlib.redirect_stdout(temp_stdout):
-    #         hardware.both_axes.follow(curve, pen_speed=100, use_soft_limits=use_limits, suppress_limit_warnings=suppress_warnings)
-
 
 def main():
     """Running this runs all the tests and outputs their results."""
