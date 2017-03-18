@@ -28,12 +28,28 @@ class Direction(enum.IntEnum):
 
 
 def turn_left(current_direction):
+    """
+
+    Args:
+        current_direction: The direction the previous picture was taken in.
+
+    Returns:
+        new_direction: The direction after turning left
+    """
     direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
     direction_index = (current_direction - 1) % 4
     return direction_array[direction_index]
 
 
 def turn_right(current_direction):
+    """"
+
+    Args:
+        current_direction: The direction the previous picture was taken in.
+
+    Returns:
+        new_direction: The direction after turning right
+    """
     direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
     direction_index = (current_direction + 1) % 4
     return direction_array[direction_index]
@@ -46,6 +62,16 @@ class Turning(enum.IntEnum):
 
 
 def compute_centroid_from_row(current_row, last_centroid, search_width):
+    """
+
+    Args:
+        current_row: The row to be analysed
+        last_centroid: The centre of line in the previous row
+        search_width: The width of area to be searched.
+
+    Returns:
+        centroid: The centre of the line in the current row.
+    """
 
     # If the centroid from the last row is black in this row examine the width of the search area.
     if current_row[last_centroid] < 130:
@@ -84,12 +110,19 @@ def compute_centroid_from_row(current_row, last_centroid, search_width):
 
 
 def compute_centroid(lightnesses):
+    """
+
+    Args:
+        lightnesses: The sub_image to average.
+
+    Returns:
+        centroid: the centre of the line in the sub_image.
+    """
     num_elements = lightnesses.shape
 
     x = np.arange(num_elements[0])
     is_white = lightnesses > white_threshold
     num_white = sum(is_white)
-    weighted = np.multiply(is_white, x)
 
     if num_white == 0:
         return -1
@@ -242,6 +275,7 @@ def analyse_rows(pixels, search_width, is_rotated):
     Args:
         pixels: Image to be analysed
         search_width: The width around the path to be analysed.
+        is_rotated: Whether the image being analysed has been rotated.
 
     Returns: The indices of the average white pixels found  (centre of the path) and the
                 direction to turn to continue analysing the path.
@@ -261,9 +295,7 @@ def analyse_rows(pixels, search_width, is_rotated):
     # from the previous average - indicating noise in the image.
     last_centroid = Centroid.VALID
 
-
     # Analyse each row at a time from the top moving down the image.
-
     for rr in range(1, pixels.shape[0]):
 
         # Determine the indices to average based on the last valid index.
@@ -323,32 +355,15 @@ def analyse_rows(pixels, search_width, is_rotated):
     # Return the list of average indices and the scan direction for the next picture taken.
     return indices, turn_to_next_scan
 
-def find_first_black_row(image, current_row, column):
-    """
-    This function finds the number of rows from the current row until a black pixel is found.
-    :param current_row: The index of the current row being analysed.
-    :param column: The column index of the last valid index found.
-    :return: The number of rows until the next black row.
-    """
-
-    # Initially set the pixel to the last valid pixel found.
-    pixel = image[current_row, column]
-    count = 0
-
-    # While the pixel is classed as white move down a row
-    while pixel > white_threshold and current_row < image.shape[0] - 1:
-        current_row += 1
-        pixel = image[current_row, column]
-        count += 1
-
-    return count
-
 
 def approximate_with_line(indices):
     """
     Approximates gradient of line assuming that the line goes through the start point
+    Args:
+        indices: The points to be approximated.
 
-    Gives gradient y = mx
+    Returns:
+        The gradient and constant of the approximation line.
     """
 
     # Indices are ordered y, x in list.
@@ -363,8 +378,14 @@ def approximate_with_line(indices):
 
 def error_from_line(line, indices, max_error):
     """
-    Error from line y = mx + c, where line = (m, c) in the inputs.
-    This functions finds the first index along the line where the error is greater than the max error bound.
+        This functions finds the first index along the line where the error is greater than the max error bound.
+    Args:
+        line: The coefficients of the line approximation.
+        indices: The indices being approximated.
+        max_error: The max error allowed from the line
+
+    Returns:
+        The indices of the point that first breaks the maximum error.
     """
     if line[0]:
         line_normal = np.array([1, -1 / line[0]])
@@ -546,3 +567,27 @@ def find_start_direction(img):
 
     if max_num_pixels == west_whiteness_total:
         return Direction.WEST
+
+
+
+## Legacy ##
+def find_first_black_row(image, current_row, column):
+    """
+    This function finds the number of rows from the current row until a black pixel is found.
+    :param current_row: The index of the current row being analysed.
+    :param column: The column index of the last valid index found.
+    :return: The number of rows until the next black row.
+    """
+
+    # Initially set the pixel to the last valid pixel found.
+    pixel = image[current_row, column]
+    count = 0
+
+    # While the pixel is classed as white move down a row
+    while pixel > white_threshold and current_row < image.shape[0] - 1:
+        current_row += 1
+        pixel = image[current_row, column]
+        count += 1
+
+    return count
+
