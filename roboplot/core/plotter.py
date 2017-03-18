@@ -63,6 +63,17 @@ class Plotter:
         for curve in curve_list:
             self._axes.follow(curve, pen_speed, resolution)
 
+    def move_to(self, target_location, pen_speed: float = default_pen_speed) -> None:
+        """
+        Move from the current location to the target location.
+
+        Args:
+            target_location: the target location
+            pen_speed: the pen speed (optional)
+        """
+        self._lift_pen()
+        self._axes.move_to(target_location, pen_speed)
+
     def _lift_pen(self):
         self._pen.lift()
 
