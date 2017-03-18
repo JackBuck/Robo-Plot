@@ -45,6 +45,44 @@ class Turning(enum.IntEnum):
     RIGHT = 2
 
 
+def compute_centroid_from_row(current_row, last_centroid, search_width):
+
+    # If the centroid from the last row is black in this row examine the width of the search area.
+    if current_row[last_centroid] < 130:
+        min_index = int(max(0, last_centroid - search_width / 2))
+        max_index = int(min(current_row.shape[0], last_centroid + search_width / 2))
+
+    # Otherwise grow the search area at either end until they hit black pixels. If the side of the
+    # image is hit return an incorrect centroid.
+    else:
+        min_index = last_centroid - 1
+        while min_index > 0 and current_row[min_index] > 130:
+            min_index -= 1
+
+        max_index = last_centroid + 1
+        while max_index < current_row.shape[0] and current_row[max_index] > 130:
+            max_index += 1
+
+    image_to_analyse = current_row[min_index:max_index]
+
+    # temp_image = current_row.copy()
+    # temp_image = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2BGR)
+    # temp_image[min_index] = (255, 100, 200)
+    # temp_image[max_index] = (255, 100, 200)
+    # temp_image = np.tile(temp_image, (25, 1))
+    # temp_image = np.rot90(temp_image, 1)
+    # cv2.imshow('Row', cv2.resize(temp_image, (0, 0), fx=3, fy=3))
+    #cv2.waitKey(0)
+
+    # Compute the average of the given row portion.
+
+    sub_image_centroid = compute_centroid(image_to_analyse)
+    if sub_image_centroid == -1:
+        return -1
+    else:
+        return sub_image_centroid + min_index
+
+
 def compute_centroid(lightnesses):
     num_elements = lightnesses.shape
 
@@ -81,6 +119,8 @@ def process_and_extract_sub_image(image, scan_direction):
     else:
         processed_img = image
 
+
+
     # Orientate image so we are scanning the bottom half.
     if scan_direction == Direction.NORTH:
         pixels = np.rot90(processed_img, 2)
@@ -102,8 +142,13 @@ def process_and_extract_sub_image(image, scan_direction):
 
     pixels = cv2.erode(pixels, kernel, iterations=10)
 
-    # cv2.imshow('full processed image', pixels)
-    # cv2.waitKey(0)
+    # Debugging code - useful to show the images are being eroded correctly.
+    #spacer = processed_img[:, 0:2].copy()
+    #spacer.fill(100)
+    #combined_image = np.concatenate((processed_img, spacer), axis=1)
+    #combined_image = np.concatenate((combined_image, pixels), axis=1)
+    #cv2.imshow('PreProcessed and Processed Image', combined_image)
+    #cv2.waitKey(0)
 
     sub_image = pixels[int(pixels.shape[0] / 2):, :]
 
@@ -163,9 +208,6 @@ def compute_pixel_path(image, search_width):
 
         # Check that the turns do not disagree. If neither are straight and the disagree compromise on
         # straight.
-
-        x=0
-
         if turn_to_next_scan is not Turning.STRAIGHT \
                 and rotated_turn_to_next_scan is not Turning.STRAIGHT \
                 and turn_to_next_scan is not rotated_turn_to_next_scan:
@@ -219,8 +261,6 @@ def analyse_rows(pixels, search_width, is_rotated):
     # from the previous average - indicating noise in the image.
     last_centroid = Centroid.VALID
 
-    # Keep track of the current row index
-    next_camera_position = (-1, -1)
 
     # Analyse each row at a time from the top moving down the image.
 
@@ -229,7 +269,8 @@ def analyse_rows(pixels, search_width, is_rotated):
         # Determine the indices to average based on the last valid index.
         # Only a proportion of the row is considered this is to filter out any noise/path parts that
         # might be at the edge of the image.
-        current_row, next_centroid = compute_centroid_from_row(indices, pixels, rr, search_width)
+
+        next_centroid = compute_centroid_from_row(pixels[rr, :], indices[-1][1], search_width)
 
         # EXPERIMENTAL -can cause rotations to not give much.
         if is_rotated \
@@ -242,8 +283,9 @@ def analyse_rows(pixels, search_width, is_rotated):
             break
 
         # Only continue if the its the first index or the line as not got too flat. 2 means cannot go above
-        # 45 degrees
-        if rr == 1 or abs(next_centroid - indices[-1][1]) < 2:
+        # 45 degrees.  If we are on the first row abandon the averaging if the centroid found is black in
+        # the first row as this implied the picture is not ideal.
+        if (rr == 1 and pixels[0, next_centroid] > 130) or abs(next_centroid - indices[-1][1]) < 2:
             # Valid result, add result to arrays
             indices.append([rr, next_centroid])
             last_centroid = Centroid.VALID
@@ -280,16 +322,6 @@ def analyse_rows(pixels, search_width, is_rotated):
 
     # Return the list of average indices and the scan direction for the next picture taken.
     return indices, turn_to_next_scan
-
-
-def compute_centroid_from_row(indices, pixels, rr, search_width):
-    min_index = int(max(0, indices[-1][1] - search_width / 2))
-    max_index = int(min(pixels.shape[1], indices[-1][1] + search_width / 2))
-    current_row = pixels[rr, min_index:max_index]
-    # Compute the average of the given row portion.
-    next_centroid = min_index + compute_centroid(current_row)
-    return current_row, next_centroid
-
 
 def find_first_black_row(image, current_row, column):
     """
