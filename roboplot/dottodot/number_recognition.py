@@ -134,7 +134,7 @@ def _recognise_number_in_clean_image(img) -> int:
 
 
 def _clean_image(img):
-    img = cv2.medianBlur(img, ksize=5)
+    img = cv2.medianBlur(img, ksize=3)
     img = cv2.adaptiveThreshold(img, maxValue=255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                 thresholdType=cv2.THRESH_BINARY, blockSize=11, C=2)
     return img
