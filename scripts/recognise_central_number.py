@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
 
 import cv2
 import numpy as np
@@ -11,25 +12,30 @@ import roboplot.dottodot.number_recognition as number_recognition
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Crop a dot-to-dot image to just the number closest to the centre.')
 parser.add_argument('input_file', type=str, help='the path to the file containing the dot-to-dot image.')
+parser.add_argument('-d', '--display-images', action='store_true', help='display intermediate results.')
 args = parser.parse_args()
 
 # ---  Script body ---
-
 img = number_recognition.read_image(args.input_file)
 img = number_recognition._clean_image(img)
 
 # Dilate and Erode to 'clean' the spot (note that this harms the number itself, so we may want to only do this
 # temporarily
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-img = cv2.dilate(img, kernel, iterations=1)
-img = cv2.erode(img, kernel, iterations=1)
+img_lessnoise = cv2.dilate(img, kernel, iterations=1)
+img_lessnoise = cv2.erode(img_lessnoise, kernel, iterations=1)
 
-spot_keypoints = number_recognition._extract_spots_from_clean_image(img)
+spot_keypoints = number_recognition._extract_spots_from_clean_image(img_lessnoise)
+
+if len(spot_keypoints) == 0:
+    print("No spot found")
+    sys.exit(0)
 
 image_centre = np.array(img.shape) / 2
 spot_closest_to_centre = min(spot_keypoints, key=lambda s: np.linalg.norm(s.pt - image_centre))
 
-# number_recognition._draw_image_with_keypoints(img, [spot_closest_to_centre])
+if args.display_images:
+    number_recognition._draw_image_with_keypoints(img, [spot_closest_to_centre])
 
 # Find contours
 img_inverted = 255 - img
@@ -68,7 +74,8 @@ while still_adding_contours:
 
 central_contours = central_contours[1:]
 
-# draw_image_with_contours(img, central_contours)
+if args.display_images:
+    draw_image_with_contours(img, central_contours)
 
 
 #  Mask the image based on the central contours
@@ -76,6 +83,9 @@ mask = np.zeros(img.shape, np.uint8)
 cv2.drawContours(mask, central_contours, contourIdx=-1, color=255, thickness=-1)
 img[np.where(mask == 0)] = 255
 
+if args.display_images:
+    cv2.imshow("Masked image", img)
+    cv2.waitKey(0)
 
 # Try to recognise the number
 recognised_number = number_recognition.recognise_rotated_number(img)
