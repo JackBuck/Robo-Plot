@@ -1,7 +1,3 @@
-import enum
-import os
-import math
-import time
 import operator
 
 import numpy as np
@@ -12,7 +8,6 @@ import roboplot.core.hardware as hardware
 import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.image_analysis_debug as iadebug
 import roboplot.imgproc.image_analysis as image_analysis
-import roboplot.imgproc.colour_detection as cd
 import roboplot.core.curves as curves
 
 
