@@ -79,6 +79,16 @@ class Plotter:
         for curve in curve_list:
             self._axes.follow(curve, pen_speed, resolution)
 
+    def move_camera_to(self, target_location, camera_speed: float = default_pen_speed) -> None:
+        """
+        Move the camera from the current location to the target location.
+
+        Args:
+            target_location: the target location
+            camera_speed: the camera speed (mm/s) (optional)
+        """
+        self.move_pen_to(target_location - self._pen_to_camera_offset, pen_speed=camera_speed)
+
     def move_pen_to(self, target_location, pen_speed: float = default_pen_speed) -> None:
         """
         Move the pen from the current location to the target location.
