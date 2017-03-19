@@ -307,6 +307,9 @@ class AxisPair:
         target_distances = abs(target_location - start_location)
         current_distances = np.array([0, 0])
 
+        # TODO: There is a bug here - somehow I manage to overstep slightly (I notice this in y by moving to [10,
+        # 10] after homing, when it actually moved to [9.96, 10])
+        # Maybe the nearest_reachable_location idea isn't good enough?
         while any(current_distances < target_distances):
             self._step_the_axis_which_is_behind(current_distances, target_distances)
 
