@@ -120,15 +120,20 @@ class Plotter:
 class PlotterWithDebugImage(Plotter):
     @staticmethod
     def create_from(plotter: Plotter):
-        return PlotterWithDebugImage(plotter._axes, plotter._pen)
+        return PlotterWithDebugImage(plotter._axes, plotter._pen, plotter._camera, plotter._pen_to_camera_offset)
 
-    def __init__(self, axes: stepper_control.AxisPairWithDebugImage, pen: liftable_pen.LiftablePen):
+    def __init__(self,
+                 axes: stepper_control.AxisPairWithDebugImage,
+                 pen: liftable_pen.LiftablePen,
+                 camera: Camera,
+                 pen_to_camera_offset):
+
         # Setup the axes member to use a debug image
         if not isinstance(axes, stepper_control.AxisPairWithDebugImage):
             axes = stepper_control.AxisPairWithDebugImage.create_from(axes)
 
         # Initialise
-        super().__init__(axes, pen)
+        super().__init__(axes, pen, camera, pen_to_camera_offset)
         self.debug_image = axes.debug_image
 
     def _lift_pen(self):
