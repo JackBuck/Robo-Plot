@@ -74,7 +74,7 @@ class AverageRowsTest(unittest.TestCase):
         image = cv2.resize(image, (200, 100))
         search_width = 100
         start_time = time.time()
-        pixel_indices, turn = image_analysis.analyse_rows(image, search_width)
+        pixel_indices, turn = image_analysis.analyse_rows(image, search_width, is_rotated=False)
         end_time = time.time()
 
         print('Time Taken for average rows:' + filename_without_extension + ': ' + str(end_time - start_time))
@@ -85,7 +85,8 @@ class AverageRowsTest(unittest.TestCase):
         # self._overwrite_expected_results_file(expected_results_file, pixel_indices)  # For creating test data
 
         expected_averages = np.loadtxt(expected_results_file, delimiter=",")
-        self.assertTrue((np.array(pixel_indices) == expected_averages).all())
+        self.assertTrue(np.array_equal(pixel_indices, expected_averages),
+                        msg="Actual=\n{}\nExpected=\n{}".format(np.array(pixel_indices), expected_averages))
 
     def averageRowsWithRotationTest(self, filename_without_extension):
         image = cv2.imread(os.path.join(self.path_to_test_data, filename_without_extension + '.jpg'))
@@ -97,7 +98,7 @@ class AverageRowsTest(unittest.TestCase):
         image = cv2.resize(image, (200, 100))
         search_width = 100
         start_time = time.time()
-        pixel_indices, turn_to_next_scan = image_analysis.analyse_rows(image, search_width)
+        pixel_indices, turn_to_next_scan = image_analysis.analyse_rows(image, search_width, is_rotated=False)
         if (len(pixel_indices) < image.shape[0]) and (turn_to_next_scan is not image_analysis.Turning.STRAIGHT):
 
             if turn_to_next_scan is image_analysis.Turning.LEFT:
@@ -109,7 +110,7 @@ class AverageRowsTest(unittest.TestCase):
             sub_image = image_analysis.create_rotated_sub_image(image, pixel_indices[-1], search_width, angle)
 
             # Analyse sub image
-            rotated_indices, turn_to_next_scan = image_analysis.analyse_rows(sub_image, search_width)
+            rotated_indices, turn_to_next_scan = image_analysis.analyse_rows(sub_image, search_width, is_rotated=True)
 
             # Rotate line indices back.
             extra_indices = [list(map(operator.add,
@@ -129,7 +130,8 @@ class AverageRowsTest(unittest.TestCase):
         # self._overwrite_expected_results_file(expected_results_file, pixel_indices)  # For creating test data
 
         expected_averages = np.loadtxt(expected_results_file, delimiter=",")
-        self.assertTrue((np.array(pixel_indices) == np.array(expected_averages)).all())
+        self.assertTrue(np.array_equal(pixel_indices, expected_averages),
+                        msg="Actual=\n{}\nExpected=\n{}".format(np.array(pixel_indices), expected_averages))
 
     @staticmethod
     def _overwrite_expected_results_file(expected_results_file, pixel_indices):

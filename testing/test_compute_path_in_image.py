@@ -87,7 +87,8 @@ class PathFromImageTest(unittest.TestCase):
         #  self._overwrite_expected_results_file(expected_results_file, pixel_path)  # For creating test data
 
         expected_pixel_path = np.loadtxt(expected_results_file, delimiter=",")
-        self.assertTrue((np.array(pixel_path) == np.array(expected_pixel_path)).all())
+        self.assertTrue(np.array_equal(pixel_path, expected_pixel_path),
+                        msg="Actual=\n{}\nExpected=\n{}".format(np.array(pixel_path), expected_pixel_path))
 
         return turn_to_next_scan
 
