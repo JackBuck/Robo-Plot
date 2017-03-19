@@ -4,15 +4,31 @@ import roboplot.core.curves as curves
 import roboplot.core.debug_movement as debug_movement
 import roboplot.core.liftable_pen as liftable_pen
 import roboplot.core.stepper_control as stepper_control
+from roboplot.core.camera.camera_wrapper import Camera
 
 
 class Plotter:
     default_pen_speed = np.inf  # I.e. as fast as possible
     default_resolution = 0.1
 
-    def __init__(self, axes: stepper_control.AxisPair, pen: liftable_pen.LiftablePen):
+    def __init__(self,
+                 axes: stepper_control.AxisPair,
+                 pen: liftable_pen.LiftablePen,
+                 camera: Camera,
+                 pen_to_camera_offset):
+        """
+        Create a Plotter.
+
+        Args:
+            axes (stepper_control.AxisPair): the axes
+            pen (liftable_pen.LiftablePen): the pen
+            camera (Camera): the camera
+            pen_to_camera_offset (iterable): the offset (y,x) of the camera from the pen
+        """
         self._axes = axes
         self._pen = pen
+        self._camera = camera
+        self._pen_to_camera_offset = pen_to_camera_offset
 
     def home(self):
         self._pen.lift()
@@ -44,7 +60,7 @@ class Plotter:
                 self._axes.follow(curve, pen_speed, resolution)
             self._lift_pen()
 
-    def follow(self, curve_list, pen_speed: float = default_pen_speed, resolution: float = default_resolution):
+    def follow_with_pen(self, curve_list, pen_speed: float = default_pen_speed, resolution: float = default_resolution):
         """
         Algorithm:
           - Lift the pen
@@ -63,13 +79,13 @@ class Plotter:
         for curve in curve_list:
             self._axes.follow(curve, pen_speed, resolution)
 
-    def move_to(self, target_location, pen_speed: float = default_pen_speed) -> None:
+    def move_pen_to(self, target_location, pen_speed: float = default_pen_speed) -> None:
         """
-        Move from the current location to the target location.
+        Move the pen from the current location to the target location.
 
         Args:
             target_location: the target location
-            pen_speed: the pen speed (optional)
+            pen_speed: the pen speed (mm/s) (optional)
         """
         self._lift_pen()
         self._axes.move_to(target_location, pen_speed)
