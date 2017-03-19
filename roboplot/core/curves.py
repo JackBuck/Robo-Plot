@@ -62,6 +62,32 @@ class Curve:
                """
         raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
 
+    def offset(self, amount_by_which_to_offset):
+        return OffsetCurve(self, amount_by_which_to_offset)
+
+
+class OffsetCurve(Curve):
+    def __init__(self, original_curve: Curve, offset: np.ndarray):
+        """
+        Create a curve offset from another curve.
+
+        Args:
+            original_curve: the original curve
+            offset: the curve offset
+        """
+        self._original_curve = original_curve
+        self._offset = offset
+
+    @property
+    def total_millimetres(self):
+        return self._original_curve.total_millimetres
+
+    def evaluate_at(self, arc_lengths: np.ndarray):
+        return self._original_curve.evaluate_at(arc_lengths) + self._offset
+
+    def get_start_point(self):
+        return self._original_curve.get_start_point() + self._offset
+
 
 class LineSegment(Curve):
     def __init__(self, start: np.ndarray, end: np.ndarray):

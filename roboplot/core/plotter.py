@@ -60,6 +60,10 @@ class Plotter:
                 self._axes.follow(curve, pen_speed, resolution)
             self._lift_pen()
 
+    def follow_with_camera(self, curve_list, camera_speed: float = default_pen_speed, resolution: float = default_resolution):
+        offset_curves = [c.offset(-self._pen_to_camera_offset) for c in curve_list]
+        self.follow_with_pen(offset_curves, pen_speed=camera_speed, resolution=resolution)
+
     def follow_with_pen(self, curve_list, pen_speed: float = default_pen_speed, resolution: float = default_resolution):
         """
         Algorithm:
