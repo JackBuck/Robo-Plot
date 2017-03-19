@@ -7,9 +7,8 @@ hardware.
 It is also where the GPIO pins used for each piece of hardware are defined.
 """
 
-import numpy as np
-
 import roboplot.config as config
+import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.core.home_position as home_position
 import roboplot.core.liftable_pen as liftable_pen
 import roboplot.core.limit_switches as limit_switches
@@ -37,6 +36,8 @@ y_limit_switches = (limit_switches.LimitSwitch(gpio_pin=9),  # Motor side
 x_home_position = home_position.HomePosition(forwards=False, location=4.2)
 y_home_position = home_position.HomePosition(forwards=False, location=4)
 
+camera = camera_wrapper.Camera()
+
 # Substitute objects
 if not config.real_hardware:
     x_limit_switches = limit_switches.define_pretend_limit_switches(x_home_position, separation=220)
@@ -62,7 +63,7 @@ if not config.real_hardware:
 both_axes = stepper_control.AxisPair(y_axis, x_axis)
 
 pen = liftable_pen.LiftablePen(servo=servo, position_when_down=0.03, position_when_up=0.05)
-plotter = plotter_module.Plotter(axes=both_axes, pen=pen)
+plotter = plotter_module.Plotter(both_axes, pen, camera, config.camera_offset)
 
 if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage.create_from(both_axes)

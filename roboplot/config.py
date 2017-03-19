@@ -34,4 +34,4 @@ Y_PIXELS_TO_MILLIMETRE_SCALE = 0.2
 
 CAMERA_RESOLUTION = (200, 200)
 
-camera_offset = (0.0, 2.0)  # Needs calibration. This is translation to move from pen centre to camera centre.
+camera_offset = (0.0, 2.0)  # Needs calibration. This is a translation (y,x) to move from pen centre to camera centre.
