@@ -54,7 +54,7 @@ def recognise_rotated_number(img) -> Number:
     """
 
     img = _clean_image(img)
-    spot = _extract_first_spot_from_clean_image(img)
+    spot = _extract_spot_closest_to_centre_from_clean_image(img)
 
     if spot is not None:
         current_angle = _estimate_degrees_from_number_centre_to_spot(img, spot)
@@ -123,7 +123,7 @@ def recognise_number(img: np.ndarray) -> Number:
     """
     img = _clean_image(img)
     numeric_value = _recognise_number_in_clean_image(img)
-    spot = _extract_first_spot_from_clean_image(img)
+    spot = _extract_spot_closest_to_centre_from_clean_image(img)
     spot_location = spot.pt if spot is not None else None
     return Number(numeric_value, dot_location_yx=spot_location)
 
@@ -157,15 +157,22 @@ def _text_to_number(recognised_text: str) -> int:
         return int(match.group(1))
 
 
-def _extract_first_spot_from_clean_image(img):
+def _extract_spot_closest_to_centre_from_clean_image(img):
     possible_spots = _extract_spots_from_clean_image(img)
     if len(possible_spots) == 0:
         return None
     else:
-        return possible_spots[0]
+        image_centre = np.array(img.shape) / 2
+        return min(possible_spots, key=lambda s: np.linalg.norm(s.pt - image_centre))
 
 
 def _extract_spots_from_clean_image(img):
+    # Dilate and Erode to 'clean' the spot (note that this harms the number itself, so we only do it to extract spots
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    img = cv2.dilate(img, kernel, iterations=1)
+    img = cv2.erode(img, kernel, iterations=1)
+
+    # Perform a simple blob detect
     params = cv2.SimpleBlobDetector_Params()
     params.filterByArea = True
     params.minArea = 20  # The dot in 20pt font has area of about 30
@@ -180,7 +187,38 @@ def _extract_spots_from_clean_image(img):
     return keypoints
 
 
-def _draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
+def _extract_contours_close_to(img, target_point, maximum_pixels_between_contours):
+    img_inverted = 255 - img
+    _, contours, _ = cv2.findContours(img_inverted, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
+
+    def dist_between_contours(cnt1, cnt2):
+        return min([min(np.linalg.norm(cnt1 - pt, axis=2)) for pt in cnt2])
+
+    # contours = [cv2.convexHull(c, returnPoints=True) for c in contours]
+
+    spot_location_as_contour = np.reshape(target_point, (-1, 1, 2))
+    central_contours = [spot_location_as_contour]
+
+    still_adding_contours = True
+    while still_adding_contours:
+        still_adding_contours = False
+
+        for i in reversed(range(len(contours))):
+            dist_from_central_contours = min([dist_between_contours(contours[i], c) for c in central_contours])
+            if dist_from_central_contours <= maximum_pixels_between_contours:
+                central_contours.append(contours.pop(i))
+                still_adding_contours = True
+
+    return central_contours[1:]
+
+
+def _mask_with_contours(img, contours):
+    mask = np.zeros(img.shape, np.uint8)
+    cv2.drawContours(mask, contours, contourIdx=-1, color=255, thickness=-1)
+    img[np.where(mask == 0)] = 255
+
+
+def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
     """An apparently unused method which is actually quite useful when debugging!"""
 
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
@@ -188,4 +226,11 @@ def _draw_image_with_keypoints(img, keypoints, window_title="Image with keypoint
                                            flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
     cv2.imshow(window_title, img_with_keypoints)
+    cv2.waitKey(0)
+
+
+def draw_image_with_contours(img, contours):
+    img_colour = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    cv2.drawContours(img_colour, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
+    cv2.imshow("Image with contours", img_colour)
     cv2.waitKey(0)
