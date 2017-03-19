@@ -28,7 +28,7 @@ class Plotter:
         self._axes = axes
         self._pen = pen
         self._camera = camera
-        self._pen_to_camera_offset = pen_to_camera_offset
+        self._pen_to_camera_offset = np.array(pen_to_camera_offset)
 
     def home(self):
         self._pen.lift()
@@ -61,6 +61,9 @@ class Plotter:
             self._lift_pen()
 
     def follow_with_camera(self, curve_list, camera_speed: float = default_pen_speed, resolution: float = default_resolution):
+        if isinstance(curve_list, curves.Curve):
+            curve_list = [curve_list]
+
         offset_curves = [c.offset(-self._pen_to_camera_offset) for c in curve_list]
         self.follow_with_pen(offset_curves, pen_speed=camera_speed, resolution=resolution)
 
