@@ -15,7 +15,11 @@ try:
     a_camera = camera_wrapper.Camera()
     photo = a_camera.take_photo_at((60, 20))
 
-    hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
+    img_yuv = cv2.cvtColor(photo, cv2.COLOR_BGR2YUV)
+
+    # equalize the histogram of the Y channel
+    img_yuv[:, :, 0] = cv2.equalizeHist(img_yuv[:, :, 0])
+    hsv_image = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2HSV)
     (cX, cY) = cd.detect_green(hsv_image, 0, False)
 
     if cX != -1:
