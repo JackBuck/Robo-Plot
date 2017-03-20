@@ -28,6 +28,8 @@ try:
         target_location = [hardware.both_axes.current_location[0] + (cY - photo.shape[0]/2) * config.Y_PIXELS_TO_MILLIMETRE_SCALE,
                            hardware.both_axes.current_location[1] + (cX - photo.shape[1]/2) * config.X_PIXELS_TO_MILLIMETRE_SCALE]
 
+        print('Current' + str(hardware.both_axes.current_location))
+        print('Target' + str(target_location))
         line_segment = curves.LineSegment(hardware.both_axes.current_location, target_location)
         hardware.both_axes.follow(curve=line_segment, pen_speed=np.Inf)
 
