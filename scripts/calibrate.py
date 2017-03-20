@@ -20,7 +20,7 @@ try:
 
     if cX != -1:
         # For some reason objects to putting this on a rotated image.??
-        #cv2.circle(photo, (cX, cY), 2, (255, 10, 10), 1)
+        cv2.circle(photo, (cX, cY), 2, (255, 10, 10), 1)
         cv2.imshow('Centre', cv2.resize(photo, (500, 500)))
         cv2.waitKey(0)
         print("Point Found")
