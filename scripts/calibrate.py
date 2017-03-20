@@ -15,6 +15,7 @@ try:
     a_camera = camera_wrapper.Camera()
     photo = a_camera.take_photo_at((60, 20))
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
+    hsv_image[:, :, 2]= cv2.medianBlur(hsv_image[:, :, 2], ksize=5)
     hsv_image[:, :, 2] = cv2.adaptiveThreshold(hsv_image[:, :, 2], 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=11, C=2)
     (cX, cY) = cd.detect_black(hsv_image, 0, False)
 
@@ -38,6 +39,7 @@ try:
         photo = a_camera.take_photo_at((60, 20))
 
         hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
+        hsv_image[:, :, 2] = cv2.medianBlur(hsv_image[:, :, 2], ksize=5)
         hsv_image[:, :, 2] = cv2.adaptiveThreshold(hsv_image[:, :, 2], 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=11, C=2)
         (cX, cY) = cd.detect_black(hsv_image, 0, False)
 
