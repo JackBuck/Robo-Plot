@@ -140,7 +140,7 @@ def detect_green(hsv_image, min_size, change_to_white):
 
     """
 
-    hsv_boundary = ([40, 50, 50], [80, 255, 255])
+    hsv_boundary = ([40, 40, 50], [80, 255, 255])
 
     (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
 
