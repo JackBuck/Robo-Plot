@@ -16,7 +16,7 @@ try:
     photo = a_camera.take_photo_at((60, 20))
 
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
-    (cX, cY) = cd.detect_green(hsv_image, 0, False)
+    (cX, cY) = cd.detect_black(hsv_image, 0, False)
 
     if cX != -1:
         # For some reason objects to putting this on a rotated image.??
@@ -33,7 +33,7 @@ try:
 
         photo = a_camera.take_photo_at((60, 20))
         hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
-        (cX, cY) = cd.detect_green(hsv_image, 2, False)
+        (cX, cY) = cd.detect_black(hsv_image, 2, False)
 
         cv2.imshow('Centre2', cv2.resize(photo, (500, 500)))
         cv2.waitKey(0)
