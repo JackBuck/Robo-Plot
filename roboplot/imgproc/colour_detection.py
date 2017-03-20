@@ -168,7 +168,7 @@ def detect_black(hsv_image, min_size, change_to_white):
 
     """
 
-    hsv_boundary = ([0, 0, 0], [255, 255, 150])
+    hsv_boundary = ([0, 0, 0], [255, 255, 75])
 
     (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
 
