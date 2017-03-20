@@ -147,6 +147,33 @@ def detect_green(hsv_image, min_size, change_to_white):
     return cX, cY
 
 
+def detect_black(hsv_image, min_size, change_to_white):
+    """
+    This function detects the largest feature in the image with green pixels. If this
+    feature is larger than the minimum size then the centre of this feature with respect to the centre
+    of the image is returned.
+
+    If change to white is set to true the original image is modified such that all pixels within the
+    feature identified are now white.
+
+    Args:
+        hsv_image (numpy array):                The image to be analysed.
+        min_size (int):                         The minimum number of pixels the largest feature must
+                                                have to be "significant" enough to report.
+        change_to_white (bool):                 Bool indicating whether the detected feature should be
+                                                turned white
+
+    Returns:
+        tuple - co-ordinates of centre of the feature (wrt top left corner of image)
+
+    """
+
+    hsv_boundary = ([0, 0, 50], [255, 255, 255])
+
+    (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
+
+    return cX, cY
+
 
 
 
