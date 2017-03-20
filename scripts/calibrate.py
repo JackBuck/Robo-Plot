@@ -25,6 +25,8 @@ try:
         cv2.waitKey(0)
         print("Point Found")
 
+        print(cY)
+        print(cX)
         target_location = [hardware.both_axes.current_location[0] + (cY - photo.shape[0]/2) * config.Y_PIXELS_TO_MILLIMETRE_SCALE,
                            hardware.both_axes.current_location[1] + (cX - photo.shape[1]/2) * config.X_PIXELS_TO_MILLIMETRE_SCALE]
 
