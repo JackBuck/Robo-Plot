@@ -75,14 +75,14 @@ def follow_computed_path(computed_path):
 
     # Move to start of the computed path.
     line_segment = curves.LineSegment(hardware.both_axes.current_location,
-                                      list(map(operator.sub, computed_path[0], config.camera_offset)))
+                                      list(map(operator.sub, computed_path[0], config.CAMERA_OFFSET)))
 
     hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
     for i in range(1, len(computed_path)):
         # Move to next point in the computed path. # This can be updated when new follow exists.
         line_segment = curves.LineSegment(hardware.both_axes.current_location,
-                                          list(map(operator.sub, computed_path[i], config.camera_offset)))
+                                          list(map(operator.sub, computed_path[i], config.CAMERA_OFFSET)))
         hardware.both_axes.follow(curve=line_segment, pen_speed=32)
 
 

@@ -1,5 +1,6 @@
 # coding=utf-8
 import math
+import operator
 
 import numpy as np
 import cv2
@@ -45,7 +46,10 @@ def find_green_triangle(pen_speed, min_size):
     """
 
     # Calculate the list of positions photos need to be taken at to walk round the outside of the paper.
-    camera_positions = page_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
+    positions = page_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
+
+    camera_positions = [list(map(operator.add, config.CAMERA_OFFSET, point)) for point in positions]
+
     green_found = False
 
     # Walk round to each position and analyse the photo taken at that position.
