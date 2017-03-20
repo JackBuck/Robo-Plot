@@ -25,8 +25,8 @@ try:
         cv2.waitKey(0)
         print("Point Found")
 
-        target_location = [hardware.both_axes.current_location[0] + (cY - photo.shape[0]/2) * config.X_PIXELS_TO_MILLIMETRE_SCALE,
-                           hardware.both_axes.current_location[1] + (cX - photo.shape[1]/2) * config.Y_PIXELS_TO_MILLIMETRE_SCALE]
+        target_location = [hardware.both_axes.current_location[0] + (cY - photo.shape[0]/2) * config.Y_PIXELS_TO_MILLIMETRE_SCALE,
+                           hardware.both_axes.current_location[1] + (cX - photo.shape[1]/2) * config.X_PIXELS_TO_MILLIMETRE_SCALE]
 
         line_segment = curves.LineSegment(hardware.both_axes.current_location, target_location)
         hardware.both_axes.follow(curve=line_segment, pen_speed=np.Inf)
