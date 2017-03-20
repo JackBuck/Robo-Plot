@@ -25,8 +25,8 @@ debug_output_folder = os.path.join(resources_dir, 'DebugImages')
 
 
 # Camera constants
-X_PIXELS_TO_MILLIMETRE_SCALE = 0.22
-Y_PIXELS_TO_MILLIMETRE_SCALE = 0.22
+X_PIXELS_TO_MILLIMETRE_SCALE = 0.237
+Y_PIXELS_TO_MILLIMETRE_SCALE = 0.233
 
 
 CAMERA_RESOLUTION = (200, 200)
