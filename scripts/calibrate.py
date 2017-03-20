@@ -14,8 +14,8 @@ import roboplot.core.hardware as hardware
 try:
     a_camera = camera_wrapper.Camera()
     photo = a_camera.take_photo_at((60, 20))
-
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
+    hsv_image[:, :, 2] = cv2.adaptiveThreshold(hsv_image[:, :, 2], 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=11, C=2)
     (cX, cY) = cd.detect_black(hsv_image, 0, False)
 
     if cX != -1:
@@ -36,8 +36,10 @@ try:
         hardware.both_axes.follow(curve=line_segment, pen_speed=np.Inf)
 
         photo = a_camera.take_photo_at((60, 20))
+
         hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
-        (cX, cY) = cd.detect_black(hsv_image, 2, False)
+        hsv_image[:, :, 2] = cv2.adaptiveThreshold(hsv_image[:, :, 2], 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=11, C=2)
+        (cX, cY) = cd.detect_black(hsv_image, 0, False)
 
         cv2.imshow('Centre2', cv2.resize(photo, (500, 500)))
         cv2.waitKey(0)
