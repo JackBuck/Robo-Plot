@@ -18,7 +18,7 @@ def pad_image(image, target_photo_centre):
     """
 
     # If the centre is already correct return early with the input image.
-    if target_photo_centre[0] == int(image.shape[0] / 2) and target_photo_centre[0] == int(image.shape[1] / 2):
+    if target_photo_centre[0] == int(image.shape[0] / 2) and target_photo_centre[1] == int(image.shape[1] / 2):
         return image
 
     # Otherwise create a modified image to populate with the required portion of the photo.
@@ -26,18 +26,26 @@ def pad_image(image, target_photo_centre):
 
     # Set min/max x value and placement in the photo
     if 0 > int(target_photo_centre[1]) - int(image.shape[1] / 2):
+        # If the target location is lower in x than the current centre then the beginning of the image is used but
+        # placed higher up the image in x.
         image_x_min = 0
-        image_x_max = int(target_photo_centre[1]) + int(image.shape[1] / 2)
-        # Simplification of int(self._photo_size - (camera_centre[0] + int(self._photo_size/2)))
         image_x_min_placement = int(image.shape[1] / 2 - int(target_photo_centre[1]))
+
+        # The higher end of the image in x is cropped off and the remainder placed to the max edge in x of the
+        # modified image
+        image_x_max = int(target_photo_centre[1]) + int(image.shape[1] / 2)
         image_x_max_placement = image.shape[1]
     else:
+        # If the target location is higher in x than the current centre then the beginning of the image cropped but
+        # along the lower edge in x of the modified image.
         image_x_min = int(target_photo_centre[1]) - int(image.shape[1] / 2)
-        image_x_max = image.shape[1]
         image_x_min_placement = 0
+
+        # The upper edge in x of the image used but placed lower in the image with the remainder filled with padding.
+        image_x_max = image.shape[1]
         image_x_max_placement = image.shape[1] - (int(target_photo_centre[1]) - int(image.shape[1] / 2))
 
-    # Set min/max y value and placement in the photo
+    # Set min/max y value and placement in the photo, reasoning as above but in y.
     if 0 > int(target_photo_centre[0]) - int(image.shape[0] / 2):
         image_y_min = 0
         image_y_max = int(target_photo_centre[0]) + int(image.shape[0] / 2)
@@ -48,7 +56,6 @@ def pad_image(image, target_photo_centre):
         image_y_max = image.shape[0]
         image_y_min_placement = 0
         image_y_max_placement = image.shape[0] - (int(target_photo_centre[0]) - int(image.shape[0] / 2))
-
 
     # Get dummy photo as sub array of the map.
     modified_photo[image_y_min_placement:image_y_max_placement, image_x_min_placement:image_x_max_placement] = \
