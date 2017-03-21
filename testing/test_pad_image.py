@@ -35,17 +35,45 @@ class PadImageTest(unittest.TestCase):
 
     def test_pad_left(self):
         # Request new centre below current centre
-        new_centre = (100, 30)
+        new_centre = (100, 20)
 
         # Pad Image Test.
         self.pad_test('pad_left', new_centre)
 
     def test_pad_right(self):
         # Request new centre below current centre
-        new_centre = (100, 170)
+        new_centre = (100, 180)
 
         # Pad Image Test.
         self.pad_test('pad_right', new_centre)
+
+    def test_pad_top_extreme(self):
+        # Request new centre below current centre
+        new_centre = (-60, 100)
+
+        # Pad Image Test.
+        self.pad_test('pad_top_extreme', new_centre)
+
+    def test_pad_bottom_extreme(self):
+        # Request new centre below current centre
+        new_centre = (250, 100)
+
+        # Pad Image Test.
+        self.pad_test('pad_bottom_extreme', new_centre)
+
+    def test_pad_left_extreme(self):
+        # Request new centre below current centre
+        new_centre = (100, -30)
+
+        # Pad Image Test.
+        self.pad_test('pad_left_extreme', new_centre)
+
+    def test_pad_right_extreme(self):
+        # Request new centre below current centre
+        new_centre = (100, 230)
+
+        # Pad Image Test.
+        self.pad_test('pad_right_extreme', new_centre)
 
     def test_pad_top_left(self):
         # Request new centre below current centre
@@ -75,9 +103,30 @@ class PadImageTest(unittest.TestCase):
         # Pad Image Test.
         self.pad_test('bottom_right', new_centre)
 
+    def test_centre(self):
+        # Request new centre below current centre
+        new_centre = (100, 100)
+
+        # Pad Image Test.
+        self.pad_test('bottom_right', new_centre)
+
+        # Load image for testing.
+        image = cv2.imread(os.path.join(self.path_to_test_data, 'pad_test_input.png'))
+        image = cv2.resize(image, (200, 200))
+
+        # Check image was loaded correctly
+        if image is None:
+            raise TypeError
+
+        # Pad Image.
+        modified_image = camera_utils.pad_image(image, new_centre)
+
+        # Compare images
+        self.assertTrue(not (np.bitwise_xor(modified_image, image).any()))
+
     def pad_test(self, filename_without_extension, new_centre):
         # Load image for testing.
-        image = cv2.imread(os.path.join(self.path_to_test_data, 'pad_test_input.jpg'))
+        image = cv2.imread(os.path.join(self.path_to_test_data, 'pad_test_input.png'))
         image = cv2.resize(image, (200, 200))
 
         # Check image was loaded correctly
