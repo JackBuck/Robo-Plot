@@ -1,7 +1,10 @@
 # coding=utf-8
 import os
+import operator
+
 import numpy as np
 import cv2
+
 import roboplot.config as config
 
 
@@ -62,3 +65,19 @@ def pad_image(image, target_photo_centre):
         image[image_y_min:image_y_max, image_x_min:image_x_max]
 
     return modified_photo
+
+
+def translate_camera_points_to_global_points(points):
+    """
+    This function takes a list of points and translates by the camera offset. This mean points recorded by the camera
+    can now be followed/drawn by the plotter pen.
+    Args:
+        points: The list of points to be translated.
+
+    Returns:
+        global_points: The translated points.
+    """
+
+    global_points = [list(map(operator.add, point, config.camera_offset)) for point in points]
+
+    return global_points
