@@ -22,6 +22,64 @@ class Number:
         self.dot_location_yx = dot_location_yx
 
 
+class DotToDotImage:
+    @staticmethod
+    def process_file(file_path: str):
+        img = read_image(file_path)
+        return DotToDotImage.process_image(img)
+
+    @staticmethod
+    def process_image(img: np.ndarray) -> tuple:
+        """
+        A factory method to process an image as a dot-to-dot image.
+
+        Args:
+            img (np.ndarray): the image to process
+
+        Returns:
+            tuple[Number, DotToDotImage]: The first return value contains the number closest to the centre.
+                                          The second return value contains the DotToDotImage instance used to analyse
+                                          the number. This contains references to intermediate results which can be
+                                          useful when debugging.
+        """
+
+        # TODO: Refactor these into member methods which act in sequence on a single member variable img,
+        # but which also save their results to other member variables for debugging purposes.
+        dot2dot_img = DotToDotImage(img)
+        dot2dot_img.clean_image = _clean_image(dot2dot_img.original_image)
+
+        dot2dot_img.spots = _extract_spots_from_clean_image(dot2dot_img.clean_image)
+
+        dot2dot_img.central_contours = _extract_contours_close_to(dot2dot_img.clean_image,
+                                                                  dot2dot_img.closest_spot_to_centre.pt,
+                                                                  maximum_pixels_between_contours=9)
+        dot2dot_img.masked_image = dot2dot_img.clean_image.copy()
+        _mask_with_contours(dot2dot_img.masked_image, dot2dot_img.central_contours)
+
+        # TODO: Finish refactoring the functions into this class
+
+    def __init__(self, original_img):
+        """
+        Use one of the static factory methods provided, as opposed to this initialiser.
+
+        Args:
+            original_img (np.ndarray): the image to proccess
+        """
+        self.original_image = original_img
+        self.clean_image = None
+        self.spots = None
+        self.central_contours = None
+        self.masked_image = None
+
+    @property
+    def closest_spot_to_centre(self):
+        if self.spots is None or len(self.spots) == 0:
+            return None
+        else:
+            image_centre = np.array(self.original_image.shape) / 2
+            return min(self.spots, key=lambda s: np.linalg.norm(s.pt - image_centre))
+
+
 def read_image(file_path: str) -> np.ndarray:
     """
     Load an image from a supplied file path.
