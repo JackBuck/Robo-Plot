@@ -148,15 +148,17 @@ class DotToDotImage:
         if self.centre_spot is not None:
             current_angle = self._estimate_degrees_from_number_centre_to_spot()
             desired_angle = -30
-            self._img = _rotate_image(desired_angle - current_angle, self._img)
+            self._img = _rotate_image_anticlockwise(desired_angle - current_angle, self._img)
             self.rotated_image = self._img.copy()
 
     def _estimate_degrees_from_number_centre_to_spot(self):
-        total_intensity = np.sum(255 - self._img)
+        inverted_image = 255 - self._img
+
+        total_intensity = np.sum(inverted_image)
         centroid_y = np.sum(
-            np.arange(self._img.shape[0]).reshape(-1, 1) * (255 - self._img)) / total_intensity
+            np.arange(inverted_image.shape[0]).reshape(-1, 1) * inverted_image) / total_intensity
         centroid_x = np.sum(
-            np.arange(self._img.shape[1]).reshape(1, -1) * (255 - self._img)) / total_intensity
+            np.arange(inverted_image.shape[1]).reshape(1, -1) * inverted_image) / total_intensity
 
         return np.rad2deg(np.arctan2(-(self.centre_spot.pt[0] - centroid_y),
                                      self.centre_spot.pt[1] - centroid_x))
@@ -193,7 +195,7 @@ def read_image(file_path: str) -> np.ndarray:
         raise TypeError("Could not open image file: {}".format(file_path))
 
 
-def _rotate_image(degrees, img):
+def _rotate_image_anticlockwise(degrees, img):
     rows, cols = img.shape
     rotation_matrix = cv2.getRotationMatrix2D(center=(cols / 2, rows / 2), angle=degrees, scale=1)
     rotated_image = cv2.warpAffine(img, rotation_matrix, (cols, rows))
@@ -228,7 +230,7 @@ def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints
     draw_image(img_with_keypoints, window_title)
 
 
-def draw_image_with_contours(img, contours, window_title = "Image with contours"):
+def draw_image_with_contours(img, contours, window_title="Image with contours"):
     img_colour = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     cv2.drawContours(img_colour, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
     draw_image(img_colour, window_title)
