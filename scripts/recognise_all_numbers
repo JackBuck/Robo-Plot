@@ -16,6 +16,6 @@ fi
 for i in "$@"
 do
   echo `basename $i .jpg`
-  $script_directory/recognise_number.py $i -r || { echo ERROR: recognise_number.py failed; exit 1; }
+  $script_directory/recognise_number.py $i || { echo ERROR: recognise_number.py failed; exit 1; }
   echo
 done

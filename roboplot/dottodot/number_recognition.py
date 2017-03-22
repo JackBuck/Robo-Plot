@@ -1,6 +1,5 @@
 import PIL.Image as Image
 import re
-import warnings
 
 import cv2
 import numpy as np
@@ -23,61 +22,148 @@ class Number:
 
 
 class DotToDotImage:
-    @staticmethod
-    def process_file(file_path: str):
-        img = read_image(file_path)
-        return DotToDotImage.process_image(img)
+    """A class to process dot-to-dot images."""
 
     @staticmethod
-    def process_image(img: np.ndarray) -> tuple:
+    def load_image_from_file(file_path: str):
         """
-        A factory method to process an image as a dot-to-dot image.
+        Load an image from a supplied file path.
 
         Args:
-            img (np.ndarray): the image to process
+            file_path (str): path to the image to return
 
         Returns:
-            tuple[Number, DotToDotImage]: The first return value contains the number closest to the centre.
-                                          The second return value contains the DotToDotImage instance used to analyse
-                                          the number. This contains references to intermediate results which can be
-                                          useful when debugging.
+            DotToDotImage: the loaded (unprocessed) image
         """
-
-        # TODO: Refactor these into member methods which act in sequence on a single member variable img,
-        # but which also save their results to other member variables for debugging purposes.
-        dot2dot_img = DotToDotImage(img)
-        dot2dot_img.clean_image = _clean_image(dot2dot_img.original_image)
-
-        dot2dot_img.spots = _extract_spots_from_clean_image(dot2dot_img.clean_image)
-
-        dot2dot_img.central_contours = _extract_contours_close_to(dot2dot_img.clean_image,
-                                                                  dot2dot_img.closest_spot_to_centre.pt,
-                                                                  maximum_pixels_between_contours=9)
-        dot2dot_img.masked_image = dot2dot_img.clean_image.copy()
-        _mask_with_contours(dot2dot_img.masked_image, dot2dot_img.central_contours)
-
-        # TODO: Finish refactoring the functions into this class
+        img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+        if img is not None:
+            return DotToDotImage(img)
+        else:
+            raise TypeError("Could not open image file: {}".format(file_path))
 
     def __init__(self, original_img):
         """
-        Use one of the static factory methods provided, as opposed to this initialiser.
+        Create an unprocessed dot-to-dot image.
 
         Args:
             original_img (np.ndarray): the image to proccess
         """
-        self.original_image = original_img
-        self.clean_image = None
-        self.spots = None
-        self.central_contours = None
-        self.masked_image = None
+        self._img = original_img
+        self.original_image = self._img.copy()
 
-    @property
-    def closest_spot_to_centre(self):
-        if self.spots is None or len(self.spots) == 0:
-            return None
+    def process_image(self) -> Number:
+        """
+        Process the dot-to-dot image.
+
+        Returns:
+            Number: the number whose spot is closest to the centre of the image
+        """
+        self._clean_image()
+        self._extract_spots()
+        self._find_closest_spot_to_centre()
+        self._extract_central_contours(maximum_pixels_between_contours=9)
+        self._mask_using_central_contours()
+        self._rotate_centre_spot_to_bottom_right()
+        self._recognise_number_text()
+        self._extract_number_from_recognised_text()
+        return Number(self.recognised_numeric_value, self.centre_spot.pt)
+
+    def _clean_image(self):
+        self._img = cv2.medianBlur(self._img, ksize=3)
+        self._img = cv2.adaptiveThreshold(self._img, maxValue=255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                          thresholdType=cv2.THRESH_BINARY, blockSize=11, C=2)
+        self.clean_image = self._img.copy()
+
+    def _extract_spots(self):
+        # Dilate and Erode to 'clean' the spot (note that this harms the number itself, so we only do it to extract spots
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        img = cv2.dilate(self._img, kernel, iterations=1)
+        img = cv2.erode(img, kernel, iterations=1)
+
+        # Perform a simple blob detect
+        params = cv2.SimpleBlobDetector_Params()
+        params.filterByArea = True
+        params.minArea = 20  # The dot in 20pt font has area of about 30
+        params.filterByCircularity = True
+        params.minCircularity = 0.7
+        params.filterByConvexity = True
+        params.minConvexity = 0.8
+        params.filterByInertia = True
+        params.minInertiaRatio = 0.6
+        detector = cv2.SimpleBlobDetector_create(params)
+        self.spot_keypoints = detector.detect(img)
+
+    def _find_closest_spot_to_centre(self):
+        if self.spot_keypoints is None or len(self.spot_keypoints) == 0:
+            self.centre_spot = None
         else:
             image_centre = np.array(self.original_image.shape) / 2
-            return min(self.spots, key=lambda s: np.linalg.norm(s.pt - image_centre))
+            self.centre_spot = min(self.spot_keypoints, key=lambda s: np.linalg.norm(s.pt - image_centre))
+
+    def _extract_central_contours(self, maximum_pixels_between_contours: float):
+        self.central_contours = None
+        if self.centre_spot is not None:
+            self.central_contours = self._extract_contours_close_to(self.centre_spot.pt,
+                                                                    maximum_pixels_between_contours)
+
+    def _extract_contours_close_to(self, target_point, maximum_pixels_between_contours: float):
+        img_inverted = 255 - self._img
+        _, all_contours, _ = cv2.findContours(img_inverted, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
+
+        def dist_between_contours(cnt1, cnt2):
+            return min([min(np.linalg.norm(cnt1 - pt, axis=2)) for pt in cnt2])
+
+        # all_contours = [cv2.convexHull(c, returnPoints=True) for c in all_contours]
+
+        target_point_as_contour = np.reshape(target_point, (-1, 1, 2))
+        contours_near_target = [target_point_as_contour]
+
+        still_adding_contours = True
+        while still_adding_contours:
+            still_adding_contours = False
+
+            for i in reversed(range(len(all_contours))):
+                dist_from_central_contours = min(
+                    [dist_between_contours(all_contours[i], c) for c in contours_near_target])
+                if dist_from_central_contours <= maximum_pixels_between_contours:
+                    contours_near_target.append(all_contours.pop(i))
+                    still_adding_contours = True
+
+        return contours_near_target[1:]
+
+    def _mask_using_central_contours(self):
+        if self.central_contours is not None:
+            self._img = self._mask_using_contours(self.central_contours)
+            self.masked_image = self._img.copy()
+
+    def _mask_using_contours(self, contours):
+        img = self._img.copy()
+        mask = np.zeros(img.shape, np.uint8)
+        cv2.drawContours(mask, contours, contourIdx=-1, color=255, thickness=-1)
+        img[np.where(mask == 0)] = 255
+        return img
+
+    def _rotate_centre_spot_to_bottom_right(self):
+        self.rotated_image = None
+        if self.centre_spot is not None:
+            current_angle = _estimate_degrees_from_number_centre_to_spot(self._img, self.centre_spot)
+            desired_angle = -30
+            self._img = _rotate_image(desired_angle - current_angle, self._img)
+            self.rotated_image = self._img.copy()
+
+    def _recognise_number_text(self):
+        img = Image.fromarray(self._img)
+
+        # psm 8 => single word;
+        # digits => use the digits config file supplied with the software
+        self.recognised_text = pytesseract.image_to_string(img, config='-psm 8, digits')
+
+    def _extract_number_from_recognised_text(self):
+        # Forcing a terminating period helps us to filter out bad results
+        match = re.match(r'(\d+)\.$', self.recognised_text)
+        self.recognised_numeric_value = None
+        if match is not None:
+            self.recognised_numeric_value = int(match.group(1))
 
 
 def read_image(file_path: str) -> np.ndarray:
@@ -282,13 +368,15 @@ def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
     img_with_keypoints = cv2.drawKeypoints(img, keypoints, outImage=np.array([]), color=(0, 0, 255),
                                            flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-    cv2.imshow(window_title, img_with_keypoints)
-    cv2.waitKey(0)
+    draw_image(img_with_keypoints, window_title)
 
 
-def draw_image_with_contours(img, contours):
+def draw_image_with_contours(img, contours, window_title = "Image with contours"):
     img_colour = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     cv2.drawContours(img_colour, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
-    cv2.imshow("Image with contours", img_colour)
+    draw_image(img_colour, window_title)
+
+
+def draw_image(img, window_title="Image"):
+    cv2.imshow(window_title, img)
     cv2.waitKey(0)
