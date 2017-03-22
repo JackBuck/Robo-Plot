@@ -160,8 +160,8 @@ class DotToDotImage:
         centroid_x = np.sum(
             np.arange(inverted_image.shape[1]).reshape(1, -1) * inverted_image) / total_intensity
 
-        return np.rad2deg(np.arctan2(-(self.centre_spot.pt[0] - centroid_y),
-                                     self.centre_spot.pt[1] - centroid_x))
+        return np.rad2deg(np.arctan2(-(self.centre_spot.pt[1] - centroid_y),
+                                     self.centre_spot.pt[0] - centroid_x))
 
     def _recognise_number_text(self):
         img = Image.fromarray(self._img)
