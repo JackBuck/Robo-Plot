@@ -22,7 +22,4 @@ if __name__ == '__main__':
 
     # Display images
     if args.display_images:
-        number_recognition.draw_image_with_keypoints(img.clean_image, [img.centre_spot], "Clean with centre spot")
-        number_recognition.draw_image_with_contours(img.clean_image, img.central_contours, "Clean with centre contours")
-        number_recognition.draw_image(img.masked_image, "Masked image")
-        number_recognition.draw_image(img.rotated_image, "Rotated image")
+        img.display_intermediate_images()

@@ -21,6 +21,12 @@ class Number:
         self.dot_location_yx = dot_location_yx
 
 
+class NamedImage:
+    def __init__(self, image, name):
+        self.image = image
+        self.name = name
+
+
 class DotToDotImage:
     """A class to process dot-to-dot images."""
 
@@ -49,7 +55,7 @@ class DotToDotImage:
             original_img (np.ndarray): the image to proccess
         """
         self._img = original_img
-        self.original_image = self._img.copy()
+        self.intermediate_images = [NamedImage(self._img.copy(), 'Original Image')]
 
     def process_image(self) -> Number:
         """
@@ -58,6 +64,7 @@ class DotToDotImage:
         Returns:
             Number: the number whose spot is closest to the centre of the image
         """
+        self.intermediate_images = [self.intermediate_images[0]]  # Just keep the original image
         self._clean_image()
         self._extract_spots()
         self._find_closest_spot_to_centre()
@@ -72,7 +79,7 @@ class DotToDotImage:
         self._img = cv2.medianBlur(self._img, ksize=3)
         self._img = cv2.adaptiveThreshold(self._img, maxValue=255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                           thresholdType=cv2.THRESH_BINARY, blockSize=11, C=2)
-        self.clean_image = self._img.copy()
+        self.intermediate_images.append(NamedImage(self._img.copy(), 'Clean Image'))
 
     def _extract_spots(self):
         # Dilate and Erode to 'clean' the spot (note that this harms the number itself, so we only do it to extract spots
@@ -93,18 +100,35 @@ class DotToDotImage:
         detector = cv2.SimpleBlobDetector_create(params)
         self.spot_keypoints = detector.detect(img)
 
+        # Log intermediate image
+        img_with_keypoints = cv2.drawKeypoints(img, self.spot_keypoints, outImage=np.array([]), color=(0, 0, 255),
+                                               flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        self.intermediate_images.append(NamedImage(img_with_keypoints, 'Spot Detection Image'))
+
     def _find_closest_spot_to_centre(self):
         if self.spot_keypoints is None or len(self.spot_keypoints) == 0:
             self.centre_spot = None
         else:
-            image_centre = np.array(self.original_image.shape) / 2
+            image_centre = np.array(self._img.shape) / 2
             self.centre_spot = min(self.spot_keypoints, key=lambda s: np.linalg.norm(s.pt - image_centre))
+
+            try:
+                spots_image = next(img.image for img in self.intermediate_images if img.name == 'Spot Detection Image')
+                cv2.circle(spots_image, tuple(int(i) for i in self.centre_spot.pt), radius=int(self.centre_spot.size),
+                           color=(0, 255, 0), thickness=2)
+            except StopIteration:
+                pass
 
     def _extract_central_contours(self, maximum_pixels_between_contours: float):
         self.central_contours = None
         if self.centre_spot is not None:
             self.central_contours = self._extract_contours_close_to(self.centre_spot.pt,
                                                                     maximum_pixels_between_contours)
+
+            # Log intermediate image
+            img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
+            cv2.drawContours(img, self.central_contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
+            self.intermediate_images.append(NamedImage(img, 'Central contours'))
 
     def _extract_contours_close_to(self, target_point, maximum_pixels_between_contours: float):
         img_inverted = 255 - self._img
@@ -134,7 +158,7 @@ class DotToDotImage:
     def _mask_using_central_contours(self):
         if self.central_contours is not None:
             self._img = self._mask_using_contours(self.central_contours)
-            self.masked_image = self._img.copy()
+            self.intermediate_images.append(NamedImage(self._img.copy(), 'Masked Image'))
 
     def _mask_using_contours(self, contours):
         img = self._img.copy()
@@ -144,12 +168,11 @@ class DotToDotImage:
         return img
 
     def _rotate_centre_spot_to_bottom_right(self):
-        self.rotated_image = None
         if self.centre_spot is not None:
             current_angle = self._estimate_degrees_from_number_centre_to_spot()
             desired_angle = -30
             self._img = _rotate_image_anticlockwise(desired_angle - current_angle, self._img)
-            self.rotated_image = self._img.copy()
+            self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
 
     def _estimate_degrees_from_number_centre_to_spot(self):
         inverted_image = 255 - self._img
@@ -176,6 +199,11 @@ class DotToDotImage:
         self.recognised_numeric_value = None
         if match is not None:
             self.recognised_numeric_value = int(match.group(1))
+
+    def display_intermediate_images(self):
+        for img in self.intermediate_images:
+            cv2.imshow(winname=img.name, mat=img.image)
+            cv2.waitKey(0)
 
 
 def read_image(file_path: str) -> np.ndarray:
