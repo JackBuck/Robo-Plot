@@ -22,11 +22,10 @@ import roboplot.core.stepper_control as stepper_control
 x_axis_motor = stepper_motors.large_stepper_motor(gpio_pins=(22, 23, 24, 25))
 y_axis_motor = stepper_motors.large_stepper_motor(gpio_pins=(19, 26, 20, 21))
 
-small_stepper_1 = stepper_motors.small_stepper_motor(gpio_pins=(5, 6, 12, 16))
-small_stepper_2 = stepper_motors.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
+# small_stepper_1 = stepper_motors.small_stepper_motor(gpio_pins=(5, 6, 12, 16))  # Pin 5 is now for the servo power
+# small_stepper_2 = stepper_motors.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
 
-# TODO: Choose a pin to control the power to the servo motor
-servo = servo_motor.ServoMotor(power_control_pin=,
+servo = servo_motor.ServoMotor(power_control_pin=5,
                                pwm_pin=18,
                                min_position=0.03,
                                max_position=0.12)
