@@ -1,7 +1,12 @@
-import context
-import cv2
+#!/usr/bin/env python3
+
 import argparse
+
+import cv2
+
+import context
 import roboplot.imgproc.colour_detection as cd
+
 
 # Commandline arguments
 parser = argparse.ArgumentParser(description='Find green in a given image')
@@ -11,6 +16,8 @@ parser.add_argument('-m', '--minsize', type=float, required=True,
                     help='the minimum size of green to be detected')
 
 args = parser.parse_args()
+
+# Script body
 inFile = args.file_path
 print(inFile)
 image = cv2.imread(inFile)

@@ -18,7 +18,7 @@ try:
                         help='a %(type)s for the target y displacement in millimetres')
     parser.add_argument('x_millimetres', metavar='x', type=float,
                         help='a %(type)s for the target x displacement in millimetres')
-    parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=32,
+    parser.add_argument('-s', '--speed', metavar='SPEED', dest='pen_millimetres_per_second', type=float, default=np.inf,
                         help='the target speed for the pen in millimetres per second (default: %(default)smm/s)')
     parser.add_argument('-w', '--wait', type=float, default=0,
                         help='an initial sleep time in seconds (default: %(default)s)')

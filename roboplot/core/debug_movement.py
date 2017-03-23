@@ -6,6 +6,7 @@ This module creates a debug images showing the movement of the plotter.
 """
 import os
 import threading
+import warnings
 
 import cv2
 import numpy as np
@@ -24,7 +25,8 @@ class DebugImage:
     steps_since_save = 0
     image_index = 0
     colour_index = 0
-    colour = Colour.Yellow
+    colour = Colour.Pink
+    override_colour = None  # If not none, then this colour will be used instead of the 'colour' attribute
 
     def __init__(self, millimetres_per_step, bgimage_path=None, pixels_per_mm=3):
         """
@@ -80,12 +82,11 @@ class DebugImage:
         # The point is (y, x) and the shape is width height.
         if 0 <= pixel[0] < self._image_dimensions_pixels[1] and \
            0 <= pixel[1] < self._image_dimensions_pixels[0]:
-            self.debug_image[pixel] = self.colour
+            self.debug_image[pixel] = self.override_colour or self.colour
            # print(' Pixel: ' + str(pixel))
         else:
-           # print('Warning: Tried to populate pixel out of image bounds. Pixel: ' + str(pixel))
-            #raise Exception
-            x=0
+            warnings.warn('Tried to populate pixel out of image bounds.')
+
 
         self.steps_since_save += 1
 
@@ -94,9 +95,12 @@ class DebugImage:
             self.save_image()
 
     def change_colour(self):
-        """This function changes the colour of the pixels being added to the image."""
+        """
+        This function changes the colour of the pixels being added to the image to one of the colours designated
+        for pen-down drawing.
+        """
 
-        scan = [Colour.Yellow, Colour.Pink, Colour.Light_Blue, Colour.Purple]
+        scan = [Colour.Pink, Colour.Light_Blue, Colour.Purple]
 
         self.colour_index = (self.colour_index + 1) % len(scan)
         self.colour = scan[self.colour_index]

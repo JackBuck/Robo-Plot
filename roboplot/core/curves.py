@@ -7,26 +7,16 @@ All distances in the module are expressed in MILLIMETRES.
 import numpy as np
 
 
-# TODO: Add functionality to chain svg_curves
 class Curve:
     @property
     def total_millimetres(self):
         """The total length of the curve (in MILLIMETRES)."""
         raise NotImplementedError("The total length property must be overriden in derived classes.")
 
-    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
-        """
-        This method should be overridden in derived classes to return the coordinates on the curve at (a) given
-        position(s).
-
-        Args:
-            arc_length (np.ndarray): A vector of positions along the curve, expressed in arc length in millimetres.
-
-        Returns:
-            np.ndarray: An nx2 matrix whose ith row is the ith requested point on the curve.
-
-        """
-        raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
+    @property
+    def first_point(self) -> np.ndarray:
+        """The first point on the curve"""
+        return self.evaluate_at(arc_lengths=0)
 
     def to_series_of_points(self, interval_millimetres: float, include_last_point: bool = True) -> np.ndarray:
         """Express the curve by a series of points.
@@ -47,6 +37,20 @@ class Curve:
 
         return self.evaluate_at(arc_lengths)
 
+    def evaluate_at(self, arc_lengths: np.ndarray) -> np.ndarray:
+        """
+        This method should be overridden in derived classes to return the coordinates on the curve at (a) given
+        position(s).
+
+        Args:
+            arc_lengths (np.ndarray): A vector of positions along the curve, expressed in arc length in millimetres.
+
+        Returns:
+            np.ndarray: An nx2 matrix whose ith row is the ith requested point on the curve.
+
+        """
+        raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
+
     def get_start_point(self):
         """
         This method should be overridden in derived classes to return the coordinates on the curve at (a) given
@@ -57,6 +61,32 @@ class Curve:
 
                """
         raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
+
+    def offset(self, amount_by_which_to_offset):
+        return OffsetCurve(self, amount_by_which_to_offset)
+
+
+class OffsetCurve(Curve):
+    def __init__(self, original_curve: Curve, offset: np.ndarray):
+        """
+        Create a curve offset from another curve.
+
+        Args:
+            original_curve: the original curve
+            offset: the curve offset
+        """
+        self._original_curve = original_curve
+        self._offset = offset
+
+    @property
+    def total_millimetres(self):
+        return self._original_curve.total_millimetres
+
+    def evaluate_at(self, arc_lengths: np.ndarray):
+        return self._original_curve.evaluate_at(arc_lengths) + self._offset
+
+    def get_start_point(self):
+        return self._original_curve.get_start_point() + self._offset
 
 
 class LineSegment(Curve):
@@ -78,10 +108,10 @@ class LineSegment(Curve):
     def total_millimetres(self) -> float:
         return np.linalg.norm(self.end - self.start)
 
-    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
-        arc_length = np.reshape(arc_length, (-1, 1))  # Make it a column vector
+    def evaluate_at(self, arc_lengths: np.ndarray) -> np.ndarray:
+        arc_lengths = np.reshape(arc_lengths, (-1, 1))  # Make it a column vector
         with np.errstate(divide='ignore', invalid='ignore'):
-            t = arc_length / self.total_millimetres
+            t = arc_lengths / self.total_millimetres
             t[np.isnan(t)] = 0
         return (1 - t) * self.start + t * self.end
 
@@ -113,18 +143,19 @@ class CircularArc(Curve):
         radians = np.deg2rad(self.end_degrees - self.start_degrees)
         return abs(radians) * self.radius
 
-    def evaluate_at(self, arc_length: np.ndarray) -> np.ndarray:
+    def evaluate_at(self, arc_lengths: np.ndarray) -> np.ndarray:
         if self.radius == 0:
-            return np.copy(self.centre.reshape(1,2))
+            return np.copy(self.centre.reshape(1, 2))
         else:
-            arc_length = np.reshape(arc_length, [-1, 1])  # Make column vector
-            radians = arc_length / self.radius + np.deg2rad(self.start_degrees)
+            arc_lengths = np.reshape(arc_lengths, [-1, 1])  # Make column vector
+            radians = arc_lengths / self.radius + np.deg2rad(self.start_degrees)
             points = np.hstack((np.sin(radians), np.cos(radians)))  # (y,x)
             points = self.radius * points + self.centre
             return points
 
     def get_start_point(self):
-        return np.array([self.radius * np.cos(deg2rad(self.start_degrees)), self.radius * np.sin(deg2rad(self.start_degrees))] + self.centre)
+        return self.centre + np.array([self.radius * np.cos(np.deg2rad(self.start_degrees)),
+                                       self.radius * np.sin(np.deg2rad(self.start_degrees))])
 
 
 class Circle(CircularArc):

@@ -22,7 +22,7 @@ try:
     parser.add_argument('-w', '--wait', type=float, default=0,
                         help='an initial sleep time in seconds (default: %(default)s)')
     parser.add_argument('-f', '--file_path', type=str, required=False, default=None,
-                        help='where the iamge will be saved')
+                        help='where the image will be saved')
     args = parser.parse_args()
     time.sleep(args.wait)
     

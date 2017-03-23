@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import cv2
 import argparse
+
+import cv2
 
 import context
 import roboplot.imgproc.image_analysis as image_analysis

@@ -367,6 +367,7 @@ class GPIO:
     def setwarnings(flag):
         pass
 
+    @staticmethod
     @typeassert(int, int, int, int)
     def setup(channel, state, initial=-1, pull_up_down=-1):
         global dictionaryPins
