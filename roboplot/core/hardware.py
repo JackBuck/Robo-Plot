@@ -7,9 +7,8 @@ hardware.
 It is also where the GPIO pins used for each piece of hardware are defined.
 """
 
-import numpy as np
-
 import roboplot.config as config
+import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.core.home_position as home_position
 import roboplot.core.liftable_pen as liftable_pen
 import roboplot.core.limit_switches as limit_switches
@@ -22,10 +21,11 @@ import roboplot.core.stepper_control as stepper_control
 x_axis_motor = stepper_motors.large_stepper_motor(gpio_pins=(22, 23, 24, 25))
 y_axis_motor = stepper_motors.large_stepper_motor(gpio_pins=(19, 26, 20, 21))
 
-small_stepper_1 = stepper_motors.small_stepper_motor(gpio_pins=(5, 6, 12, 16))
-small_stepper_2 = stepper_motors.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
+# small_stepper_1 = stepper_motors.small_stepper_motor(gpio_pins=(5, 6, 12, 16))  # Pin 5 is now for the servo power
+# small_stepper_2 = stepper_motors.small_stepper_motor(gpio_pins=(2, 3, 4, 17))
 
-servo = servo_motor.ServoMotor(gpio_pin=18,
+servo = servo_motor.ServoMotor(power_control_pin=5,
+                               pwm_pin=18,
                                min_position=0.03,
                                max_position=0.12)
 
@@ -34,8 +34,10 @@ x_limit_switches = (limit_switches.LimitSwitch(gpio_pin=8),  # Motor side
 y_limit_switches = (limit_switches.LimitSwitch(gpio_pin=9),  # Motor side
                     limit_switches.LimitSwitch(gpio_pin=11))  # Encoder side
 
-x_home_position = home_position.HomePosition(forwards=False, location=3)
-y_home_position = home_position.HomePosition(forwards=False, location=3)
+x_home_position = home_position.HomePosition(forwards=False, location=4.2)
+y_home_position = home_position.HomePosition(forwards=False, location=4)
+
+camera = camera_wrapper.Camera()
 
 # Substitute objects
 if not config.real_hardware:
@@ -61,8 +63,8 @@ if not config.real_hardware:
 
 both_axes = stepper_control.AxisPair(y_axis, x_axis)
 
-pen = liftable_pen.LiftablePen(servo=servo, position_when_down=0.03, position_when_up=0.05)
-plotter = plotter_module.Plotter(axes=both_axes, pen=pen)
+pen = liftable_pen.LiftablePen(servo=servo, position_when_down=0.03, position_when_up=0.055)
+plotter = plotter_module.Plotter(both_axes, pen, camera, config.camera_offset)
 
 if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage.create_from(both_axes)
