@@ -23,4 +23,5 @@ try:
         raise ValueError('Bad input!')  # Shouldn't get here since argument parser will catch invalid arguments
 
 finally:
-    GPIO.cleanup()
+    # GPIO.cleanup()
+    pass

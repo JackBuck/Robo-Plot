@@ -11,11 +11,19 @@ try:
     parser.add_argument('position', type=float,
                         help="The position to set on the servo "
                              "(this is a proportion of the maximum pwm frequency set up on the pi). "
-                             "This should be between {} and {}".format(hardware.servo.min_position,
-                                                                             hardware.servo.max_position))
+                             "This should be between {} and {}, or 0.".format(hardware.servo.min_position,
+                                                                              hardware.servo.max_position))
     args = parser.parse_args()
 
-    hardware.servo.set_position(args.position)
+    if args.position == 0:
+        print('Disengaging servo... ', end='')
+        hardware.servo.disengage()
+        print('Success')
+    else:
+        print('Setting servo to {}...'.format(args.position), end='')
+        hardware.servo.set_position(args.position)
+        print('Success')
 
 finally:
-    GPIO.cleanup()
+    #GPIO.cleanup()
+    pass
