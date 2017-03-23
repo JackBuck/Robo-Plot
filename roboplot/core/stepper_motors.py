@@ -1,5 +1,5 @@
 """
-This module defines all GPIO motor connections.
+This module defines all GPIO stepper motor connections.
 
 Authors:
     Hannah Howell, Jack Buckingham
