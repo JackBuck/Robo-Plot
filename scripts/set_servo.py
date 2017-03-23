@@ -25,4 +25,5 @@ try:
         print('Success')
 
 finally:
-    GPIO.cleanup()
+    #GPIO.cleanup()
+    pass
