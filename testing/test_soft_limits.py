@@ -35,7 +35,7 @@ class SoftLimitTest(unittest.TestCase):
     def setUp(self):
         _setup_small_axis_travels()
         _set_current_location_between_switches()
-        hardware.both_axes.home()
+        hardware.plotter.home()
 
     def test_exceeding_min_x_soft_limit_raises_warning_when_limits_are_on(self):
         line_segment = self._build_segment_crossing_min_x_soft_limit()

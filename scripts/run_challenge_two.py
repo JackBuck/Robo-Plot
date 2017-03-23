@@ -13,11 +13,10 @@ import roboplot.core.hardware as hardware
 
 try:
     # Home axes.
-   # hardware.both_axes.home()
-    hardware.both_axes.current_location = (60, 20)
+
+    hardware.plotter.home()
     global_centre = hardware.both_axes.current_location
-    #global_centre = challenge2.find_green_triangle(np.Inf, 20)
-    centre, photo = challenge2.find_green_centre(global_centre, np.Inf, 20)
+    centre, photo = challenge2.find_green_centre(global_centre, 20)
 
     # Need function to compute first direction here.
 

@@ -13,7 +13,7 @@ import roboplot.core.hardware as hardware
 
 try:
     # Home axes.
-    hardware.both_axes.home()
+    hardware.plotter.home()
 
     global_centre = challenge2.find_green_triangle(32, 20)
     centre, photo = challenge2.find_green_centre(global_centre, 32, 20)

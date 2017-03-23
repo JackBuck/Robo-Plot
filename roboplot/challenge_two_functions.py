@@ -6,15 +6,10 @@ import numpy as np
 import cv2
 
 import roboplot.config as config
-import roboplot.imgproc.image_analysis as IP
 import roboplot.imgproc.colour_detection as CD
-import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.page_search as page_search
-import roboplot.core.curves as curves
-import roboplot.core.gpio.gpio_wrapper as gpio_wrapper
 import roboplot.core.hardware as hardware
 
-a_camera = camera_wrapper.Camera()
 
 
 # Define the paper and photo size. - This will be moved out of here eventually.
@@ -46,9 +41,7 @@ def find_green_triangle(pen_speed, min_size):
     """
 
     # Calculate the list of positions photos need to be taken at to walk round the outside of the paper.
-    positions = page_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
-
-    camera_positions = [list(map(operator.add, config.CAMERA_OFFSET, point)) for point in positions]
+    camera_positions = page_search.compute_positions(a4_width_x_mm, a4_height_y_mm, photo_size_mm)
 
     green_found = False
 
@@ -57,7 +50,7 @@ def find_green_triangle(pen_speed, min_size):
 
         camera_centre = camera_positions[i]
 
-        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, pen_speed, min_size)
+        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, min_size)
 
         # Check if any green was detected.
         if displacement_x != -1:
@@ -68,10 +61,10 @@ def find_green_triangle(pen_speed, min_size):
         raise AssertionError("No green was found on paper")
 
     return camera_centre[0] + displacement_y * config.Y_PIXELS_TO_MILLIMETRE_SCALE, \
-           camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE
+        camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE
 
 
-def find_green_at_position(camera_centre, pen_speed, min_size):
+def find_green_at_position(camera_centre, min_size):
     """Finds the centre of any green artifacts in the photo taken at the given position.
         Args:
             co - ordinates in global mm of camera location for photo.
@@ -81,12 +74,10 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
     """
 
     # Move to camera position
+    if not np.array_equal(hardware.both_axes.current_location + config.CAMERA_OFFSET, camera_centre):
+        hardware.plotter.move_camera_to(camera_centre)
 
-    if not np.array_equal(hardware.both_axes.current_location, camera_centre):
-        line_to_camera_position = curves.LineSegment(hardware.both_axes.current_location, camera_centre)
-        hardware.both_axes.follow(curve=line_to_camera_position, pen_speed=pen_speed)
-
-    photo = a_camera.take_photo_at(hardware.both_axes.current_location)
+    photo = hardware.plotter.take_photo()
 
     # Create hsv version of image to analyse for colour detection.
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
@@ -104,7 +95,7 @@ def find_green_at_position(camera_centre, pen_speed, min_size):
         return -1, -1, hsv_image[:, :, 2]
 
 
-def find_green_centre(initial_centre, pen_speed, min_size):
+def find_green_centre(initial_centre, min_size):
 
     error = 999999999
 
@@ -114,7 +105,7 @@ def find_green_centre(initial_centre, pen_speed, min_size):
     while error > 2:
 
         # Find the centre of the largest green contour found on the image (if one exists)
-        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, pen_speed, min_size)
+        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, min_size)
         new_centre = (camera_centre[0] + displacement_y * config.Y_PIXELS_TO_MILLIMETRE_SCALE,
                       camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE)
 

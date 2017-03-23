@@ -51,9 +51,9 @@ class DebugImage:
 
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
-        a4paper = (210, 297)  # openCV asks for image dimensions as width then height.
+        a4paper_with_border = (315, 445.5)  # openCV asks for image dimensions as width then height.
 
-        self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
+        self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper_with_border)
 
         # Background image
         if bgimage_path is not None:

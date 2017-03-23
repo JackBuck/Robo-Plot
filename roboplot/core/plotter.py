@@ -1,5 +1,6 @@
 import numpy as np
 
+import roboplot.config as config
 import roboplot.core.curves as curves
 import roboplot.core.debug_movement as debug_movement
 import roboplot.core.liftable_pen as liftable_pen
@@ -106,6 +107,9 @@ class Plotter:
         """
         self._lift_pen()
         self._axes.move_to(target_location, pen_speed)
+
+    def take_photo(self):
+        return self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
 
     def _lift_pen(self):
         self._pen.lift()

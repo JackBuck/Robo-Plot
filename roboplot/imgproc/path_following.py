@@ -19,10 +19,6 @@ def compute_complete_path(image, current_direction):
 
     kernel = np.ones((5, 5), np.uint8)
     image = cv2.dilate(image, kernel, iterations=10)
-
-    # Set up camera.
-    a_camera = camera_wrapper.Camera()
-
     computed_path =[]
 
     i = 0
@@ -53,11 +49,10 @@ def compute_complete_path(image, current_direction):
         computed_path.extend(next_computed_path_segment)
 
         # Move to new camera position and take photo.
-        line_segment = curves.LineSegment(hardware.both_axes.current_location, computed_path[-1])
-        hardware.both_axes.follow(curve=line_segment, pen_speed=32)
+        hardware.plotter.move_pen_to(computed_path[-1])
 
         # Take next picture.
-        image = a_camera.take_photo_at(hardware.both_axes.current_location)
+        image = hardware.plotter.take_photo()
 
         # Compute the current direction.
         if turn_to_next_direction == image_analysis.Turning.LEFT:
@@ -74,16 +69,14 @@ def compute_complete_path(image, current_direction):
 def follow_computed_path(computed_path):
 
     # Move to start of the computed path.
-    line_segment = curves.LineSegment(hardware.both_axes.current_location,
-                                      list(map(operator.sub, computed_path[0], config.CAMERA_OFFSET)))
+    hardware.plotter.move_pen_to(computed_path[0])
 
-    hardware.both_axes.follow(curve=line_segment, pen_speed=32)
+    # Move to next point in the computed path. # This can be updated when new follow exists.
+    line_segments = [curves.LineSegment(hardware.both_axes.current_location,
+                                       list(map(operator.sub, point, config.CAMERA_OFFSET)))
+                    for point in computed_path]
 
-    for i in range(1, len(computed_path)):
-        # Move to next point in the computed path. # This can be updated when new follow exists.
-        line_segment = curves.LineSegment(hardware.both_axes.current_location,
-                                          list(map(operator.sub, computed_path[i], config.CAMERA_OFFSET)))
-        hardware.both_axes.follow(curve=line_segment, pen_speed=32)
+    hardware.plotter.draw(line_segments)
 
 
 def convert_to_global_coords(points, scan_direction, origin):
