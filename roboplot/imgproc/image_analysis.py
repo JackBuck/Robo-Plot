@@ -59,6 +59,7 @@ class Turning(enum.IntEnum):
     LEFT = 0
     STRAIGHT = 1
     RIGHT = 2
+    INVALID = 3
 
 
 def compute_centroid_from_row(current_row, last_centroid, search_width):
@@ -187,9 +188,7 @@ def process_and_extract_sub_image(image, scan_direction):
 
     # Save sub_image to debug folder if required.
     if __debug__:
-        cv2.imwrite(os.path.join(config.debug_output_folder,
-                                 datetime.datetime.now().strftime("%Y%m%d-%H%M%S.%f") + 'aa_sub_image' + '.jpg'),
-                    sub_image)
+        iadebug.save_sub_image(sub_image)
 
     return sub_image
 
@@ -222,7 +221,9 @@ def compute_pixel_path(image, search_width):
         iadebug.save_line_approximation(debug_image, pixel_segments, is_rotated=False)
 
     # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
-    if (len(indices) < image.shape[0]) and (turn_to_next_scan is not Turning.STRAIGHT):
+    if (len(indices) < image.shape[0]) \
+            and (turn_to_next_scan is not Turning.STRAIGHT) \
+            and (turn_to_next_scan is not Turning.INVALID):
 
         if turn_to_next_scan is Turning.LEFT:
             angle_rad = np.deg2rad(-60)
@@ -251,7 +252,7 @@ def compute_pixel_path(image, search_width):
 
         # Show current state if debug is set to true and reset indices.
         if __debug__:
-            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments,is_rotated=True)
+            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, is_rotated=True)
 
             # Rotate line indices back.
             extra_pixel_segments = [list(map(operator.add,
@@ -265,6 +266,10 @@ def compute_pixel_path(image, search_width):
     if __debug__:
         debug_image = iadebug.create_debug_image(image)
         iadebug.save_line_approximation(debug_image, pixel_segments,is_rotated=False)
+
+    # If there was not enough path in the photo try another orientation.
+    if turn_to_next_scan is Turning.INVALID:
+        return [(-1, -1)], turn_to_next_scan
 
     return pixel_segments, turn_to_next_scan
 
@@ -294,7 +299,7 @@ def analyse_rows(pixels, search_width, is_rotated):
 
     # Initialise the state of the last centroid if a valid average could not be found or is too far
     # from the previous average - indicating noise in the image.
-    last_centroid = Centroid.VALID
+    last_centroid_validity = Centroid.VALID
 
     # Analyse each row at a time from the top moving down the image.
     for rr in range(1, pixels.shape[0]):
@@ -321,12 +326,12 @@ def analyse_rows(pixels, search_width, is_rotated):
         if (rr == 1 and pixels[0, next_centroid] > 130) or abs(next_centroid - indices[-1][1]) < 2:
             # Valid result, add result to arrays
             indices.append([rr, next_centroid])
-            last_centroid = Centroid.VALID
+            last_centroid_validity = Centroid.VALID
 
-        elif abs(next_centroid - indices[-1][1]) >= 2:
+        elif abs(next_centroid - indices[-1][1]) >= 2 and next_centroid != -1:
             # Invalid result - too much of a gap created.
             # If the last row was also invalid then we stop as another picture needs to be taken.
-            if last_centroid != Centroid.VALID:
+            if last_centroid_validity != Centroid.VALID:
                 if next_centroid - indices[-1][1] < 0:
                     turn_to_next_scan = Turning.RIGHT
                 else:
@@ -334,11 +339,11 @@ def analyse_rows(pixels, search_width, is_rotated):
                 break
 
             # Flag last centroid as invalid.
-            last_centroid = Centroid.INVALID_RANGE
+            last_centroid_validity = Centroid.INVALID_RANGE
 
         else:
             # We have an invalid row because no white was found.
-            if last_centroid != Centroid.VALID:
+            if last_centroid_validity != Centroid.VALID:
                 # We have 2 invalid entries in a row. Or too big a jump between averages. This means the
                 # approximation should stop.
 
@@ -351,9 +356,14 @@ def analyse_rows(pixels, search_width, is_rotated):
                     turn_to_next_scan = Turning.RIGHT
                 break
 
-                last_centroid = Centroid.INVALID_NO_WHITE
+            last_centroid_validity = Centroid.INVALID_NO_WHITE
 
     # Return the list of average indices and the scan direction for the next picture taken.
+
+    min_number = max(10, int(pixels.shape[0]/50))
+    if len(indices) < min_number and last_centroid_validity is Centroid.INVALID_NO_WHITE:
+        turn_to_next_scan = Turning.INVALID
+
     return indices, turn_to_next_scan
 
 

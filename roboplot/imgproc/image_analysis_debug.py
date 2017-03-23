@@ -35,9 +35,9 @@ def save_line_approximation(debug_image, pixel_segments, is_rotated):
         cv2.circle(debug_image, (x_start_index, y_start_index), 2, (255, 10, 10))
 
     filename = datetime.datetime.now().strftime("%M%S.%f_") \
-               + str(hardware.both_axes.current_location[0]) \
+               + str(hardware.plotter._axes.current_location[0]) \
                + '_' \
-               + str(hardware.both_axes.current_location[1]) + '_'
+               + str(hardware.plotter._axes.current_location[1]) + '_'
 
     if is_rotated:
         filename += 'line_approximation_rotated' + '.jpg'
@@ -60,9 +60,9 @@ def save_average_rows(image, indices, is_rotated):
                                 int(current_average_pixel + pixel)] = (10, 10, 255)
 
     filename = datetime.datetime.now().strftime("%M%S.%f_") \
-               + str(hardware.both_axes.current_location[0]) \
+               + str(hardware.plotter._axes.current_location[0]) \
                + '_' \
-               + str(hardware.both_axes.current_location[1]) + '_'
+               + str(hardware.plotter._axes.current_location[1]) + '_'
 
     if is_rotated:
         filename += 'average_rows_rotated' + '.jpg'
@@ -76,6 +76,14 @@ def save_average_rows(image, indices, is_rotated):
 
     return debug_image
 
+def save_sub_image(image):
+
+    filename = datetime.datetime.now().strftime("%M%S.%f_") \
+               + str(hardware.plotter._axes.current_location[0]) \
+               + '_' \
+               + str(hardware.plotter._axes.current_location[1]) + '_SubImage.jpg'
+
+    cv2.imwrite(os.path.join(config.debug_output_folder,filename), image)
 
 def create_debug_image(image):
     debug_image = cv2.resize(image, (0, 0), fx=DEBUG_SCALE_FACTOR, fy=DEBUG_SCALE_FACTOR)

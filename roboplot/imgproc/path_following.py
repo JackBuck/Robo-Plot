@@ -5,7 +5,7 @@ import cv2
 
 import roboplot.config as config
 import roboplot.core.hardware as hardware
-import roboplot.core.camera.camera_wrapper as camera_wrapper
+import roboplot.core.camera.camera_utils as camera_utils
 import roboplot.imgproc.image_analysis_debug as iadebug
 import roboplot.imgproc.image_analysis as image_analysis
 import roboplot.core.curves as curves
@@ -20,6 +20,7 @@ def compute_complete_path(image, current_direction):
     kernel = np.ones((5, 5), np.uint8)
     image = cv2.dilate(image, kernel, iterations=10)
     computed_path =[]
+    direction_turned = image_analysis.Turning.STRAIGHT
 
     i = 0
     while i<70:  # Should be true but restricting path for debugging.
@@ -42,26 +43,43 @@ def compute_complete_path(image, current_direction):
         # Analyse image
         next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse,
                                                                                                      search_width)
-        next_computed_path_segment = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                              current_direction, hardware.both_axes.current_location)
 
-        # Append the computed path with the new values.
-        computed_path.extend(next_computed_path_segment)
+        if next_computed_pixel_path_segment[0][0] == -1:
+            # Try another orientation of the current image - not currently you could end up infinitely looping round
+            # with the wrong parameters. Dont come back the way you came.
 
-        # Move to new camera position and take photo.
-        hardware.plotter.move_pen_to(computed_path[-1])
+            # Compute the current direction.
+            if direction_turned == image_analysis.Turning.LEFT:
+                current_direction = image_analysis.turn_right(current_direction)
+            elif direction_turned == image_analysis.Turning.RIGHT:
+                current_direction = image_analysis.turn_left(current_direction)
 
-        # Take next picture.
-        image = hardware.plotter.take_photo()
+        else:
+            #Continue as usual - convert the co-ordinates and append them move
+            next_computed_path_segment = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                                  current_direction, hardware.plotter._axes.current_location)
 
-        # Compute the current direction.
-        if turn_to_next_direction == image_analysis.Turning.LEFT:
-            current_direction = image_analysis.turn_left(current_direction)
-        elif turn_to_next_direction == image_analysis.Turning.RIGHT:
-            current_direction = image_analysis.turn_right(current_direction)
+            next_computed_path_segment = camera_utils.translate_camera_points_to_global_points(next_computed_path_segment)
 
-    if __debug__:
-        iadebug.save_line_approximation(hardware.both_axes.debug_image.debug_image, computed_path, False)
+            # Append the computed path with the new values.
+            computed_path.extend(next_computed_path_segment)
+
+            # Move to new camera position and take photo.
+            hardware.plotter.move_camera_to(computed_path[-1])
+
+            # Compute the current direction.
+            if turn_to_next_direction == image_analysis.Turning.LEFT:
+                current_direction = image_analysis.turn_left(current_direction)
+            elif turn_to_next_direction == image_analysis.Turning.RIGHT:
+                current_direction = image_analysis.turn_right(current_direction)
+
+            direction_turned = turn_to_next_direction
+
+        # Take next picture. - We have to do this even if we havent moved as otherwise we will process it twice.
+        image = hardware.plotter.take_photo_at(list(map(operator.sub, computed_path[-1], config.CAMERA_OFFSET)))
+
+        if __debug__:
+            iadebug.save_line_approximation(hardware.plotter._axes.debug_image.debug_image, computed_path, False)
 
     return computed_path
 
@@ -72,7 +90,7 @@ def follow_computed_path(computed_path):
     hardware.plotter.move_pen_to(computed_path[0])
 
     # Move to next point in the computed path. # This can be updated when new follow exists.
-    line_segments = [curves.LineSegment(hardware.both_axes.current_location,
+    line_segments = [curves.LineSegment(hardware.plotter._axes.current_location,
                                        list(map(operator.sub, point, config.CAMERA_OFFSET)))
                     for point in computed_path]
 

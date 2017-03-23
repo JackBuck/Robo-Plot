@@ -15,7 +15,7 @@ try:
     # Home axes.
 
     hardware.plotter.home()
-    global_centre = hardware.both_axes.current_location
+    global_centre = challenge2.find_green_triangle(32, 20)
     centre, photo = challenge2.find_green_centre(global_centre, 20)
 
     # Need function to compute first direction here.

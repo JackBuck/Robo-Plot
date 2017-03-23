@@ -29,7 +29,7 @@ try:
     # Needs homing 
     hardware.plotter.home()
     hardware.plotter.move_camera_to(args.centre)
-    image = hardware.plotter.take_photo()
+    image = hardware.plotter.take_photo_at()
 
     if args.file_path is not None:
         cv2.imwrite(args.file_path, image)

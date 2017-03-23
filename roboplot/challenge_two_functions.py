@@ -74,10 +74,10 @@ def find_green_at_position(camera_centre, min_size):
     """
 
     # Move to camera position
-    if not np.array_equal(hardware.both_axes.current_location + config.CAMERA_OFFSET, camera_centre):
+    if not np.array_equal(hardware.plotter._axes.current_location + config.CAMERA_OFFSET, camera_centre):
         hardware.plotter.move_camera_to(camera_centre)
 
-    photo = hardware.plotter.take_photo()
+    photo = hardware.plotter.take_photo_at(camera_centre)
 
     # Create hsv version of image to analyse for colour detection.
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)

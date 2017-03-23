@@ -6,6 +6,7 @@ import roboplot.core.debug_movement as debug_movement
 import roboplot.core.liftable_pen as liftable_pen
 import roboplot.core.stepper_control as stepper_control
 from roboplot.core.camera.camera_wrapper import Camera
+import roboplot.core.camera.camera_utils as camera_utils
 
 
 class Plotter:
@@ -108,8 +109,25 @@ class Plotter:
         self._lift_pen()
         self._axes.move_to(target_location, pen_speed)
 
-    def take_photo(self):
-        return self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
+    def take_photo_at(self, target_photo_centre):
+        current_camera_location = self._axes.current_location + config.CAMERA_OFFSET
+
+        #TODO if overstep is fixed this fudge can be removed.
+        is_at_centre = abs(current_camera_location[0] - target_photo_centre[0]) < 0.05 and \
+                       abs(current_camera_location[1] - target_photo_centre[1]) < 0.05
+
+        if not is_at_centre:
+            photo = self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
+
+            centre_displacement = target_photo_centre - self._axes.current_location
+            pixel_centre_displacement = [int(photo.shape[0]/2) + centre_displacement[0] / config.Y_PIXELS_TO_MILLIMETRE_SCALE,
+                                         int(photo.shape[1] / 2) +centre_displacement[1] / config.X_PIXELS_TO_MILLIMETRE_SCALE]
+
+            photo = camera_utils.pad_image(photo, pixel_centre_displacement)
+        else:
+            photo = self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
+
+        return photo
 
     def _lift_pen(self):
         self._pen.lift()
