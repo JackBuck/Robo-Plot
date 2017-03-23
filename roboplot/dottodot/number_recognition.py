@@ -68,7 +68,10 @@ class DotToDotImage:
         self._clean_image()
         self._extract_spots()
         self._find_closest_spot_to_centre()
-        self._extract_central_contours(maximum_pixels_between_contours=9)
+        self._extract_central_contours(maximum_pixels_between_contours=10)  # This value 'only just' works for 40pt.
+        # Unfortunately the spot size doesn't really grow in proportion to the font size - to do it dynamically we
+        # would need to actually look at distances between contours and choose a threshold based on that, maybe using
+        # some sort of clustering algorithm.
         self._mask_using_central_contours()
         self._rotate_centre_spot_to_bottom_right()
         self._recognise_number_text()
