@@ -1,9 +1,13 @@
 import PIL.Image as Image
+import os
 import re
+import threading
 
 import cv2
 import numpy as np
 import pytesseract
+
+import roboplot.config as config
 
 
 class Number:
@@ -208,6 +212,23 @@ class DotToDotImage:
         for img in self.intermediate_images:
             cv2.imshow(winname=img.name, mat=img.image)
             cv2.waitKey(0)
+
+    def save_intermediate_images(self, save_path_prefix: str = os.path.join(config.debug_output_folder, 'numrec_')):
+        counter = -1
+        for img in self.intermediate_images:
+            counter += 1
+
+            save_dir = os.path.dirname(save_path_prefix)
+
+            save_name = os.path.basename(save_path_prefix + str(counter) + '_' + img.name)
+            save_name = re.sub(r'\s+', '_', save_name)  # Replace whitespace with underscores
+            save_name = re.sub(r'[^\w\s-]', '', save_name)  # Remove all weird characters
+            save_name += '.jpg'
+
+            save_path = os.path.join(save_dir, save_name)
+
+            image = img.image.copy()
+            threading.Thread(target=lambda: cv2.imwrite(save_path, image)).start()
 
 
 def read_image(file_path: str) -> np.ndarray:

@@ -20,6 +20,8 @@ if __name__ == '__main__':
     print("Recognised number: {!r}".format(recognised_number.numeric_value))
     print("Probable spot location: {!r}".format(recognised_number.dot_location_yx))
 
-    # Display images
+    # Save and display images
+    img.save_intermediate_images()
+
     if args.display_images:
         img.display_intermediate_images()
