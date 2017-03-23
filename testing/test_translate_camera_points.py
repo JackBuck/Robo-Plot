@@ -16,7 +16,7 @@ import roboplot.imgproc.image_analysis as image_analysis
 class CameraPathTranslationTest(unittest.TestCase):
 
     def testTranslatePoint(self):
-        config.camera_offset = [2.33, 2.37]
+        config.CAMERA_OFFSET = [2.33, 2.37]
         point = [[2.0, 10.0]]
 
         # Translate Point
@@ -25,7 +25,7 @@ class CameraPathTranslationTest(unittest.TestCase):
         self.assertTrue(np.allclose(translated_point, expected_point, atol=1e-3))
 
     def testTranslateListOfPoints(self):
-        config.camera_offset = [2.33, 2.37]
+        config.CAMERA_OFFSET = [2.33, 2.37]
         points = [[2.0, 10], [3.0, 6.93], [5.78, 8.04], [36.9, 65.23], [34.33, 92.69]]
 
         # Translate Point

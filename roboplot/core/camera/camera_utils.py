@@ -78,6 +78,6 @@ def translate_camera_points_to_global_points(points):
         global_points: The translated points.
     """
 
-    global_points = [list(map(operator.add, point, config.camera_offset)) for point in points]
+    global_points = [list(map(operator.add, point, config.CAMERA_OFFSET)) for point in points]
 
     return global_points
