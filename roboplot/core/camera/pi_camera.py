@@ -28,7 +28,7 @@ class Camera:
                 outputarray = output.array
 
             # Save photo.
-            cv2.imwrite(os.path.join(config.debug_output_folder, "Photo_" + str(self._photo_index) + ".jpg"),
+            cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_{:03}.jpg'.format(self._photo_index)),
                         outputarray)
             self._photo_index += 1
 
