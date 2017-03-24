@@ -2,6 +2,7 @@
 
 import argparse
 
+import context
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.page_search as page_search
 
