@@ -80,8 +80,11 @@ class DotToDotImage:
         self._rotate_centre_spot_to_bottom_right()
         self._recognise_number_text()
         self._extract_number_from_recognised_text()
-        return Number(numeric_value=self.recognised_numeric_value,
-                      dot_location_yx=(self.centre_spot.pt[1], self.centre_spot.pt[0]))
+
+        dot_location_yx = None
+        if self.centre_spot is not None:
+            dot_location_yx = tuple(reversed(self.centre_spot.pt))
+        return Number(self.recognised_numeric_value, dot_location_yx)
 
     def _clean_image(self):
         self._img = cv2.medianBlur(self._img, ksize=3)
