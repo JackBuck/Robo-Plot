@@ -38,7 +38,7 @@ try:
         photos.append(photo)
 
     end_time = time.time()
-    print('Time to collect photos: {:.1} seconds'.format(end_time-start_time))
+    print('Time to collect photos: {:.1f} seconds'.format(end_time-start_time))
 
 finally:
     GPIO.cleanup()
