@@ -7,7 +7,6 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import os
-import time
 
 import cv2
 import numpy as np
@@ -34,3 +33,17 @@ class Camera:
             self._photo_index += 1
 
             return outputarray
+
+    @property
+    def resolution_mm(self):
+        """The size of a photo in mm"""
+        return self.resolution_pixels * self.pixels_to_mm_scale_factors
+
+    @property
+    def resolution_pixels(self):
+        """The size of a photo in pixels"""
+        return np.array(config.CAMERA_RESOLUTION)
+
+    @property
+    def pixels_to_mm_scale_factors(self):
+        return np.array(config.Y_PIXELS_TO_MILLIMETRE_SCALE, config.X_PIXELS_TO_MILLIMETRE_SCALE)
