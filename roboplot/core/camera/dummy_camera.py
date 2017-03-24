@@ -105,8 +105,8 @@ class DummyCamera:
     @property
     def resolution_mm(self):
         """The size of a photo in mm"""
-        return np.array(self._photo_size_mm, self._photo_size_mm)
+        return np.array([self._photo_size_mm, self._photo_size_mm])
 
     @property
     def pixels_to_mm_scale_factors(self):
-        return np.array(self._conversion_factor, self._conversion_factor)
+        return np.array([self._conversion_factor, self._conversion_factor])

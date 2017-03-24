@@ -46,4 +46,4 @@ class Camera:
 
     @property
     def pixels_to_mm_scale_factors(self):
-        return np.array(config.Y_PIXELS_TO_MILLIMETRE_SCALE, config.X_PIXELS_TO_MILLIMETRE_SCALE)
+        return np.array([config.Y_PIXELS_TO_MILLIMETRE_SCALE, config.X_PIXELS_TO_MILLIMETRE_SCALE])
