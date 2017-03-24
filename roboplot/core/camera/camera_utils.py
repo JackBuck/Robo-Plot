@@ -26,6 +26,7 @@ def pad_image(image, target_photo_centre):
 
     # Otherwise create a modified image to populate with the required portion of the photo.
     modified_photo = np.zeros(image.shape, np.uint8)
+    modified_photo.fill(30)
 
     # Set min/max x value and placement in the photo
     if 0 > int(target_photo_centre[1]) - int(image.shape[1] / 2):

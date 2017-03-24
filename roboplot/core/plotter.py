@@ -1,4 +1,9 @@
+import cv2
+import os
+import datetime
+
 import numpy as np
+
 
 import roboplot.config as config
 import roboplot.core.curves as curves
@@ -119,11 +124,23 @@ class Plotter:
         if not is_at_centre:
             photo = self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
 
-            centre_displacement = target_photo_centre - self._axes.current_location
+            centre_displacement = [target_photo_centre[0] - config.CAMERA_OFFSET[0] - self._axes.current_location[0],
+                                   target_photo_centre[1] - config.CAMERA_OFFSET[1] - self._axes.current_location[1]]
+
             pixel_centre_displacement = [int(photo.shape[0]/2) + centre_displacement[0] / config.Y_PIXELS_TO_MILLIMETRE_SCALE,
-                                         int(photo.shape[1] / 2) +centre_displacement[1] / config.X_PIXELS_TO_MILLIMETRE_SCALE]
+                                         int(photo.shape[1] / 2) + centre_displacement[1] / config.X_PIXELS_TO_MILLIMETRE_SCALE]
 
             photo = camera_utils.pad_image(photo, pixel_centre_displacement)
+
+            if __debug__:
+                # Save photo.
+                filename = datetime.datetime.now().strftime("%M%S.%f_") + \
+                           str(self._axes.current_location[0]) \
+                           + '_' \
+                           + str(self._axes.current_location[1]) + '_Photo.jpg'
+
+                cv2.imwrite(os.path.join(config.debug_output_folder, filename), photo)
+
         else:
             photo = self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
 

@@ -221,7 +221,7 @@ def compute_pixel_path(image, search_width):
         iadebug.save_line_approximation(debug_image, pixel_segments, is_rotated=False)
 
     # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
-    if (len(indices) < image.shape[0]) \
+    if (len(indices) < image.shape[0] - 20) \
             and (turn_to_next_scan is not Turning.STRAIGHT) \
             and (turn_to_next_scan is not Turning.INVALID):
 

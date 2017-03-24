@@ -7,7 +7,7 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import os
-import time
+import datetime
 
 import cv2
 import numpy as np
@@ -32,8 +32,12 @@ class Camera:
             outputarray = np.rot90(outputarray, 3)
 
             # Save photo.
-            cv2.imwrite(os.path.join(config.debug_output_folder, "Photo_" + str(self._photo_index) + ".jpg"),
-                        outputarray)
+            filename = datetime.datetime.now().strftime("%M%S.%f_") + \
+                       str(camera_centre[0]) \
+                       + '_' \
+                       + str(camera_centre[1]) + '_Photo_' + str(self._photo_index) + '.jpg'
+
+            cv2.imwrite(os.path.join(config.debug_output_folder, filename), outputarray)
             self._photo_index += 1
 
             return outputarray

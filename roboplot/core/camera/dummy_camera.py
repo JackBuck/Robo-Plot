@@ -94,7 +94,7 @@ class DummyCamera:
                        + '_' \
                        + str(camera_centre[1]) + '_Photo_' + str(self._photo_index) + '.jpg'
 
-            cv2.imwrite(os.path.join(config.debug_output_folder, filename),dummy_photo)
+            cv2.imwrite(os.path.join(config.debug_output_folder, filename), dummy_photo)
 
             self._photo_index += 1
 

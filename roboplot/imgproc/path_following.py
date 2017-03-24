@@ -23,7 +23,7 @@ def compute_complete_path(image, current_direction):
     direction_turned = image_analysis.Turning.STRAIGHT
 
     i = 0
-    while i<70:  # Should be true but restricting path for debugging.
+    while i<30:  # Should be true but restricting path for debugging.
         i += 1
 
         # Analyse photo to check if red is found.
@@ -56,10 +56,11 @@ def compute_complete_path(image, current_direction):
 
         else:
             #Continue as usual - convert the co-ordinates and append them move
-            next_computed_path_segment = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                                  current_direction, hardware.plotter._axes.current_location)
 
-            next_computed_path_segment = camera_utils.translate_camera_points_to_global_points(next_computed_path_segment)
+            camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
+            next_computed_path_segment = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                                  current_direction,
+                                                                  camera_location)
 
             # Append the computed path with the new values.
             computed_path.extend(next_computed_path_segment)
@@ -76,7 +77,7 @@ def compute_complete_path(image, current_direction):
             direction_turned = turn_to_next_direction
 
         # Take next picture. - We have to do this even if we havent moved as otherwise we will process it twice.
-        image = hardware.plotter.take_photo_at(list(map(operator.sub, computed_path[-1], config.CAMERA_OFFSET)))
+        image = hardware.plotter.take_photo_at(computed_path[-1])
 
         if __debug__:
             iadebug.save_line_approximation(hardware.plotter._axes.debug_image.debug_image, computed_path, False)
