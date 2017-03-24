@@ -30,8 +30,8 @@ try:
     hardware.both_axes.home()
     
     line_to_camera_location = curves.LineSegment(hardware.both_axes.current_location,
-                                                 [args.centre[0] - config.camera_offset[0],
-                                                  args.centre[1] - config.camera_offset[1]])
+                                                 [args.centre[0] - config.CAMERA_OFFSET[0],
+                                                  args.centre[1] - config.CAMERA_OFFSET[1]])
     hardware.both_axes.follow(curve=line_to_camera_location, pen_speed=args.pen_millimetres_per_second)
   
     a_camera = Camera()

@@ -23,15 +23,10 @@ else:
 debug_image_file_path = os.path.join(resources_dir, 'Challenge_2_Test_Images', 'HackspacePath_Sample3.png')
 debug_output_folder = os.path.join(resources_dir, 'DebugImages')
 
-# Debugging image paths
-debug_image_file_path = os.path.normpath(os.path.join(resources_dir, 'Challenge_2_Test_Images', 'HackspacePath_Sample3.png'))
-debug_output_folder = os.path.normpath(os.path.join(resources_dir, 'DebugImages'))
-
-
 # Camera constants
-X_PIXELS_TO_MILLIMETRE_SCALE = 0.2
-Y_PIXELS_TO_MILLIMETRE_SCALE = 0.2
+X_PIXELS_TO_MILLIMETRE_SCALE = 0.237
+Y_PIXELS_TO_MILLIMETRE_SCALE = 0.233
 
 CAMERA_RESOLUTION = (200, 200)
 
-camera_offset = (0.0, 2.0)  # Needs calibration. This is a translation (y,x) to move from pen centre to camera centre.
+CAMERA_OFFSET = [-2.56, -45.7]  # Needs calibration. This is translation (y,x) to move from pen centre to camera centre.
