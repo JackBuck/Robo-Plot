@@ -1,3 +1,4 @@
+import glob
 import PIL.Image as Image
 import os
 import re
@@ -211,7 +212,14 @@ class DotToDotImage:
             cv2.imshow(winname=img.name, mat=img.image)
             cv2.waitKey(0)
 
-    def save_intermediate_images(self, save_path_prefix: str = os.path.join(config.debug_output_folder, 'numrec_')):
+    _default_intermediate_image_save_path_prefix = os.path.join(config.debug_output_folder, 'numrec_')
+
+    @staticmethod
+    def delete_intermediate_image_files(save_path_prefix: str = _default_intermediate_image_save_path_prefix):
+        for f in glob.glob(save_path_prefix + '*.jpg'):
+            os.remove(f)
+
+    def save_intermediate_images(self, save_path_prefix: str = _default_intermediate_image_save_path_prefix):
         counter = -1
         for img in self.intermediate_images:
             counter += 1

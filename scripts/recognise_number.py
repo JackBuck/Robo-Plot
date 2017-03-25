@@ -28,6 +28,7 @@ if __name__ == '__main__':
         print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx))
 
     # Save and display images
+    img.delete_intermediate_image_files()
     img.save_intermediate_images()
 
     if args.display_images:
