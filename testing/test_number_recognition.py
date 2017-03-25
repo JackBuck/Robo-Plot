@@ -49,13 +49,13 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
         with self.subTest(filename=os.path.basename(file_path)):
             # Perform the number recognition
             img = number_recognition.DotToDotImage.load_image_from_file(file_path)
-            recognised_numbers = img.process_image()
+            img.process_image()
 
             # Compare
             for expected_number in expected_numbers:
                 recognised_numbers_at_this_location =\
-                    [n for n in recognised_numbers if np.allclose(n.dot_location_yx, expected_number.dot_location_yx,
-                                                                  rtol=0, atol=2)]
+                    [n for n in img.recognised_numbers
+                     if np.allclose(n.dot_location_yx, expected_number.dot_location_yx, rtol=0, atol=2)]
 
                 self.assertEqual(len(recognised_numbers_at_this_location), 1,
                                  'More than one number found at the same location.')
@@ -63,6 +63,8 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
                 recognised_number = recognised_numbers_at_this_location[0]
 
                 self.assertEqual(recognised_number.numeric_value, expected_number.numeric_value)
+
+            self.assertCountEqual([n for n in img.recognised_numbers if n.numeric_value is not None], expected_numbers)
 
 
 if __name__ == '__main__':
