@@ -61,7 +61,7 @@ class DotToDotImage:
         self._img = original_img
         self.intermediate_images = [NamedImage(self._img.copy(), 'Original Image')]
 
-    def process_image(self) -> Number:
+    def process_image(self) -> None:
         """
         Process the dot-to-dot image.
 
@@ -71,17 +71,7 @@ class DotToDotImage:
         self.intermediate_images = [self.intermediate_images[0]]  # Just keep the original image
         self._clean_image()
         self._extract_spots()
-        self._find_closest_spot_to_centre()
-        self._extract_central_contours(maximum_pixels_between_contours=10)  # This value 'only just' works for 40pt.
-        # Unfortunately the spot size doesn't really grow in proportion to the font size - to do it dynamically we
-        # would need to actually look at distances between contours and choose a threshold based on that, maybe using
-        # some sort of clustering algorithm.
-        self._mask_using_central_contours()
-        self._rotate_centre_spot_to_bottom_right()
-        self._recognise_number_text()
-        self._extract_number_from_recognised_text()
-        return Number(numeric_value=self.recognised_numeric_value,
-                      dot_location_yx=(self.centre_spot.pt[1], self.centre_spot.pt[0]))
+        self._recognise_number_near_each_spot()
 
     def _clean_image(self):
         self._img = cv2.medianBlur(self._img, ksize=3)
@@ -113,32 +103,32 @@ class DotToDotImage:
                                                flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         self.intermediate_images.append(NamedImage(img_with_keypoints, 'Spot Detection Image'))
 
-    def _find_closest_spot_to_centre(self):
-        if self.spot_keypoints is None or len(self.spot_keypoints) == 0:
-            self.centre_spot = None
-        else:
-            image_centre = np.array(self._img.shape) / 2
-            self.centre_spot = min(self.spot_keypoints, key=lambda s: np.linalg.norm(s.pt - image_centre))
+    def _recognise_number_near_each_spot(self):
+        self.recognised_numbers = []
+        original_image = self._img
+        for spot in self.spot_keypoints:
+            self._img = original_image
 
-            try:
-                spots_image = next(img.image for img in self.intermediate_images if img.name == 'Spot Detection Image')
-                cv2.circle(spots_image, tuple(int(i) for i in self.centre_spot.pt), radius=int(self.centre_spot.size),
-                           color=(0, 255, 0), thickness=2)
-            except StopIteration:
-                pass
+            self._mask_to_contours_near_keypoint(spot)
 
-    def _extract_central_contours(self, maximum_pixels_between_contours: float):
-        self.central_contours = None
-        if self.centre_spot is not None:
-            self.central_contours = self._extract_contours_close_to(self.centre_spot.pt,
-                                                                    maximum_pixels_between_contours)
+            self._rotate_keypoint_to_bottom_right(spot)
 
-            # Log intermediate image
-            img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
-            cv2.drawContours(img, self.central_contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
-            self.intermediate_images.append(NamedImage(img, 'Central contours'))
+            number = self._recognise_number()
 
-    def _extract_contours_close_to(self, target_point, maximum_pixels_between_contours: float):
+            self.recognised_numbers.append(
+                Number(numeric_value=number,
+                       dot_location_yx=(spot.pt[1], spot.pt[0]))
+            )
+
+    def _mask_to_contours_near_keypoint(self, keypoint):
+        # This value for the maximum_pixels_between_contours 'only just' works for 40pt.
+        # Unfortunately the spot size doesn't really grow in proportion to the font size - to do it dynamically we
+        # would need to actually look at distances between contours and choose a threshold based on that, maybe using
+        # some sort of clustering algorithm.
+        nearby_contours = self._extract_contours_close_to(keypoint, maximum_pixels_between_contours=10)
+        self._mask_using_contours(nearby_contours)
+
+    def _extract_contours_close_to(self, target_keypoint, maximum_pixels_between_contours: float):
         img_inverted = 255 - self._img
         _, all_contours, _ = cv2.findContours(img_inverted, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
 
@@ -147,7 +137,7 @@ class DotToDotImage:
 
         # all_contours = [cv2.convexHull(c, returnPoints=True) for c in all_contours]
 
-        target_point_as_contour = np.reshape(target_point, (-1, 1, 2))
+        target_point_as_contour = np.reshape(target_keypoint.pt, (-1, 1, 2))
         contours_near_target = [target_point_as_contour]
 
         still_adding_contours = True
@@ -161,28 +151,32 @@ class DotToDotImage:
                     contours_near_target.append(all_contours.pop(i))
                     still_adding_contours = True
 
-        return contours_near_target[1:]
+        contours_near_target = contours_near_target[1:]
 
-    def _mask_using_central_contours(self):
-        if self.central_contours is not None:
-            self._img = self._mask_using_contours(self.central_contours)
-            self.intermediate_images.append(NamedImage(self._img.copy(), 'Masked Image'))
+        self._log_contours_on_current_image(contours_near_target, 'Contours near spot')
+        return contours_near_target
+
+    def _log_contours_on_current_image(self, contours, name):
+        img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
+        cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
+        self.intermediate_images.append(NamedImage(img, name))
 
     def _mask_using_contours(self, contours):
         img = self._img.copy()
         mask = np.zeros(img.shape, np.uint8)
         cv2.drawContours(mask, contours, contourIdx=-1, color=255, thickness=-1)
         img[np.where(mask == 0)] = 255
-        return img
+        self._img = img
 
-    def _rotate_centre_spot_to_bottom_right(self):
-        if self.centre_spot is not None:
-            current_angle = self._estimate_degrees_from_number_centre_to_spot()
-            desired_angle = -30
-            self._img = _rotate_image_anticlockwise(desired_angle - current_angle, self._img)
-            self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
+        self.intermediate_images.append(NamedImage(self._img.copy(), 'Masked Image'))
 
-    def _estimate_degrees_from_number_centre_to_spot(self):
+    def _rotate_keypoint_to_bottom_right(self, keypoint):
+        current_angle = self._estimate_degrees_from_centroid_to_location(y=keypoint.pt[1], x=keypoint.pt[0])
+        desired_angle = -30
+        self._img = _rotate_image_anticlockwise(desired_angle - current_angle, self._img)
+        self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
+
+    def _estimate_degrees_from_centroid_to_location(self, y, x):
         inverted_image = 255 - self._img
 
         total_intensity = np.sum(inverted_image)
@@ -191,22 +185,26 @@ class DotToDotImage:
         centroid_x = np.sum(
             np.arange(inverted_image.shape[1]).reshape(1, -1) * inverted_image) / total_intensity
 
-        return np.rad2deg(np.arctan2(-(self.centre_spot.pt[1] - centroid_y),
-                                     self.centre_spot.pt[0] - centroid_x))
+        return np.rad2deg(np.arctan2(-(y - centroid_y), x - centroid_x))
 
-    def _recognise_number_text(self):
+    def _recognise_number(self) -> int:
+        text = self._recognise_number_text()
+        return self._extract_number_from_recognised_text(text)
+
+    def _recognise_number_text(self) -> str:
         img = Image.fromarray(self._img)
 
         # psm 8 => single word;
         # digits => use the digits config file supplied with the software
-        self.recognised_text = pytesseract.image_to_string(img, config='-psm 8, digits')
+        return pytesseract.image_to_string(img, config='-psm 8, digits')
 
-    def _extract_number_from_recognised_text(self):
+    @staticmethod
+    def _extract_number_from_recognised_text(recognised_text) -> int:
         # Forcing a terminating period helps us to filter out bad results
-        match = re.match(r'(\d+)\.$', self.recognised_text)
-        self.recognised_numeric_value = None
+        match = re.match(r'(\d+)\.$', recognised_text)
+
         if match is not None:
-            self.recognised_numeric_value = int(match.group(1))
+            return int(match.group(1))
 
     def display_intermediate_images(self):
         for img in self.intermediate_images:
