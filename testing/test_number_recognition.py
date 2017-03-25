@@ -38,7 +38,7 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
             filename = os.path.basename(img_file)
 
             expected_numbers = []
-            for file_name_match in re.finditer(r'(?P<numeric_value>\d+)_y(?P<spot_y>\d+)_x(?P<spot_x>\d+)', filename):
+            for file_name_match in re.finditer(r'(?P<numeric_value>\d+)y(?P<spot_y>\d+)x(?P<spot_x>\d+)', filename):
                 numeric_value = int(file_name_match.group('numeric_value'))
                 dot_location_yx = (int(file_name_match.group('spot_y')), int(file_name_match.group('spot_x')))
                 expected_numbers.append(number_recognition.Number(numeric_value, dot_location_yx))
@@ -58,13 +58,14 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
                      if np.allclose(n.dot_location_yx, expected_number.dot_location_yx, rtol=0, atol=2)]
 
                 self.assertEqual(len(recognised_numbers_at_this_location), 1,
-                                 'More than one number found at the same location.')
+                                 'Did not find a unique matching recognised number at this location.')
 
                 recognised_number = recognised_numbers_at_this_location[0]
 
                 self.assertEqual(recognised_number.numeric_value, expected_number.numeric_value)
 
-            self.assertCountEqual([n for n in img.recognised_numbers if n.numeric_value is not None], expected_numbers)
+            self.assertEqual(len([n for n in img.recognised_numbers if n.numeric_value is not None]),
+                             len(expected_numbers))
 
 
 if __name__ == '__main__':
