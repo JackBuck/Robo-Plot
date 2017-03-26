@@ -23,7 +23,45 @@ def save_line_approximation(debug_image, pixel_segments, is_rotated):
     # For each line segment draw a line between the start and end points of the segment and mark the start
     # and end with a circle. Ignore last pair as this is the target pair.
 
-    for index in range(0, len(pixel_segments) - 2):
+    for index in range(0, len(pixel_segments) -1):
+        # Add artifacts to debug_image
+        x_start_index = int(pixel_segments[index][1]*DEBUG_SCALE_FACTOR)
+        y_start_index = int(pixel_segments[index][0]*DEBUG_SCALE_FACTOR)
+        x_end_index = int(pixel_segments[index + 1][1]*DEBUG_SCALE_FACTOR)
+        y_end_index = int(pixel_segments[index + 1][0]*DEBUG_SCALE_FACTOR)
+
+        # Note these functions need the co-ordinates ordered (x, y)
+        cv2.line(debug_image, (x_start_index, y_start_index), (x_end_index, y_end_index), (255, 10, 10), 1)
+        cv2.circle(debug_image, (x_start_index, y_start_index), 2, (255, 10, 10))
+        cv2.circle(debug_image, (x_end_index, y_end_index), 2, (255, 10, 10))
+
+
+
+
+
+    filename = datetime.datetime.now().strftime("%M%S.%f_") \
+               + str(hardware.plotter._axes.current_location[0]) \
+               + '_' \
+               + str(hardware.plotter._axes.current_location[1]) + '_'
+
+    if is_rotated:
+        filename += 'line_approximation_rotated' + '.jpg'
+    else:
+        filename += 'line_approximation' + '.jpg'
+
+    cv2.imwrite(os.path.join(config.debug_output_folder, filename), debug_image)
+
+
+def save_candidate_line_approximation(debug_image, pixel_segments, i):
+    """ Displays the line segments x = my + c on debug_image not this is assumed to already have been resized"""
+
+    if debug_image is None:
+        return
+
+    # For each line segment draw a line between the start and end points of the segment and mark the start
+    # and end with a circle. Ignore last pair as this is the target pair.
+
+    for index in range(0, len(pixel_segments) - 1):
         # Add artifacts to debug_image
         x_start_index = int(pixel_segments[index][1]*DEBUG_SCALE_FACTOR)
         y_start_index = int(pixel_segments[index][0]*DEBUG_SCALE_FACTOR)
@@ -37,12 +75,9 @@ def save_line_approximation(debug_image, pixel_segments, is_rotated):
     filename = datetime.datetime.now().strftime("%M%S.%f_") \
                + str(hardware.plotter._axes.current_location[0]) \
                + '_' \
-               + str(hardware.plotter._axes.current_location[1]) + '_'
+               + str(hardware.plotter._axes.current_location[1]) + '_Direction' + str(i) + '.jpg'
 
-    if is_rotated:
-        filename += 'line_approximation_rotated' + '.jpg'
-    else:
-        filename += 'line_approximation' + '.jpg'
+
 
     cv2.imwrite(os.path.join(config.debug_output_folder, filename), debug_image)
 

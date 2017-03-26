@@ -19,15 +19,26 @@ def compute_complete_path(image, current_direction):
 
     kernel = np.ones((5, 5), np.uint8)
     image = cv2.dilate(image, kernel, iterations=10)
-    computed_path =[]
 
     # Process picture and extract image for analysis.
     image_to_analyse = image_analysis.process_image(image)
     image_to_analyse = image_analysis.extract_sub_image(image_to_analyse, current_direction)
 
-    i = 0
-    while i<30:  # Should be true but restricting path for debugging.
-        i += 1
+    # Analyse image
+    next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse,
+                                                                                                 search_width)
+    # Convert the co-ordinates and append them move
+    camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
+    computed_path = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                          current_direction,
+                                                          camera_location)
+    k = 0
+    while k<30:  # Should be true but restricting path for debugging.
+        k += 1
+
+        # Move to new camera position and take photo.
+        hardware.plotter.move_camera_to(computed_path[-1])
+        image = hardware.plotter.take_photo_at(computed_path[-1])
 
         # Analyse photo to check if red is found.
 
@@ -36,37 +47,52 @@ def compute_complete_path(image, current_direction):
 
         if red_triangle_found:
             global_centre_of_red = convert_to_global_coords(centre_of_red, current_direction,
-                                                            hardware.both.axes.current_location)
+                                                            hardware.both_axes.current_location)
             computed_path.append(centre_of_red)
             break
 
-        # Analyse image
-        next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse,
-                                                                                                     search_width)
-        #Convert the co-ordinates and append them move
-        camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
-        next_computed_path_segment = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                              current_direction,
-                                                              camera_location)
 
-        # Append the computed path with the new values.
-        computed_path.extend(next_computed_path_segment)
-
-        # Move to new camera position and take photo.
-        hardware.plotter.move_camera_to(computed_path[-1])
-
-        # Take next picture. - We have to do this even if we havent moved as otherwise we will process it twice.
-        image = hardware.plotter.take_photo_at(computed_path[-1])
-
-        # Process image for analysis.
+         # Process image for analysis.
         image_to_analyse = image_analysis.process_image(image)
 
-        # Compute the next path direction.
-        current_direction = image_analysis.compute_next_direction(image, image_to_analyse, current_direction)
+        # Analyse image in all four directions.
 
-        # Extract sub image.
-        image_to_analyse = image_analysis.extract_sub_image(image_to_analyse, current_direction)
+        candidate_path_segments = [[], [], [], []]
+        selected_candidate = -1
+        selected_candidate_length = -1
+        for i in range(0, 4):
+            # Extract sub image.
+            current_direction = image_analysis.Direction(i)
+            sub_image = image_analysis.extract_sub_image(image_to_analyse, current_direction)
 
+            next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(
+                sub_image,
+                search_width)
+
+            # Convert the co-ordinates.
+            camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
+            candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                                  current_direction,
+                                                                  camera_location)
+
+            # Analyse candidate path.
+            length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
+
+            if __debug__:
+                iadebug.save_line_approximation(hardware.plotter._axes.debug_image.debug_image.copy(), computed_path, False)
+
+                temp_path = computed_path.copy()
+                temp_path.extend(candidate_path_segments[i])
+                iadebug.save_candidate_line_approximation(hardware.plotter._axes.debug_image.debug_image.copy(),
+                                                          temp_path, i)
+
+            if is_valid_path and length > selected_candidate_length:
+                selected_candidate = i
+                selected_candidate_length = length
+
+
+        # Append the computed path with the new values.
+        computed_path.extend(candidate_path_segments[selected_candidate])
 
         if __debug__:
             iadebug.save_line_approximation(hardware.plotter._axes.debug_image.debug_image, computed_path, False)
