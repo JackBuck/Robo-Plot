@@ -142,7 +142,7 @@ class DotToDotImage:
         original_image = self._img
         for spot in self.spot_keypoints:
             self._img = original_image
-            self._mask_to_contour_groups_close_to(spot.pt, 2*spot.size)
+            self._mask_to_contour_groups_close_to(spot.pt, 2 * spot.size)
             self._rotate_keypoint_to_bottom_right(spot)
             number = self._recognise_number()
 
@@ -245,7 +245,6 @@ def read_image(file_path: str) -> np.ndarray:
 
 
 def _rotate_image_anticlockwise_without_cropping(degrees, img):
-
     # Adapted from:
     # http://stackoverflow.com/questions/22041699/rotate-an-image-without-cropping-in-opencv-in-c/33564950#33564950
 
@@ -286,8 +285,10 @@ def _crop_about(img, centre, new_side_length):
 
     return cropped_img, new_centre
 
+
 def _invert(img: np.ndarray) -> np.ndarray:
     return 255 - img
+
 
 def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
     """An apparently unused method which is actually quite useful when debugging!"""
