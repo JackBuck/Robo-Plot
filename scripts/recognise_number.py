@@ -18,14 +18,7 @@ if __name__ == '__main__':
     img.process_image()
 
     # Print output
-    print("Recognised {} numbers:".format(len(img.recognised_numbers)))
-    for number in img.recognised_numbers:
-        print("  * ", end='')
-        if number.numeric_value is not None:
-            print("{:2d}".format(number.numeric_value), end='')
-        else:
-            print("??", end='')
-        print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx))
+    img.print_recognised_numbers()
 
     # Save and display images
     img.delete_intermediate_image_files()

@@ -229,6 +229,17 @@ class DotToDotImage:
             image = img.image.copy()
             threading.Thread(target=lambda: cv2.imwrite(save_path, image)).start()
 
+    def print_recognised_numbers(self):
+        print("Recognised {} numbers:".format(len(self.recognised_numbers)))
+        for number in self.recognised_numbers:
+            print("  * ", end='')
+            if number.numeric_value is not None:
+                print("{:2d}".format(number.numeric_value), end='')
+            else:
+                print("??", end='')
+            print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx))
+        print('')
+
 
 def read_image(file_path: str) -> np.ndarray:
     """
