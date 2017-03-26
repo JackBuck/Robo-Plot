@@ -51,7 +51,7 @@ try:
         dot_to_dot_image.print_recognised_numbers()
 
         recognised_numbers.extend(
-            [number_recognition.GlobalNumber.from_local(n) for n in dot_to_dot_image.recognised_numbers])
+            [number_recognition.GlobalNumber.from_local(n, target_position) for n in dot_to_dot_image.recognised_numbers])
 
     end_time = time.time()
     print('Time to collect photos: {:.1f} seconds'.format(end_time-start_time))
@@ -81,8 +81,16 @@ try:
             num_retries += 1
 
             # Take a new photo
+            print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\nRetrying...'.format(location_yx_mm))
             plotter.move_camera_to(location_yx_mm)
-            photo = camera.take_photo_at(target_position)
+            photo = camera.take_photo_at(location_yx_mm)
+
+            dot_to_dot_image = number_recognition.DotToDotImage(photo)
+            dot_to_dot_image.process_image()
+            dot_to_dot_image.print_recognised_numbers()
+
+            global_numbers = [number_recognition.GlobalNumber(n, location_yx_mm) for n in dot_to_dot_image.recognised_numbers]
+            group.extend([n for n in global_numbers if np.linalg.norm(n.dot_location_yx_mm - location_yx_mm) < 5])
 
             # Try again to get the mode values
             try:

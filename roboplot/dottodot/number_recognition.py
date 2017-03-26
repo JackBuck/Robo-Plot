@@ -16,13 +16,13 @@ import roboplot.dottodot.misc as misc
 class LocalNumber:
     """Represents a number on a photo taken of a local area on the dot-to-dot."""
 
-    def __init__(self, numeric_value: int, dot_location_yx_pixels: tuple):
+    def __init__(self, numeric_value: int, dot_location_yx_pixels):
         """
         Create an instance to represent a number on the dot-to-dot picture.
         
         Args:
             numeric_value (int): the ordinal associated with the dot-to-dot number
-            dot_location_yx_pixels (tuple): a pair (y,x) of floats specifying the location of the dot in the photo
+            dot_location_yx_pixels: a pair (y,x) of floats specifying the location of the dot in the photo
         """
         self.numeric_value = numeric_value
         self.dot_location_yx_pixels = np.array(dot_location_yx_pixels)
@@ -37,13 +37,13 @@ class GlobalNumber:
                                                                          camera_location)
         return GlobalNumber(local_number.numeric_value, global_location)
 
-    def __init__(self, numeric_value: int, dot_location_yx_mm: tuple):
+    def __init__(self, numeric_value: int, dot_location_yx_mm):
         """
         Create an instance to represent a number on the dot-to-dot picture.
 
         Args:
             numeric_value (int): the ordinal associated with the dot-to-dot number
-            dot_location_yx_mm (tuple): a pair (y,x) of floats specifying the location (in mm) of the dot on the page
+            dot_location_yx_mm: a pair (y,x) of floats specifying the location (in mm) of the dot on the page
         """
         self.numeric_value = numeric_value
         self.dot_location_yx_mm = np.array(dot_location_yx_mm)
