@@ -9,7 +9,7 @@ from roboplot.core.camera.camera_wrapper import Camera
 
 class Plotter:
     default_pen_speed = np.inf  # I.e. as fast as possible
-    default_resolution = 0.1
+    default_resolution = 0.5
 
     def __init__(self,
                  axes: stepper_control.AxisPair,
