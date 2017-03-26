@@ -117,7 +117,8 @@ class DotToDotImage:
         # Dilate and Erode to 'clean' the spot (nb that this harms the number itself, so we only do it to extract spots)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         img = cv2.dilate(self._img, kernel, iterations=1)
-        img = cv2.erode(img, kernel, iterations=1)
+        img = cv2.erode(img, kernel, iterations=2)
+        img = cv2.dilate(img, kernel, iterations=1)
 
         # Perform a simple blob detect
         params = cv2.SimpleBlobDetector_Params()
