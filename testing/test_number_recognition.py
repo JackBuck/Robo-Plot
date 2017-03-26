@@ -26,9 +26,10 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
                 r'(?P<numeric_value>\d+)_(?P<fontsize>\d+)pt_(?P<angle>\d+)deg_y(?P<spot_y>\d+)_x(?P<spot_x>\d+)',
                 filename)
 
-            expected_number = number_recognition.Number(numeric_value=int(file_name_match.group('numeric_value')),
-                                                        dot_location_yx=(int(file_name_match.group('spot_y')),
-                                                                         int(file_name_match.group('spot_x'))))
+            expected_number = number_recognition.LocalNumber(
+                numeric_value=int(file_name_match.group('numeric_value')),
+                dot_location_yx_pixels=(int(file_name_match.group('spot_y')),
+                                        int(file_name_match.group('spot_x'))))
             self._test_on_file(img_file, [expected_number])
 
     def test_on_bat_images(self):
@@ -41,7 +42,7 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
             for file_name_match in re.finditer(r'(?P<numeric_value>\d+)y(?P<spot_y>\d+)x(?P<spot_x>\d+)', filename):
                 numeric_value = int(file_name_match.group('numeric_value'))
                 dot_location_yx = (int(file_name_match.group('spot_y')), int(file_name_match.group('spot_x')))
-                expected_numbers.append(number_recognition.Number(numeric_value, dot_location_yx))
+                expected_numbers.append(number_recognition.LocalNumber(numeric_value, dot_location_yx))
 
             self._test_on_file(img_file, expected_numbers)
 

@@ -12,19 +12,34 @@ import roboplot.config as config
 import roboplot.dottodot.contour_tools as contour_tools
 
 
-class Number:
-    """Represents a number on the dot-to-dot picture."""
+class LocalNumber:
+    """Represents a number on a photo taken of a local area on the dot-to-dot."""
 
-    def __init__(self, numeric_value: int, dot_location_yx: tuple):
+    def __init__(self, numeric_value: int, dot_location_yx_pixels: tuple):
         """
         Create an instance to represent a number on the dot-to-dot picture.
         
         Args:
-            numeric_value (int): the ordinal associated with the dot-to-dot number\n
-            dot_location_yx (tuple): a pair (y,x) of floats specifying the location of the dot in the photo
+            numeric_value (int): the ordinal associated with the dot-to-dot number
+            dot_location_yx_pixels (tuple): a pair (y,x) of floats specifying the location of the dot in the photo
         """
         self.numeric_value = numeric_value
-        self.dot_location_yx = dot_location_yx
+        self.dot_location_yx_pixels = np.array(dot_location_yx_pixels)
+
+
+class GlobalNumber:
+    """Represents a number in the global dot-to-dot context."""
+
+    def __init__(self, numeric_value: int, dot_location_yx_mm: tuple):
+        """
+        Create an instance to represent a number on the dot-to-dot picture.
+
+        Args:
+            numeric_value (int): the ordinal associated with the dot-to-dot number
+            dot_location_yx_mm (tuple): a pair (y,x) of floats specifying the location (in mm) of the dot on the page
+        """
+        self.numeric_value = numeric_value
+        self.dot_location_yx_pixels = np.array(dot_location_yx_mm)
 
 
 class NamedImage:
@@ -74,7 +89,7 @@ class DotToDotImage:
         Process the dot-to-dot image.
 
         Returns:
-            Number: the number whose spot is closest to the centre of the image
+            LocalNumber: the number whose spot is closest to the centre of the image
         """
         self.intermediate_images = [self.intermediate_images[0]]  # Just keep the original image
         self._clean_image()
@@ -148,8 +163,8 @@ class DotToDotImage:
             number = self._recognise_number()
 
             self.recognised_numbers.append(
-                Number(numeric_value=number,
-                       dot_location_yx=(spot.pt[1], spot.pt[0]))
+                LocalNumber(numeric_value=number,
+                            dot_location_yx_pixels=(spot.pt[1], spot.pt[0]))
             )
 
     def _mask_to_contour_groups_close_to(self, point_xy, delta):
