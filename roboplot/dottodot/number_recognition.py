@@ -193,7 +193,9 @@ class DotToDotImage:
     @staticmethod
     def _extract_number_from_recognised_text(recognised_text) -> int:
         # Forcing a terminating period helps us to filter out bad results
-        match = re.match(r'(\d+)\.$', recognised_text)
+        # Allowing an initial period is a (small) hack to make one of the tests pass (the test recognises '.17.' due
+        # to a small amount of noise in the photo next to the 1). Ideally this would be done through image processing.
+        match = re.match(r'\.?(\d+)\.$', recognised_text)
 
         if match is not None:
             return int(match.group(1))
