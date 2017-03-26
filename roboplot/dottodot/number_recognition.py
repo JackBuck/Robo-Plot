@@ -164,11 +164,11 @@ class DotToDotImage:
     def _rotate_keypoint_to_bottom_right(self, keypoint):
         current_angle = self._estimate_degrees_from_centroid_to_location(y=keypoint.pt[1], x=keypoint.pt[0])
         desired_angle = -30
-        self._img = _rotate_image_anticlockwise(desired_angle - current_angle, self._img)
+        self._img = _rotate_image_anticlockwise_without_cropping(desired_angle - current_angle, self._img)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
 
     def _estimate_degrees_from_centroid_to_location(self, y, x):
-        inverted_image = 255 - self._img
+        inverted_image = _invert(self._img)
 
         total_intensity = np.sum(inverted_image)
         centroid_y = np.sum(
@@ -244,18 +244,33 @@ def read_image(file_path: str) -> np.ndarray:
         raise TypeError("Could not open image file: {}".format(file_path))
 
 
-def _rotate_image_anticlockwise(degrees, img):
-    # TODO: Change this to pad with white instead of cropping (I think by default it pads with black, so just put in
-    # a couple of inverts)
-    rows, cols = img.shape
-    rotation_matrix = cv2.getRotationMatrix2D(center=(cols / 2, rows / 2), angle=degrees, scale=1)
-    rotated_image = cv2.warpAffine(img, rotation_matrix, (cols, rows))
-    rotated_radians_mod_half_pi = np.deg2rad(degrees % 90)
-    new_img_width = img.shape[0] / (np.cos(rotated_radians_mod_half_pi) + np.sin(rotated_radians_mod_half_pi))
-    # Crop out the thin remaining border...
-    new_img_width = 2 * int((img.shape[0] + new_img_width) / 2 - 1) - img.shape[0]
-    rows, cols = rotated_image.shape
-    rotated_image, _ = _crop_about(rotated_image, centre=(cols / 2, rows / 2), new_side_length=new_img_width)
+def _rotate_image_anticlockwise_without_cropping(degrees, img):
+
+    # Adapted from:
+    # http://stackoverflow.com/questions/22041699/rotate-an-image-without-cropping-in-opencv-in-c/33564950#33564950
+
+    # Extract dimensions etc.
+    height, width = img.shape[:2]
+    image_center = (width / 2, height / 2)
+
+    # Get the usual rotation matrix
+    rotation_matrix = cv2.getRotationMatrix2D(image_center, degrees, 1.)
+
+    # Compute the new desired dimensions
+    abs_cos = abs(np.cos(np.deg2rad(degrees)))
+    abs_sin = abs(np.sin(np.deg2rad(degrees)))
+
+    new_width = int(np.ceil(width * abs_cos + height * abs_sin))
+    new_height = int(np.ceil(height * abs_cos + width * abs_sin))
+
+    # Add a translation to the rotation matrix
+    rotation_matrix[0, 2] += new_width / 2 - image_center[0]
+    rotation_matrix[1, 2] += new_height / 2 - image_center[1]
+
+    # Rotate the image, and ask opencv to return the larger canvas
+    rotated_image = cv2.warpAffine(img, rotation_matrix, (new_width, new_height),
+                                   borderMode=cv2.BORDER_CONSTANT, borderValue=255)
+
     return rotated_image
 
 
@@ -271,6 +286,8 @@ def _crop_about(img, centre, new_side_length):
 
     return cropped_img, new_centre
 
+def _invert(img: np.ndarray) -> np.ndarray:
+    return 255 - img
 
 def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
     """An apparently unused method which is actually quite useful when debugging!"""
