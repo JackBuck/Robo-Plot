@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
+import statistics
 import time
+import warnings
+
+import numpy as np
 
 import context
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.page_search as page_search
+import roboplot.dottodot.clustering as clustering
 import roboplot.dottodot.number_recognition as number_recognition
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
@@ -48,6 +53,53 @@ try:
 
     end_time = time.time()
     print('Time to collect photos: {:.1f} seconds'.format(end_time-start_time))
+
+    # Filter the results
+    def millimetres_between_numbers(first: number_recognition.GlobalNumber, second: number_recognition.GlobalNumber):
+        return np.linalg.norm(first.dot_location_yx_mm - second.dot_location_yx_mm)
+
+    groups = clustering.group_objects(recognised_numbers,
+                                      distance_function=millimetres_between_numbers,
+                                      min_dist_between_items_in_different_groups=5)
+
+    final_numbers = []
+    for group in groups:
+        assert len(group) > 0, 'Groups returned from the clustering should all be non-empty!!'
+
+        location_yx_mm = np.mean([number.dot_location_yx_mm for number in group], axis=0)
+
+        # Try to get the modal numeric value
+        try:
+            numeric_value = statistics.mode([n.numeric_value for n in group])
+        except statistics.StatisticsError:
+            numeric_value = None
+
+        num_retries = 0
+        while numeric_value is None and num_retries < 3:
+            num_retries += 1
+
+            # Take a new photo
+            plotter.move_camera_to(location_yx_mm)
+            photo = camera.take_photo_at(target_position)
+
+            # Try again to get the mode values
+            try:
+                numeric_value = statistics.mode([n.numeric_value for n in group])  # This _is_ 'None' friendly
+            except statistics.StatisticsError:  # No unique value, or empty data
+                numeric_value = None
+
+        if numeric_value is not None:
+            final_numbers.append(number_recognition.GlobalNumber(numeric_value, location_yx_mm))
+
+    final_numbers = sorted(final_numbers, key=lambda n: n.numeric_value)
+
+    # Warn if we don't have a list of unique, consecutive numbers starting at 1
+    for i in range(len(final_numbers)):
+        if final_numbers[i].numeric_value != i:
+            warnings.warn('Did not find a set of consecutive numbers starting at 1!\n'
+                          'Instead found {}'.format(', '.join([n.numeric_value for n in final_numbers])))
+            break
+
 
 finally:
     GPIO.cleanup()
