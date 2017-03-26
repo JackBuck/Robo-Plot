@@ -6,7 +6,9 @@ import time
 import context
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.page_search as page_search
+import roboplot.dottodot.number_recognition as number_recognition
 from roboplot.core.gpio.gpio_wrapper import GPIO
+
 
 try:
     # Commandline arguments
@@ -29,13 +31,20 @@ try:
 
     plotter.home()
 
+    # Take and analyse the photos
     start_time = time.time()
 
-    photos = []
+    recognised_numbers = []
     for target_position in target_positions:
         plotter.move_camera_to(target_position)
         photo = camera.take_photo_at(target_position)
-        photos.append(photo)
+
+        dot_to_dot_image = number_recognition.DotToDotImage(photo)
+        dot_to_dot_image.process_image()
+        dot_to_dot_image.print_recognised_numbers()
+
+        recognised_numbers.extend(
+            [number_recognition.GlobalNumber.from_local(n) for n in dot_to_dot_image.recognised_numbers])
 
     end_time = time.time()
     print('Time to collect photos: {:.1f} seconds'.format(end_time-start_time))

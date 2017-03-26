@@ -10,6 +10,7 @@ import pytesseract
 
 import roboplot.config as config
 import roboplot.dottodot.contour_tools as contour_tools
+import roboplot.dottodot.misc as misc
 
 
 class LocalNumber:
@@ -30,6 +31,12 @@ class LocalNumber:
 class GlobalNumber:
     """Represents a number in the global dot-to-dot context."""
 
+    @staticmethod
+    def from_local(local_number: LocalNumber, camera_location):
+        global_location = misc.convert_image_point_to_global_coordinates(local_number.dot_location_yx_pixels,
+                                                                         camera_location)
+        return GlobalNumber(local_number.numeric_value, global_location)
+
     def __init__(self, numeric_value: int, dot_location_yx_mm: tuple):
         """
         Create an instance to represent a number on the dot-to-dot picture.
@@ -39,7 +46,7 @@ class GlobalNumber:
             dot_location_yx_mm (tuple): a pair (y,x) of floats specifying the location (in mm) of the dot on the page
         """
         self.numeric_value = numeric_value
-        self.dot_location_yx_pixels = np.array(dot_location_yx_mm)
+        self.dot_location_yx_mm = np.array(dot_location_yx_mm)
 
 
 class NamedImage:
