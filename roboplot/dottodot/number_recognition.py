@@ -164,7 +164,7 @@ class DotToDotImage:
 
     def _rotate_keypoint_to_bottom_right(self, keypoint):
         current_angle = self._estimate_degrees_from_centroid_to_location(y=keypoint.pt[1], x=keypoint.pt[0])
-        desired_angle = -30
+        desired_angle = -28
         self._img = _rotate_image_anticlockwise_without_cropping(desired_angle - current_angle, self._img)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
 
