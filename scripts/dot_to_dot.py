@@ -6,12 +6,14 @@ import time
 import warnings
 
 import numpy as np
+import svgpathtools as svg
 
 import context
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.page_search as page_search
 import roboplot.dottodot.clustering as clustering
 import roboplot.dottodot.number_recognition as number_recognition
+import roboplot.svg.svg_parsing as svg_parsing
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
 
@@ -100,6 +102,19 @@ try:
                           'Instead found {}'.format(', '.join([n.numeric_value for n in final_numbers])))
             break
 
+    # Draw the dot-to-dot
+    path = svg.Path()
+    for i in range(1, len(final_numbers)):
+        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[i-1].dot_location_yx_mm),
+                             svg_parsing.yx_to_complex(final_numbers[i].dot_location_yx_mm)))
+
+    if len(final_numbers) > 0:
+        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[-1].dot_location_yx_mm),
+                             svg_parsing.yx_to_complex(final_numbers[0].dot_location_yx_mm)))
+
+    path_curve = svg_parsing.SVGPath(path, mm_per_unit=1)
+
+    plotter.draw(path_curve)
 
 finally:
     GPIO.cleanup()
