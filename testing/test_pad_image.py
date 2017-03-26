@@ -138,7 +138,7 @@ class PadImageTest(unittest.TestCase):
 
         # This has to be done with png.
         expected_results_file = os.path.join(self.path_to_test_data, filename_without_extension + '_expected.png')
-        self._overwrite_expected_results_file(expected_results_file, modified_image)
+        #self._overwrite_expected_results_file(expected_results_file, modified_image)
 
         # Load expected image
         expected_image = cv2.imread(expected_results_file)
