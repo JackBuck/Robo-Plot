@@ -35,6 +35,12 @@ class NamedImage:
 class DotToDotImage:
     """A class to process dot-to-dot images."""
 
+    # This value for the _max_pixels_between_contours_in_same_group 'only just' works for 40pt.
+    # Unfortunately the spot size doesn't really grow in proportion to the font size - to do it dynamically we
+    # would need to actually look at distances between contours and choose a threshold based on that, maybe using
+    # some sort of clustering algorithm.
+    _max_pixels_between_contours_in_same_group = 10
+
     @staticmethod
     def load_image_from_file(file_path: str):
         """
@@ -71,6 +77,8 @@ class DotToDotImage:
         """
         self.intermediate_images = [self.intermediate_images[0]]  # Just keep the original image
         self._clean_image()
+        self._extract_contour_groups()
+        self._mask_to_remove_contour_groups_near_edge()
         self._extract_spots()
         self._recognise_number_near_each_spot()
 
@@ -80,8 +88,94 @@ class DotToDotImage:
                                           thresholdType=cv2.THRESH_BINARY, blockSize=11, C=2)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Clean Image'))
 
+    def _extract_contour_groups(self):
+        contours = self._extract_contours()
+        self.contour_groups = self._group_contours(contours)
+
+    # TODO: Break out a contourtools module...
+
+    def _extract_contours(self) -> list:
+        img_inverted = 255 - self._img
+        _, contours, _ = cv2.findContours(img_inverted, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
+        self._log_contours_on_current_image(contours, 'Contours')
+        return contours
+
+    def _group_contours(self, contours) -> list:
+        """
+        Group contours, returning a list of lists of contours.
+
+        Args:
+            contours [list[np.ndarray]]: a list of contours to group.
+
+        Returns:
+            list[list[np.ndarray]]: each element is a group of contours.
+
+        """
+        contour_groups = [[c] for c in contours]
+        contour_distance_matrix = _compute_contour_distance_matrix(contours)
+
+        inds_of_mergeable_pair = self._compute_indices_of_one_pair_of_mergeable_groups(contour_distance_matrix)
+        while inds_of_mergeable_pair is not None:
+            contour_groups, contour_distance_matrix = self._merge_contour_groups(contour_groups,
+                                                                                 contour_distance_matrix,
+                                                                                 inds_of_mergeable_pair)
+            inds_of_mergeable_pair = self._compute_indices_of_one_pair_of_mergeable_groups(contour_distance_matrix)
+
+        return contour_groups
+
+    def _compute_indices_of_one_pair_of_mergeable_groups(self, contour_distance_matrix):
+        # Get all indices (i,j) with i<j, in a 2-element tuple (all rows indices, all column indices).
+        inds = np.triu_indices_from(contour_distance_matrix, 1)
+        # Get a boolean vector which indexes both elements of inds and tells whether the pair of groups should be merged
+        groups_should_be_merged = contour_distance_matrix[inds] < self._max_pixels_between_contours_in_same_group
+        # Get the subset of indices for groups we can merge
+        inds_of_mergeable_groups = [inds[i][groups_should_be_merged] for i in range(len(inds))]
+        # Return the first pair of indices, if any were found
+        indices_matrix = np.transpose(inds_of_mergeable_groups)
+        return indices_matrix[0] if len(indices_matrix) > 0 else None
+
+    @staticmethod
+    def _merge_contour_groups(contour_groups, current_distance_matrix, inds_of_mergeable_pair):
+        # Merge the actual contour groups
+        new_contour_groups = contour_groups.copy()
+        first_group = new_contour_groups.pop(max(inds_of_mergeable_pair))
+        second_group = new_contour_groups.pop(min(inds_of_mergeable_pair))
+        new_contour_groups.append(first_group + second_group)
+
+        # Merge rows and columns in the distance matrix
+        new_distances = current_distance_matrix[inds_of_mergeable_pair, :].min(axis=0)
+
+        groups_to_keep = np.ones(len(current_distance_matrix), dtype=bool)
+        groups_to_keep[inds_of_mergeable_pair] = False
+
+        new_distance_matrix = np.zeros([i-1 for i in current_distance_matrix.shape])
+        new_distance_matrix[0:-1, 0:-1] = current_distance_matrix[groups_to_keep,:][:, groups_to_keep]
+        new_distance_matrix[-1, 0:-1] = new_distances[groups_to_keep]
+        new_distance_matrix[0:-1, -1] = new_distances[groups_to_keep]
+
+        return new_contour_groups, new_distance_matrix
+
+    def _mask_to_remove_contour_groups_near_edge(self) -> None:
+        contours_near_edge = []
+        for i in reversed(range(len(self.contour_groups))):
+            if self._contour_group_is_near_edge(self.contour_groups[i]):
+                contours_near_edge.extend(
+                    self.contour_groups.pop(i))
+
+        self._log_contours_on_current_image(contours_near_edge, 'Contours near edge')
+        self._mask_using_contour_groups(self.contour_groups)
+        self.intermediate_images.append(NamedImage(self._img.copy(), 'Contours near edge removed'))
+
+    def _contour_group_is_near_edge(self, contour_group) -> bool:
+        # A contour is a numpy array of (x,y) points
+        min_xy = [self._max_pixels_between_contours_in_same_group, self._max_pixels_between_contours_in_same_group]
+        max_xy = np.array([self._img.shape[1], self._img.shape[1]]) - self._max_pixels_between_contours_in_same_group
+
+        contour_is_near_edge = [np.any(contour < min_xy) or np.any(contour >= max_xy) for contour in contour_group]
+        return any(contour_is_near_edge)
+
     def _extract_spots(self):
-        # Dilate and Erode to 'clean' the spot (note that this harms the number itself, so we only do it to extract spots
+        # Dilate and Erode to 'clean' the spot (nb that this harms the number itself, so we only do it to extract spots)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         img = cv2.dilate(self._img, kernel, iterations=1)
         img = cv2.erode(img, kernel, iterations=1)
@@ -109,11 +203,8 @@ class DotToDotImage:
         original_image = self._img
         for spot in self.spot_keypoints:
             self._img = original_image
-
-            self._mask_to_contours_near_keypoint(spot)
-
+            self._mask_to_contour_groups_close_to(spot.pt, 2*spot.size)
             self._rotate_keypoint_to_bottom_right(spot)
-
             number = self._recognise_number()
 
             self.recognised_numbers.append(
@@ -121,46 +212,28 @@ class DotToDotImage:
                        dot_location_yx=(spot.pt[1], spot.pt[0]))
             )
 
-    def _mask_to_contours_near_keypoint(self, keypoint):
-        # This value for the maximum_pixels_between_contours 'only just' works for 40pt.
-        # Unfortunately the spot size doesn't really grow in proportion to the font size - to do it dynamically we
-        # would need to actually look at distances between contours and choose a threshold based on that, maybe using
-        # some sort of clustering algorithm.
-        nearby_contours = self._extract_contours_close_to(keypoint, maximum_pixels_between_contours=10)
-        self._mask_using_contours(nearby_contours)
+    def _mask_to_contour_groups_close_to(self, point_xy, delta):
+        nearby_contour_groups = self._extract_contour_groups_close_to(point_xy, delta)
+        self._mask_using_contour_groups(nearby_contour_groups)
+        self.intermediate_images.append(NamedImage(self._img.copy(), 'Neighbourhood of Keypoint'))
 
-    def _extract_contours_close_to(self, target_keypoint, maximum_pixels_between_contours: float):
-        img_inverted = 255 - self._img
-        _, all_contours, _ = cv2.findContours(img_inverted, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_SIMPLE)
+    def _extract_contour_groups_close_to(self, target_point_xy, delta):
+        contour_groups_near_target = []
+        for grp in self.contour_groups:
+            # A hack because not all keypoints set the keypoint.size to the radius
+            if _dist_from_contour_group(grp, target_point_xy) <= delta:
+                contour_groups_near_target.append(grp)
 
-        def dist_between_contours(cnt1, cnt2):
-            return min([min(np.linalg.norm(cnt1 - pt, axis=2)) for pt in cnt2])
-
-        # all_contours = [cv2.convexHull(c, returnPoints=True) for c in all_contours]
-
-        target_point_as_contour = np.reshape(target_keypoint.pt, (-1, 1, 2))
-        contours_near_target = [target_point_as_contour]
-
-        still_adding_contours = True
-        while still_adding_contours:
-            still_adding_contours = False
-
-            for i in reversed(range(len(all_contours))):
-                dist_from_central_contours = min(
-                    [dist_between_contours(all_contours[i], c) for c in contours_near_target])
-                if dist_from_central_contours <= maximum_pixels_between_contours:
-                    contours_near_target.append(all_contours.pop(i))
-                    still_adding_contours = True
-
-        contours_near_target = contours_near_target[1:]
-
-        self._log_contours_on_current_image(contours_near_target, 'Contours near spot')
-        return contours_near_target
+        return contour_groups_near_target
 
     def _log_contours_on_current_image(self, contours, name):
         img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
         cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
         self.intermediate_images.append(NamedImage(img, name))
+
+    def _mask_using_contour_groups(self, contour_groups):
+        remaining_contours = [c for grp in contour_groups for c in grp]
+        self._mask_using_contours(remaining_contours)
 
     def _mask_using_contours(self, contours):
         img = self._img.copy()
@@ -168,8 +241,6 @@ class DotToDotImage:
         cv2.drawContours(mask, contours, contourIdx=-1, color=255, thickness=-1)
         img[np.where(mask == 0)] = 255
         self._img = img
-
-        self.intermediate_images.append(NamedImage(self._img.copy(), 'Masked Image'))
 
     def _rotate_keypoint_to_bottom_right(self, keypoint):
         current_angle = self._estimate_degrees_from_centroid_to_location(y=keypoint.pt[1], x=keypoint.pt[0])
@@ -254,7 +325,30 @@ def read_image(file_path: str) -> np.ndarray:
         raise TypeError("Could not open image file: {}".format(file_path))
 
 
+def _compute_contour_distance_matrix(contours):
+    contour_distance_matrix = np.zeros([len(contours), len(contours)])
+    for i in range(len(contours)):
+        for j in range(i + 1, len(contours)):
+            contour_distance_matrix[i, j] = _dist_between_contours(contours[i], contours[j])
+    contour_distance_matrix = contour_distance_matrix + contour_distance_matrix.T
+    return contour_distance_matrix
+
+
+def _dist_from_contour_group(grp, point_xy):
+    return min([_dist_from_contour(cnt, point_xy) for cnt in grp])
+
+
+def _dist_between_contours(cnt1, cnt2):
+    return min([_dist_from_contour(cnt1, pt) for pt in cnt2])
+
+
+def _dist_from_contour(cnt, point_xy):
+    return min(np.linalg.norm(cnt - point_xy, axis=2))
+
+
 def _rotate_image_anticlockwise(degrees, img):
+    # TODO: Change this to pad with white instead of cropping (I think by default it pads with black, so just put in
+    # a couple of inverts)
     rows, cols = img.shape
     rotation_matrix = cv2.getRotationMatrix2D(center=(cols / 2, rows / 2), angle=degrees, scale=1)
     rotated_image = cv2.warpAffine(img, rotation_matrix, (cols, rows))
