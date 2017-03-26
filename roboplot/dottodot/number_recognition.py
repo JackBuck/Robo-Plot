@@ -128,7 +128,7 @@ class DotToDotImage:
         params.filterByConvexity = True
         params.minConvexity = 0.8
         params.filterByInertia = True
-        params.minInertiaRatio = 0.6
+        params.minInertiaRatio = 0.4
         detector = cv2.SimpleBlobDetector_create(params)
         self.spot_keypoints = detector.detect(img)
 
