@@ -15,12 +15,20 @@ if __name__ == '__main__':
 
     # Load and Process the image
     img = number_recognition.DotToDotImage.load_image_from_file(args.input_file)
-    recognised_number = img.process_image()
+    img.process_image()
 
-    print("Recognised number: {!r}".format(recognised_number.numeric_value))
-    print("Probable spot location: {!r}".format(recognised_number.dot_location_yx))
+    # Print output
+    print("Recognised {} numbers:".format(len(img.recognised_numbers)))
+    for number in img.recognised_numbers:
+        print("  * ", end='')
+        if number.numeric_value is not None:
+            print("{:2d}".format(number.numeric_value), end='')
+        else:
+            print("??", end='')
+        print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx))
 
     # Save and display images
+    img.delete_intermediate_image_files()
     img.save_intermediate_images()
 
     if args.display_images:
