@@ -20,7 +20,10 @@ def compute_complete_path(image, current_direction):
     kernel = np.ones((5, 5), np.uint8)
     image = cv2.dilate(image, kernel, iterations=10)
     computed_path =[]
-    direction_turned = image_analysis.Turning.STRAIGHT
+
+    # Process picture and extract image for analysis.
+    image_to_analyse = image_analysis.process_image(image)
+    image_to_analyse = image_analysis.extract_sub_image(image_to_analyse, current_direction)
 
     i = 0
     while i<30:  # Should be true but restricting path for debugging.
@@ -37,47 +40,33 @@ def compute_complete_path(image, current_direction):
             computed_path.append(centre_of_red)
             break
 
-        # Process picture and extract image for analysis.
-        image_to_analyse = image_analysis.process_and_extract_sub_image(image, current_direction)
-
         # Analyse image
         next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse,
                                                                                                      search_width)
+        #Convert the co-ordinates and append them move
+        camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
+        next_computed_path_segment = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                              current_direction,
+                                                              camera_location)
 
-        if next_computed_pixel_path_segment[0][0] == -1:
-            # Try another orientation of the current image - not currently you could end up infinitely looping round
-            # with the wrong parameters. Dont come back the way you came.
+        # Append the computed path with the new values.
+        computed_path.extend(next_computed_path_segment)
 
-            # Compute the current direction.
-            if direction_turned == image_analysis.Turning.LEFT:
-                current_direction = image_analysis.turn_right(current_direction)
-            elif direction_turned == image_analysis.Turning.RIGHT:
-                current_direction = image_analysis.turn_left(current_direction)
-
-        else:
-            #Continue as usual - convert the co-ordinates and append them move
-
-            camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
-            next_computed_path_segment = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                                  current_direction,
-                                                                  camera_location)
-
-            # Append the computed path with the new values.
-            computed_path.extend(next_computed_path_segment)
-
-            # Move to new camera position and take photo.
-            hardware.plotter.move_camera_to(computed_path[-1])
-
-            # Compute the current direction.
-            if turn_to_next_direction == image_analysis.Turning.LEFT:
-                current_direction = image_analysis.turn_left(current_direction)
-            elif turn_to_next_direction == image_analysis.Turning.RIGHT:
-                current_direction = image_analysis.turn_right(current_direction)
-
-            direction_turned = turn_to_next_direction
+        # Move to new camera position and take photo.
+        hardware.plotter.move_camera_to(computed_path[-1])
 
         # Take next picture. - We have to do this even if we havent moved as otherwise we will process it twice.
         image = hardware.plotter.take_photo_at(computed_path[-1])
+
+        # Process image for analysis.
+        image_to_analyse = image_analysis.process_image(image)
+
+        # Compute the next path direction.
+        current_direction = image_analysis.compute_next_direction(image, image_to_analyse, current_direction)
+
+        # Extract sub image.
+        image_to_analyse = image_analysis.extract_sub_image(image_to_analyse, current_direction)
+
 
         if __debug__:
             iadebug.save_line_approximation(hardware.plotter._axes.debug_image.debug_image, computed_path, False)

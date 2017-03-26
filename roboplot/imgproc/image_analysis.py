@@ -55,6 +55,20 @@ def turn_right(current_direction):
     return direction_array[direction_index]
 
 
+def turn_around(current_direction):
+    """"
+
+    Args:
+        current_direction: The direction the previous picture was taken in.
+
+    Returns:
+        new_direction: The direction after turning around
+    """
+    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+    direction_index = (current_direction + 2) % 4
+    return direction_array[direction_index]
+
+
 class Turning(enum.IntEnum):
     LEFT = 0
     STRAIGHT = 1
@@ -132,7 +146,7 @@ def compute_centroid(lightnesses):
     return int(flt_centroid)
 
 
-def process_and_extract_sub_image(image, scan_direction):
+def extract_sub_image(processed_image, scan_direction):
     """
 
     Args:
@@ -147,26 +161,46 @@ def process_and_extract_sub_image(image, scan_direction):
     # Convert image to black and white - we cannot take the photos in black and white as we
     # must first search for the red triangle.
 
-    # Assuming the rotations below are quicker by converting to gray scale first if not already gray
+    # Orientate image so we are scanning the bottom half.
+    if scan_direction == Direction.NORTH:
+        processed_image = np.rot90(processed_image, 2)
+    elif scan_direction == Direction.EAST:
+        processed_image = np.rot90(processed_image, 3)
+    elif scan_direction == Direction.SOUTH:
+        processed_image = processed_image
+    elif scan_direction == Direction.WEST:
+        processed_image = np.rot90(processed_image, 1)
+
+    sub_image = processed_image[int(processed_image.shape[0] / 2):, :]
+
+    # Save sub_image to debug folder if required.
+    if __debug__:
+        iadebug.save_sub_image(sub_image)
+
+    return sub_image
+
+
+def process_image(image):
+    """
+
+    Args:
+        image: The image to process
+
+    Returns:
+        sub_image: The rotated and extracted.
+
+    """
+
+    # Convert image to black and white - we cannot take the photos in black and white as we
+    # must first search for the red triangle.
+
     if len(image.shape) == 3:
         processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     else:
         processed_img = image
 
-
-
-    # Orientate image so we are scanning the bottom half.
-    if scan_direction == Direction.NORTH:
-        pixels = np.rot90(processed_img, 2)
-    elif scan_direction == Direction.EAST:
-        pixels = np.rot90(processed_img, 3)
-    elif scan_direction == Direction.SOUTH:
-        pixels = processed_img
-    elif scan_direction == Direction.WEST:
-        pixels = np.rot90(processed_img, 1)
-
-    pixels = cv2.GaussianBlur(pixels, (21, 21), 0)
-    _, pixels = cv2.threshold(pixels, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        processed_img = cv2.GaussianBlur(processed_img, (21, 21), 0)
+    _, processed_img = cv2.threshold(processed_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     kernel = np.array([[0, 1, 1, 1, 0],
                        [1, 1, 1, 1, 1],
@@ -174,7 +208,7 @@ def process_and_extract_sub_image(image, scan_direction):
                        [1, 1, 1, 1, 1],
                        [0, 1, 1, 1, 0]], np.uint8)
 
-    pixels = cv2.erode(pixels, kernel, iterations=10)
+    processed_img = cv2.erode(processed_img, kernel, iterations=10)
 
     # Debugging code - useful to show the images are being eroded correctly.
     #spacer = processed_img[:, 0:2].copy()
@@ -184,13 +218,11 @@ def process_and_extract_sub_image(image, scan_direction):
     #cv2.imshow('PreProcessed and Processed Image', combined_image)
     #cv2.waitKey(0)
 
-    sub_image = pixels[int(pixels.shape[0] / 2):, :]
-
     # Save sub_image to debug folder if required.
     if __debug__:
-        iadebug.save_sub_image(sub_image)
+        iadebug.save_processed_image(processed_img)
 
-    return sub_image
+    return processed_img
 
 
 def compute_pixel_path(image, search_width):
@@ -579,6 +611,79 @@ def find_start_direction(img):
     if max_num_pixels == west_whiteness_total:
         return Direction.WEST
 
+
+def compute_next_direction_feelers(image, processed_image, current_direction):
+    # This has drawbacks as mention by JB.
+
+    (north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length) = compute_feeler_lengths(processed_image, current_direction)
+
+    max_feeler_length = max(north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length)
+
+    # If no feelers were found in the processed image use the raw image to find the direction.
+    if max_feeler_length == 0:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        (north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length) = compute_feeler_lengths(
+            image, current_direction)
+        max_feeler_length = max(north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length)
+
+    if max_feeler_length == north_feeler_length:
+        return Direction.NORTH
+    elif max_feeler_length == east_feeler_length:
+        return Direction.EAST
+    elif max_feeler_length == south_feeler_length:
+        return Direction.SOUTH
+    elif max_feeler_length == west_feeler_length:
+        return Direction.WEST
+
+
+def compute_feeler_lengths(processed_image, current_direction):
+
+    north_feeler_length = 0
+    east_feeler_length = 0
+    west_feeler_length = 0
+    south_feeler_length = 0
+
+    if current_direction is not Direction.NORTH:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and y_index < processed_image.shape[0] - 1:
+            y_index += 1
+            south_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    if current_direction is not Direction.EAST:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and x_index > 0:
+            x_index -= 1
+            west_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    if current_direction is not Direction.SOUTH:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and y_index > 0:
+            y_index -= 1
+            north_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    if current_direction is not Direction.WEST:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and x_index < processed_image.shape[1] - 1:
+            x_index += 1
+            east_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    return (north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length)
 
 
 ## Legacy ##

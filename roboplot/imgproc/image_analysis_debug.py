@@ -85,6 +85,16 @@ def save_sub_image(image):
 
     cv2.imwrite(os.path.join(config.debug_output_folder,filename), image)
 
+
+def save_processed_image(image):
+
+    filename = datetime.datetime.now().strftime("%M%S.%f_") \
+               + str(hardware.plotter._axes.current_location[0]) \
+               + '_' \
+               + str(hardware.plotter._axes.current_location[1]) + '_Processed_Image.jpg'
+
+    cv2.imwrite(os.path.join(config.debug_output_folder,filename), image)
+
 def create_debug_image(image):
     debug_image = cv2.resize(image, (0, 0), fx=DEBUG_SCALE_FACTOR, fy=DEBUG_SCALE_FACTOR)
     debug_image = cv2.cvtColor(debug_image, cv2.COLOR_GRAY2BGR)
