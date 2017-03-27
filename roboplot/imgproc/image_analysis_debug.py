@@ -52,7 +52,7 @@ def save_line_approximation(debug_image, pixel_segments, is_rotated):
     cv2.imwrite(os.path.join(config.debug_output_folder, filename), debug_image)
 
 
-def save_candidate_line_approximation(debug_image, pixel_segments, i):
+def save_candidate_line_approximation(debug_image, pixel_segments, candidate_segments, i):
     """ Displays the line segments x = my + c on debug_image not this is assumed to already have been resized"""
 
     if debug_image is None:
@@ -71,6 +71,20 @@ def save_candidate_line_approximation(debug_image, pixel_segments, i):
         # Note these functions need the co-ordinates ordered (x, y)
         cv2.line(debug_image, (x_start_index, y_start_index), (x_end_index, y_end_index), (255, 10, 10), 1)
         cv2.circle(debug_image, (x_start_index, y_start_index), 2, (255, 10, 10))
+
+    for index in range(0, len(candidate_segments) - 1):
+        # Add artifacts to debug_image
+        x_start_index = int(candidate_segments[index][1]*DEBUG_SCALE_FACTOR)
+        y_start_index = int(candidate_segments[index][0]*DEBUG_SCALE_FACTOR)
+        x_end_index = int(candidate_segments[index + 1][1]*DEBUG_SCALE_FACTOR)
+        y_end_index = int(candidate_segments[index + 1][0]*DEBUG_SCALE_FACTOR)
+
+        # Note these functions need the co-ordinates ordered (x, y)
+        cv2.line(debug_image, (x_start_index, y_start_index), (x_end_index, y_end_index), (10, 240, 10), 1)
+        cv2.circle(debug_image, (x_start_index, y_start_index), 2, (10, 240, 10))
+
+
+
 
     filename = datetime.datetime.now().strftime("%M%S.%f_") \
                + str(hardware.plotter._axes.current_location[0]) \

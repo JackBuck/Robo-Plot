@@ -33,7 +33,7 @@ def compute_complete_path(image, current_direction):
                                                           current_direction,
                                                           camera_location)
     k = 0
-    while k<30:  # Should be true but restricting path for debugging.
+    while k<70:  # Should be true but restricting path for debugging.
         k += 1
 
         # Move to new camera position and take photo.
@@ -50,7 +50,6 @@ def compute_complete_path(image, current_direction):
                                                             hardware.both_axes.current_location)
             computed_path.append(centre_of_red)
             break
-
 
          # Process image for analysis.
         image_to_analyse = image_analysis.process_image(image)
@@ -70,32 +69,32 @@ def compute_complete_path(image, current_direction):
                 search_width)
 
             # Convert the co-ordinates.
-            camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
-            candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                                  current_direction,
-                                                                  camera_location)
+            if len(next_computed_pixel_path_segment) > 1 and next_computed_pixel_path_segment[1][1] != -1:
+                camera_location = computed_path[-1]
+                candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                                      current_direction,
+                                                                      camera_location)
 
-            # Analyse candidate path.
-            length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
+                # Analyse candidate path.
+                length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
 
-            if __debug__:
-                iadebug.save_line_approximation(hardware.plotter._axes.debug_image.debug_image.copy(), computed_path, False)
+                if __debug__:
+                    iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image.copy(), computed_path, False)
 
-                temp_path = computed_path.copy()
-                temp_path.extend(candidate_path_segments[i])
-                iadebug.save_candidate_line_approximation(hardware.plotter._axes.debug_image.debug_image.copy(),
-                                                          temp_path, i)
+                    iadebug.save_candidate_line_approximation(hardware.plotter.debug_image.debug_image.copy(),
+                                                              computed_path, candidate_path_segments[i],  i)
+            else:
+                is_valid_path = False
 
             if is_valid_path and length > selected_candidate_length:
                 selected_candidate = i
                 selected_candidate_length = length
 
-
         # Append the computed path with the new values.
         computed_path.extend(candidate_path_segments[selected_candidate])
 
         if __debug__:
-            iadebug.save_line_approximation(hardware.plotter._axes.debug_image.debug_image, computed_path, False)
+            iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image, computed_path, False)
 
     return computed_path
 

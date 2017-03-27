@@ -208,7 +208,7 @@ def process_image(image):
                        [1, 1, 1, 1, 1],
                        [0, 1, 1, 1, 0]], np.uint8)
 
-    processed_img = cv2.erode(processed_img, kernel, iterations=7)
+    processed_img = cv2.erode(processed_img, kernel, iterations=10)
 
     # Debugging code - useful to show the images are being eroded correctly.
     #spacer = processed_img[:, 0:2].copy()
@@ -294,7 +294,7 @@ def compute_pixel_path(image, search_width):
 
     # If there was not enough path in the photo try another orientation.
     if turn_to_next_scan is Turning.INVALID:
-        return [(-1, -1)], turn_to_next_scan
+        return [[-1, -1], [-1, -1]], turn_to_next_scan
 
     return pixel_segments, turn_to_next_scan
 
