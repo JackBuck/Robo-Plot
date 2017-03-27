@@ -51,9 +51,9 @@ class DebugImage:
 
         # Setup image dimensions
         self.pixels_per_mm = pixels_per_mm
-        a4paper = (210, 297)  # openCV asks for image dimensions as width then height.
+        a4paper_with_border = (315, 445.5)  # openCV asks for image dimensions as width then height.
 
-        self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper)
+        self._image_dimensions_pixels = tuple(int(round(i * self.pixels_per_mm)) for i in a4paper_with_border)
 
         # Background image
         if bgimage_path is not None:
@@ -79,11 +79,14 @@ class DebugImage:
 
         pixel = tuple(int(round(i * self.pixels_per_mm)) for i in point)
 
+        # The point is (y, x) and the shape is width height.
         if 0 <= pixel[0] < self._image_dimensions_pixels[1] and \
            0 <= pixel[1] < self._image_dimensions_pixels[0]:
             self.debug_image[pixel] = self.override_colour or self.colour
+           # print(' Pixel: ' + str(pixel))
         else:
             warnings.warn('Tried to populate pixel out of image bounds.')
+
 
         self.steps_since_save += 1
 
@@ -109,5 +112,5 @@ class DebugImage:
         debug_image_copy = self.debug_image.copy()
         threading.Thread(target=lambda: cv2.imwrite(savepath, debug_image_copy)).start()
 
-        self.image_index += 1
+        #self.image_index += 1
         self.steps_since_save = 0

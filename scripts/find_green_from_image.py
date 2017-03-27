@@ -22,7 +22,7 @@ inFile = args.file_path
 print(inFile)
 image = cv2.imread(inFile)
 hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-(cX, cY) = cd.detect_green(hsv_image, args.minsize, False)
+(cX, cY) = cd.detect_green(hsv_image, args.minsize, True)
 cv2.circle(image, (cX, cY), 5, (255, 10, 10), 3)
 cv2.imshow('Centre', cv2.resize(image, (500, 500)))
 cv2.waitKey(0)

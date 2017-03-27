@@ -1,10 +1,15 @@
 import enum
 import os
 import math
-import time
+import datetime
+import operator
 
 import numpy as np
 import cv2
+
+import roboplot.config as config
+import roboplot.imgproc.image_analysis_debug as iadebug
+import roboplot.imgproc.colour_detection as cd
 
 white_threshold = 130
 
@@ -22,414 +27,528 @@ class Direction(enum.IntEnum):
     WEST = 3
 
 
-class ImageAnalyser:
-    """This class is holds the information to analyse the path."""
+def turn_left(current_direction):
+    """
 
-    def __init__(self, image, scan_direction):
-        """
+    Args:
+        current_direction: The direction the previous picture was taken in.
 
-        :param image: The image to be analysed
-        :param scan_direction: The direction to scan the image in.
-        """
+    Returns:
+        new_direction: The direction after turning left
+    """
+    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+    direction_index = (current_direction - 1) % 4
+    return direction_array[direction_index]
 
-        self._scan_direction = scan_direction
-        self._original_image = image
-        self._height = self._original_image.shape[1]
-        self._width = self._original_image.shape[0]
 
-        # Convert image to black and white - we cannot take the photos in black and white as we
-        # must first search for the red triangle.
-        self._processed_img = cv2.cvtColor(self._original_img, cv2.COLOR_RGB2GRAY)
+def turn_right(current_direction):
+    """"
 
-        # Orientate image so we are scanning the top half.
-        if self._scan_direction == Direction.NORTH:
-            self._pixels = self._processed_img
-        elif self._scan_direction == Direction.EAST:
-            self._pixels = np.rot90(self._processed_img)
-        elif self._scan_direction == Direction.SOUTH:
-            self._pixels = np.rot90(self._processed_img, 2)
-        elif self._scan_direction == Direction.WEST:
-            self._pixels = np.rot90(self._processed_img, 3)
+    Args:
+        current_direction: The direction the previous picture was taken in.
 
-        # Currently a simple serach width is used based on the size of the image - this is assuming a
-        # rough view of 40 x 40 mm^2.
-        self._search_width = min(self._original_image.shape[0], self._original_image.shape[1])
-        self._search_width /= 2
+    Returns:
+        new_direction: The direction after turning right
+    """
+    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+    direction_index = (current_direction + 1) % 4
+    return direction_array[direction_index]
 
-        # Create an image with which to display computed values
+
+def turn_around(current_direction):
+    """"
+
+    Args:
+        current_direction: The direction the previous picture was taken in.
+
+    Returns:
+        new_direction: The direction after turning around
+    """
+    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
+    direction_index = (current_direction + 2) % 4
+    return direction_array[direction_index]
+
+
+class Turning(enum.IntEnum):
+    LEFT = 0
+    STRAIGHT = 1
+    RIGHT = 2
+    INVALID = 3
+
+
+def compute_centroid_from_row(current_row, last_centroid, search_width):
+    """
+
+    Args:
+        current_row: The row to be analysed
+        last_centroid: The centre of line in the previous row
+        search_width: The width of area to be searched.
+
+    Returns:
+        centroid: The centre of the line in the current row.
+    """
+
+    # If the centroid from the last row is black in this row examine the width of the search area.
+    if current_row[last_centroid] < 130:
+        min_index = int(max(0, last_centroid - search_width / 2))
+        max_index = int(min(current_row.shape[0], last_centroid + search_width / 2))
+
+    # Otherwise grow the search area at either end until they hit black pixels. If the side of the
+    # image is hit return an incorrect centroid.
+    else:
+        min_index = last_centroid - 1
+        while min_index > 0 and current_row[min_index] > 130:
+            min_index -= 1
+
+        max_index = last_centroid + 1
+        while max_index < current_row.shape[0] and current_row[max_index] > 130:
+            max_index += 1
+
+    image_to_analyse = current_row[min_index:max_index]
+
+    # temp_image = current_row.copy()
+    # temp_image = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2BGR)
+    # temp_image[min_index] = (255, 100, 200)
+    # temp_image[max_index] = (255, 100, 200)
+    # temp_image = np.tile(temp_image, (25, 1))
+    # temp_image = np.rot90(temp_image, 1)
+    # cv2.imshow('Row', cv2.resize(temp_image, (0, 0), fx=3, fy=3))
+    #cv2.waitKey(0)
+
+    # Compute the average of the given row portion.
+
+    sub_image_centroid = compute_centroid(image_to_analyse)
+    if sub_image_centroid == -1:
+        return -1
+    else:
+        return sub_image_centroid + min_index
+
+
+def compute_centroid(lightnesses):
+    """
+
+    Args:
+        lightnesses: The sub_image to average.
+
+    Returns:
+        centroid: the centre of the line in the sub_image.
+    """
+    num_elements = lightnesses.shape
+
+    x = np.arange(num_elements[0])
+    is_white = lightnesses > white_threshold
+    num_white = sum(is_white)
+
+    if num_white == 0:
+        return -1
+
+    flt_centroid = sum(is_white * x) / num_white
+    return int(flt_centroid)
+
+
+def extract_sub_image(processed_image, scan_direction):
+    """
+
+    Args:
+        image: The image from which to extract relevant sub image
+        scan_direction: The direction the path is moving from the centre of the image.
+
+    Returns:
+        sub_image: The preprocessed, rotated and
+
+    """
+
+    # Convert image to black and white - we cannot take the photos in black and white as we
+    # must first search for the red triangle.
+
+    # Orientate image so we are scanning the bottom half.
+    if scan_direction == Direction.NORTH:
+        processed_image = np.rot90(processed_image, 2)
+    elif scan_direction == Direction.EAST:
+        processed_image = np.rot90(processed_image, 3)
+    elif scan_direction == Direction.SOUTH:
+        processed_image = processed_image
+    elif scan_direction == Direction.WEST:
+        processed_image = np.rot90(processed_image, 1)
+
+    sub_image = processed_image[int(processed_image.shape[0] / 2):, :]
+
+    # Save sub_image to debug folder if required.
+    if __debug__:
+        iadebug.save_sub_image(sub_image)
+
+    return sub_image
+
+
+def process_image(image):
+    """
+
+    Args:
+        image: The image to process
+
+    Returns:
+        sub_image: The rotated and extracted.
+
+    """
+
+    # Convert image to black and white - we cannot take the photos in black and white as we
+    # must first search for the red triangle.
+
+    if len(image.shape) == 3:
+        processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    else:
+        processed_img = image
+
+        processed_img = cv2.GaussianBlur(processed_img, (21, 21), 0)
+    _, processed_img = cv2.threshold(processed_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    kernel = np.array([[0, 1, 1, 1, 0],
+                       [1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1],
+                       [1, 1, 1, 1, 1],
+                       [0, 1, 1, 1, 0]], np.uint8)
+
+    processed_img = cv2.erode(processed_img, kernel, iterations=7)
+
+    # Debugging code - useful to show the images are being eroded correctly.
+    #spacer = processed_img[:, 0:2].copy()
+    #spacer.fill(100)
+    #combined_image = np.concatenate((processed_img, spacer), axis=1)
+    #combined_image = np.concatenate((combined_image, pixels), axis=1)
+    #cv2.imshow('PreProcessed and Processed Image', combined_image)
+    #cv2.waitKey(0)
+
+    # Save sub_image to debug folder if required.
+    if __debug__:
+        iadebug.save_processed_image(processed_img)
+
+    return processed_img
+
+
+def compute_pixel_path(image, search_width):
+    """
+
+    Args:
+        image: The image to compute a pixel path for.
+        search_width: The width of area around the central pixel to be searched.
+
+    Returns:
+        pixel_segements: An array containing the pixel co-ordinates of the line ends.
+        turn_to_next_scan: The direction the path is turning in at the end of this photo.
+
+    """
+
+    # Get average pixel positions and next path direction for photo.
+    indices, turn_to_next_scan = analyse_rows(image, search_width, is_rotated=False)
+
+    if __debug__:
+        debug_image = iadebug.save_average_rows(image, indices, is_rotated=False)
+    else:
+        debug_image = None
+
+    pixel_segments = approximate_path(indices)
+
+    # Show current state if debug is set to true.
+    if __debug__:
+        iadebug.save_line_approximation(debug_image, pixel_segments, is_rotated=False)
+
+    # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
+    if (len(indices) < image.shape[0] - 20) \
+            and (turn_to_next_scan is not Turning.STRAIGHT) \
+            and (turn_to_next_scan is not Turning.INVALID):
+
+        if turn_to_next_scan is Turning.LEFT:
+            angle_rad = np.deg2rad(-60)
+        else:
+            angle_rad = np.deg2rad(60)
+
+        # Create rotated sub_image to analyse
+        sub_image = create_rotated_sub_image(image, indices[-1], search_width, angle_rad)
+
+        # Analyse sub image
+        rotated_indices, rotated_turn_to_next_scan = analyse_rows(sub_image, search_width, is_rotated=True)
         if __debug__:
-            self._debugimage = cv2.cvtColor(self._pixels, cv2.COLOR_GRAY2RGB)
-            debug_pixels = cv2.cvtColor(self._pixels, cv2.COLOR_GRAY2BGR)
-            debug_pixels[25, 25] = (0, 200, 0)
-            debug_pixels = cv2.resize(debug_pixels, (0, 0), fx=1, fy=1)
-            cv2.imshow('Rotated Pixels', debug_pixels)
+            debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices, is_rotated=True)
+        else:
+            debug_sub_image = None
 
-            self._debug_index = 0
-            self._debug_line_index = 0
-
-    def analyse_image(self):
-
-        # Get average pixel positions and direction for next photo.
-        (indices, next_scan_direction) = self.analyse_row()
-        (x_indices, y_indices) = np.array(indices)
-
-        # Approximate the pixels with a line. Start with a line between first and last average pixel.
-        pixel_segments = [(0.0, 0.0), (0.0, len(x_indices) - 1)]
-        mm_segments = []
-        lines = []
-        segment_index = 0
-
-        # Max distance allowed between line and average pixel.
-        tol = 1
-
-        # Check each calculated segment and check all average pixels are within tolerance of the line.
-        # If not split the line and recheck the generated segments.
-        while pixel_segments[segment_index][1] < len(x_indices) - 1:
-            first_error_exceeding_index = 1
-            upper_bound = pixel_segments[segment_index + 1][1]
-            while first_error_exceeding_index != -1:
-
-                # Set the start and end of the indices this line covers.
-                start_index = int(pixel_segments[segment_index][1])
-                end_index = int(upper_bound + 1)
-
-                # Set the start point of the line to the centre 0,0 or the end of the last line calculated.
-                if len(lines):
-                    if lines[-1][0]:
-                        start_point = (int(y_indices[start_index]), int(y_indices[start_index] * lines[-1][0] + lines[-1][1]))
-                    else:
-                        start_point = (int(y_indices[start_index]), int(x_indices[start_index]))
-                else:
-                    start_point = (0, 0)
-
-                # Approximate the interval with a line
-                y_subset = y_indices[start_index: end_index]
-                x_subset = x_indices[start_index: end_index]
-
-                current_line = InterpolateAverages.approximate_with_line(start_point, y_indices[start_index: end_index],
-                                                                         x_indices[start_index: end_index])
-
-                # Determine the index at which the distance to the line first exceeds the tolerance. If no index
-                # exceeds the tolerance this returns -1.
-                first_error_exceeding_index = InterpolateAverages.error_from_line(
-                    current_line, y_indices[start_index: end_index], x_indices[start_index: end_index], tol)
-
-                if first_error_exceeding_index != -1:
-                    # Shorten the interval to end at the first point the error became too great.
-                    # Modify the lowest index to a global index.
-                    lowest_index = first_error_exceeding_index + start_index
-
-                    # Split the interval one before the max error this ensures there is a line approximating these
-                    # points which is within tolerance of th whole line.
-                    upper_bound = lowest_index - 1
-
-                else:
-                    # Add this line to the list of lines.
-                    segment_x = current_line[0] * upper_bound + current_line[1]
-                    pixel_segments.insert(segment_index + 1, (segment_x, upper_bound))
-
-                    transformed_point = self.transform_to_global_system((segment_x, upper_bound))
-                    mm_segments.insert(segment_index, transformed_point)
-                    lines.append(current_line)
-
-                    # Show current state if debug is set to true.
-                    if __debug__:
-                        self.DEBUG_show_approximation(lines, pixel_segments, y_indices)
-
-            # Good approximation found for this interval move to next interval.
-            segment_index += 1
+        # Compute approximate lines on sub_image
+        rotated_pixel_segments = approximate_path(rotated_indices)
 
         # Show current state if debug is set to true and reset indices.
         if __debug__:
-            self.DEBUG_show_approximation(lines, pixel_segments, y_indices)
-            self._debug_index += 1
-            self._debug_line_index = 0
+            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, is_rotated=True)
 
-        return mm_segments, next_scan_direction
+            # Rotate line indices back.
+            extra_pixel_segments = [list(map(operator.add,
+                                             (int(pixel_segments[-1][0]),
+                                              int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
+                                             rotate(rotated_pixel_segments[0], point, -angle_rad)))
+                                    for point in rotated_pixel_segments]
+        # Add segments to list.
+        pixel_segments += extra_pixel_segments
 
-    def analyse_row(self):
-        """
+    if __debug__:
+        debug_image = iadebug.create_debug_image(image)
+        iadebug.save_line_approximation(debug_image, pixel_segments,is_rotated=False)
 
-        :return: The indices of the average white pixels found  (centre of the path)
-        """
+    # If there was not enough path in the photo try another orientation.
+    if turn_to_next_scan is Turning.INVALID:
+        return [(-1, -1)], turn_to_next_scan
 
-        # Create two lists containing the average index of the white in the given row and the row index of
-        # the corresponding row.
-        average_index_rows = []
-        y_indices = []
+    return pixel_segments, turn_to_next_scan
 
-        # Always assume the start of the path lies in the centre - this is so the path is not disjoint.
-        y_indices.append(0)
-        average_index_rows.append(0)
 
-        # Initially assume that the scan direction for the next image is the same as the current direction
-        next_scan_direction = self._scan_direction
+def analyse_rows(pixels, search_width, is_rotated):
+    """
 
-        # Initialise the state of the last centroid if a valid average could not be found or is too far
-        # from the previous average - indicating noise in the image.
-        last_centroid = Centroid.VALID
+    Args:
+        pixels: Image to be analysed
+        search_width: The width around the path to be analysed.
+        is_rotated: Whether the image being analysed has been rotated.
 
-        # Keep track of the current row index - note this counts from the centre up unlike the image co-ords
-        row_index = 1
-        next_camera_position = (-1, -1)
+    Returns:
+        The indices of the average white pixels found  (centre of the path) and the direction to turn to continue
+        analysing the path.
 
-        # Analyse each row at a time from the centre moving up the image (backwards in image co-ordinates)
-        for rr in range(int(self._height / 2), 0, -1):
+    """
+    # Create two lists containing the average index of the white in the given row and the row index of
+    # the corresponding row.
+    indices = []
 
-            # Determine the indices to average based on the last valid index.
-            # Only a proportion of the row is considered this is to filter out any noise/path parts that
-            # might be at the edge of the image.
-            min_index = int(max(0, average_index_rows[-1] - self._search_width + self._width / 2))
-            max_index = int(min(self._height, average_index_rows[-1] + self._search_width + self._width / 2))
-            sub_array = self._pixels[rr, min_index:max_index]
+    # Always assume the start of the path lies in the centre - this is so the path is not disjoint.
+    indices.append([0, int(pixels.shape[1] / 2)])
 
-            # Compute the average of the given row portion.
-            centroid = ImageAnalyser.compute_weighted_centroid(sub_array)
+    # Initially assume that the scan direction for the next image is the same as the current direction
+    turn_to_next_scan = Turning.STRAIGHT
 
-            # If centroid is valid convert it from image co-ordinates to displacement from centre
-            # of the image.
-            if centroid != -1:
-                next_centroid = min_index + ImageAnalyser.compute_weighted_centroid(sub_array) - self._width / 2
+    # Initialise the state of the last centroid if a valid average could not be found or is too far
+    # from the previous average - indicating noise in the image.
+    last_centroid_validity = Centroid.VALID
+
+    # Analyse each row at a time from the top moving down the image.
+    for rr in range(1, pixels.shape[0]):
+
+        # Determine the indices to average based on the last valid index.
+        # Only a proportion of the row is considered this is to filter out any noise/path parts that
+        # might be at the edge of the image.
+
+        next_centroid = compute_centroid_from_row(pixels[rr, :], indices[-1][1], search_width)
+
+        # EXPERIMENTAL -can cause rotations to not give much.
+        if is_rotated \
+                and rr > pixels.shape[0] - 25 \
+                and (next_centroid < 25 or next_centroid > pixels.shape[1] - 25):
+            # if next_centroid - indices[-1][1] < 0:
+            #     turn_to_next_scan = Turning.RIGHT
+            # else:
+            #     turn_to_next_scan = Turning.LEFT
+            break
+
+        # Only continue if the its the first index or the line as not got too flat. 2 means cannot go above
+        # 45 degrees.  If we are on the first row abandon the averaging if the centroid found is black in
+        # the first row as this implied the picture is not ideal.
+        if (rr == 1 and pixels[0, next_centroid] > 130) or abs(next_centroid - indices[-1][1]) < 2:
+            # Valid result, add result to arrays
+            indices.append([rr, next_centroid])
+            last_centroid_validity = Centroid.VALID
+
+        elif abs(next_centroid - indices[-1][1]) >= 2 and next_centroid != -1:
+            # Invalid result - too much of a gap created.
+            # If the last row was also invalid then we stop as another picture needs to be taken.
+            if last_centroid_validity != Centroid.VALID:
+                if next_centroid - indices[-1][1] < 0:
+                    turn_to_next_scan = Turning.RIGHT
+                else:
+                    turn_to_next_scan = Turning.LEFT
+                break
+
+            # Flag last centroid as invalid.
+            last_centroid_validity = Centroid.INVALID_RANGE
+
+        else:
+            # We have an invalid row because no white was found.
+            if last_centroid_validity != Centroid.VALID:
+                # We have 2 invalid entries in a row. Or too big a jump between averages. This means the
+                # approximation should stop.
+
+                # NOTE There is a potential to get stuck here if we keep taking photos with no white in
+                # in them.
+
+                if next_centroid - indices[-1][1] < 0:
+                    turn_to_next_scan = Turning.LEFT
+                else:
+                    turn_to_next_scan = Turning.RIGHT
+                break
+
+            last_centroid_validity = Centroid.INVALID_NO_WHITE
+
+    # Return the list of average indices and the scan direction for the next picture taken.
+
+    min_number = max(10, int(pixels.shape[0]/50))
+    if len(indices) < min_number and last_centroid_validity is Centroid.INVALID_NO_WHITE:
+        turn_to_next_scan = Turning.INVALID
+
+    return indices, turn_to_next_scan
+
+
+def approximate_with_line(indices):
+    """
+    Approximates gradient of line assuming that the line goes through the start point
+    Args:
+        indices: The points to be approximated.
+
+    Returns:
+        The gradient and constant of the approximation line.
+    """
+
+    # Indices are ordered y, x in list.
+    x_translated = np.array(indices)[:, 1] - indices[0][1]
+    y_translated = np.array(indices)[:, 0] - indices[0][0]
+    y_translated = y_translated[:, np.newaxis]
+    a, _, _, _ = np.linalg.lstsq(y_translated, x_translated)
+
+    c = indices[0][1] - indices[0][0] * a[0]
+    return a[0], c
+
+
+def error_from_line(line, indices, max_error):
+    """
+        This functions finds the first index along the line where the error is greater than the max error bound.
+    Args:
+        line: The coefficients of the line approximation.
+        indices: The indices being approximated.
+        max_error: The max error allowed from the line
+
+    Returns:
+        The indices of the point that first breaks the maximum error.
+    """
+    if line[0]:
+        line_normal = np.array([1, -1 / line[0]])
+        line_normal /= math.sqrt(1 + 1 / (line[0] * line[0]))
+    else:
+        line_normal = np.array([0, 1])
+
+    origin = np.asarray([0, line[1]])
+
+    # Note that we don't care what the error is to the first 2 indices as we are forcing the start position as
+    # we want the line to be continuous.
+    for index in range(2, len(indices)):
+        error = compute_error(line_normal, origin, indices[index])
+        if error > max_error:
+            return index
+    return -1
+
+
+def compute_error(line_normal, line_origin, indices):
+    if indices[0] != -1:
+        error = abs(np.dot(line_normal, indices - line_origin))
+    else:
+        error = 0.0
+    return error
+
+
+def rotate(origin, point, angle):
+    """
+    Rotate a point counterclockwise by a given angle around a given origin.
+
+    The angle should be given in radians.
+    """
+    ox, oy = origin
+    px, py = point
+
+    sin_angle = math.sin(angle)
+    cos_angle = math.cos(angle)
+
+    qx = ox + cos_angle * (px - ox) - sin_angle * (py - oy)
+    qy = oy + sin_angle * (px - ox) + cos_angle * (py - oy)
+    return [int(qx), int(qy)]
+
+
+def approximate_path(pixel_indices):
+    # Approximate the pixels with a line. Start with a line between first and last average pixel.
+    # Pixels in the segment index are ordered y, x
+
+    pixel_segments = [pixel_indices[0], pixel_indices[-1]]
+    segment_index = 0
+
+    # Max distance allowed between line and average pixel.
+    tol = 2
+
+    # Check each calculated segment and check all average pixels are within tolerance of the line.
+    # If not split the line and recheck the generated segments.
+    while pixel_segments[segment_index][0] < pixel_indices[-1][0] - 1:
+        first_error_exceeding_index = 1
+        max_interval_index = pixel_segments[segment_index + 1][0]
+        while first_error_exceeding_index != -1:
+
+            # Set the start and end of the indices this line covers.
+            start_index = int(math.ceil(pixel_segments[segment_index][0] - 0.5))
+            end_index = int(math.ceil(max_interval_index))
+
+            # Approximate the interval with a line
+            subset = pixel_indices[start_index: end_index]
+
+            current_line = approximate_with_line(subset)
+
+            # Determine the index at which the distance to the line first exceeds the tolerance. If no index
+            # exceeds the tolerance this returns -1.
+            first_error_exceeding_index = error_from_line(current_line, subset, tol)
+
+            if first_error_exceeding_index != -1:
+                # Shorten the interval to end at the first point the error became too great.
+                # Modify the lowest index to a global index.
+                max_interval_index = first_error_exceeding_index + start_index - 1
+
             else:
-                next_centroid = -1
+                # Add this line to the list of lines. (y , x)
 
-            # Only continue if the its the first index or the line as not got too flat. 2 means cannot go above
-            # 45 degrees
-            if row_index == 0 or abs(next_centroid - average_index_rows[-1]) < 2:
+                # Can use computed point but this would require this to be added to the list of indices
+                # considered for the next line to remove kinks.
+                # new_point = [pixel_indices[end_index][0], int(pixel_indices[end_index][0]*current_line[0] + current_line[1])]
 
-                # Add result to arrays
-                average_index_rows.append(next_centroid)
-                y_indices.append(row_index)
-                last_centroid = Centroid.VALID
+                # Currently simply use the last index as can only be tolerance out.
+                pixel_segments.insert(segment_index + 1, pixel_indices[end_index])
 
-            elif abs(next_centroid - average_index_rows[-1]) >= 2:
+        # Good approximation found for this interval move to next interval.
+        segment_index += 1
 
-                # If the last row was also invalid then we stop as another picture needs to be taken.
-                if last_centroid != Centroid.VALID:
-
-                    # We have 2 invalid entries in a row.. This means the approximation should stop.
-                    # Find the first central pixel that is black.
-                    interval = self.find_first_black_row(rr, int(average_index_rows[-1] + self._width / 2))
-
-                    # Set the next camera position at a 45 degree angle from the current position and half the distance
-                    # away in both x and y. This is so that the remaining path in this direction is skipped.
-
-                    #      _____________________
-                    #     |
-                    #     |      //= Ready for next photo to be taken
-                    #     |    //  ______________
-                    #     |   ||  |
-                    #     |   ||  |
-                    #     |   ||  |
-                    #     |   ||  |
-                    #     |   ||  |
-                    #     |   ||  |
-
-                    if next_centroid - average_index_rows[-1] < 0:
-                        next_scan_direction = self.turn_left()
-                        next_camera_position = (int(average_index_rows[-1] - interval / 2), int(row_index + interval / 2))
-                    else:
-                        next_scan_direction = self.turn_right()
-                        next_camera_position = (int(average_index_rows[-1] + interval / 2), int(row_index + interval / 2))
-                    break
-
-                # Flag last centroid as invalid.
-                last_centroid = Centroid.INVALID_RANGE
-
-            else:
-                if last_centroid != Centroid.VALID:
-                    # We have 2 invalid entries in a row. Or too big a jump between averages. This means the
-                    # approximation should stop.
-
-                    # NOTE There is a potential to get stuck here if we keep taking photos with no white in
-                    # in them.
-
-                    if next_centroid - average_index_rows[-1] < 0:
-                        next_scan_direction = self.turn_left()
-                    else:
-                        next_scan_direction = self.turn_right()
-                    break
-
-                    last_centroid = Centroid.INVALID_NO_WHITE
-
-            row_index += 1
-
-        if __debug__:
-            self.show_debug_average_row(average_index_rows, y_indices)
-
-        # If we have ended prematurely (and set the next camera position) add this to th list
-        # of average pixels found.
-
-        if next_camera_position[1] != -1:
-            average_index_rows.append(next_camera_position[0])
-            y_indices.append(next_camera_position[1])
-
-        # Return the list of average indices and the scan direction for the next picture taken.
-        return (average_index_rows, y_indices), next_scan_direction
-
-    def find_first_black_row(self, current_row, column):
-        """
-        This function finds the number of rows from the current row until a black pixel is found.
-        :param current_row: The index of the current row being analysed.
-        :param column: The column index of the last valid index found.
-        :return: The number of rows until the next black row.
-        """
-
-        # Initially set the pixel to the last valid pixel found.
-        pixel = self._pixels[current_row, column]
-        count = 0
-
-        # While the pixel is classed as white move up a row (-ve in y)
-        global white_threshold
-        while pixel > white_threshold:
-            current_row += -1
-            pixel = self._pixels[current_row, column]
-            count += 1
-
-        return count
-
-    def DEBUG_show_approximation(self, lines, segments, y_indices):
-        """
-        This function shows/saves the stages of the approximation
-        :param lines: The equation of the current lines approximating the average rowa
-        :param segments: The x indices of the segments between which the lines are used.
-        :param y_indices: The y indices of the segments between which the lines are used.
-        :return:
-        """
-
-        """ Displays the line segments x = my + c on image"""
-
-        # Create copy of image with averages marked on.
-        image = self._debugimage.copy()
-
-        # Set centre of image.
-        centre = (int(self._width / 2), int(self._height / 2))
-
-        # For each line segment draw a line between the start and end points of the segment and mark the start
-        # and end with a circle.
-
-        for current_line in range(0, len(lines)):
-            (m, c) = lines[current_line]
-
-            # Compute start co - ordinates of line segment.
-            y_start_cart = y_indices[int(segments[current_line][1])]
-            x_start_cart = int((y_start_cart * m) + c)
-
-            x_start_cart = int(round(x_start_cart))
-            y_start_cart = int(round(y_start_cart))
-            (x_start_image, y_start_image) = ImageAnalyser.convert_to_image_coords(
-                x_start_cart, y_start_cart, centre, self._scan_direction)
-
-            # Compute end co - ordinate of line segment.
-            y_end_cart = int(y_indices[int(segments[current_line + 1][1])])
-            x_end_cart = int((y_end_cart * m) + c)
-
-            y_end_cart = int(round(y_end_cart))
-            x_end_cart = int(round(x_end_cart))
-            (x_end_image, y_end_image) = ImageAnalyser.convert_to_image_coords(
-                x_end_cart, y_end_cart, centre, self._scan_direction)
-
-            # Add artifacts to image
-            cv2.line(image, (x_start_image, y_start_image), (x_end_image, y_end_image), (255, 10, 10), 2)
-            cv2.circle(image, (x_start_image, y_start_image), 3, (255, 10, 10))
-            cv2.circle(image, (x_end_image, y_end_image), 3, (255, 10, 10))
-
-        cv2.imshow('LineApproximation', image)
-        cv2.imwrite(os.path.join(config.debug_output_folder, "LineApproximation" + str(self._debug_index) + "_" + str(self._debug_line_index)), image)
-        self._debug_line_index += 1
-
-    @staticmethod
-    def convert_to_image_coords(x, y, centre, scan_direction):
-        """
-        This function changes the co-ordinates from the referencing the centre to global pixel
-        co-ordinates for the debug image.
-        :param x: x co-ord
-        :param y: y co-ord
-        :param centre: centre of image in the global pixel co-ordinates.
-        :param scan_direction: The direction the picture was analysed in (and therefore needs to be rotated
-        back appropriately)
-        :return:
-        """
-
-        if scan_direction == Direction.NORTH:
-            x_image = centre[0] + x
-            y_image = centre[1] - y
-        elif scan_direction == Direction.EAST:
-            x_image = centre[1] + y
-            y_image = centre[0] + x
-        elif scan_direction == Direction.SOUTH:
-            x_image = centre[0] - x
-            y_image = y + centre[1]
-        else:
-            x_image = centre[1] - y
-            y_image = centre[0] - x
-
-        return x_image, y_image
+    return pixel_segments[:-1]
 
 
-class InterpolateAverages:
-    """This class takes the average row/columns and approximates them with lines
-    ready to add to the path"""
+def create_rotated_sub_image(image, centre, search_width, angle_rad):
+    # Rotation transform requires x then y.
+    M = cv2.getRotationMatrix2D((centre[1], centre[0]), np.rad2deg(angle_rad), 1.0)
 
-    def __init__(self, average_indices):
+    w = image.shape[1]
 
-        self._average_indices = average_indices
+    h = centre[0] + int((image.shape[0] - centre[0]) * abs(math.sin(angle_rad)))
+    #int(centre[0] + (w / 2 - abs(centre[1] - w / 2)) * abs(math.sin(angle_rad)))
 
-    @staticmethod
-    def approximate_with_line(start_point, x_indices, y_indices):
-        """
-        Approximates gradient of line assuming that the line goes through the start point
+    rotated = cv2.warpAffine(image, M, (w, h))
 
-        Gives gradient y = mx
-        """
+    # Centre the last white centroid into the centre of the image.
+    half_sub_image_width = int(min(min(search_width, centre[1]),
+                                   min(rotated.shape[1] - centre[1], search_width)))
 
-        x_translated = x_indices  - start_point[0]
-        y_translated = y_indices - start_point[1]
-        x_translated = x_translated[:, np.newaxis]
-        a, _, _, _ = np.linalg.lstsq(x_translated, y_translated)
+    sub_image = rotated[centre[0]:,
+                centre[1] - half_sub_image_width: centre[1] + half_sub_image_width]
 
-        c = start_point[1] - start_point[0]*a[0]
-        return a[0], c
+    return sub_image
 
-    @staticmethod
-    def error_from_line(line, x_indices, y_indices, max_error):
-        """
-        Error from line y = mx + c, where line =(m, c) in the inputs.
-        This functions fins the first index along the line where the error is greater than the max error bound.
-        """
 
-        if line[0]:
-            line_normal = np.array([1, -1/line[0]])
-            line_normal /= math.sqrt(1+1/(line[0] * line[0]))
-        else:
-            line_normal = np.array([0, 1])
+def search_for_red_triangle_near_centre(photo, min_size):
+    mid_point = int(photo.shape[0] / 2)
+    restricted_image = photo[mid_point - 20:mid_point + 20, mid_point - 20:mid_point + 20]
+    hsv_restricted_image = cv2.cvtColor(restricted_image, cv2.COLOR_BGR2HSV)
+    (cX, cY) = cd.detect_red(hsv_restricted_image, min_size, change_to_white=False)
 
-        origin = np.asarray([0, line[1]])
+    if cX == -1:
+        return False, [cX, cY]
+    else:
+        return True, [mid_point - 20 + cX, mid_point - 20 + cY]
 
-        # Note that we don't care what the error is to the first 2 indices as we are forcing the start position as
-        # we want the line to be continuous.
-        for index in range(2, len(x_indices)):
 
-            indices = np.asarray([x_indices[index], y_indices[index]])
-            error = InterpolateAverages.error(line_normal, origin, indices)
-
-            if error > max_error:
-                return index
-
-        return -1
-
-    @staticmethod
-    def error(line_normal, line_origin, indices):
-
-        if indices[0] != -1:
-            error = abs(np.dot(line_normal, indices - line_origin))
-        else:
-            error = 0.0
-
-        return error
-
-        
-        
 def find_start_direction(img):
     """
     This function takes an image and determine which direction the path leaves the centre from.
@@ -451,7 +570,7 @@ def find_start_direction(img):
     img_height = img.shape[0]
     img_width = img.shape[1]
 
-    sub_array = img[int(img_height/3):int(2*img_height/3), int(img_width/3):int(2*img_width/3)]
+    sub_array = img[int(img_height / 3):int(2 * img_height / 3), int(img_width / 3):int(2 * img_width / 3)]
 
     # Determine which orientation contains the most white pixels.
     # North
@@ -484,7 +603,151 @@ def find_start_direction(img):
 
     if max_num_pixels == west_whiteness_total:
         return Direction.WEST
-        
-        
-        
-        
+
+
+def analyse_candidate_path(computed_path, candidate_path):
+
+    # Approximate length of path generated by computing distance between first and last point in candidate edge.
+
+    length = distance_point_to_point(candidate_path[0], candidate_path[-1])
+
+    for j in range(1, len(candidate_path)):
+
+        distance_to_centre = distance_point_to_point(candidate_path[j], candidate_path[0])
+
+        for i in range(len(computed_path)-1, 0, -1):
+            distance_to_computed_path = distance_point_to_line_segment(np.array(candidate_path[j]),
+                                                                       np.array(computed_path[i-1]),
+                                                                       np.array(computed_path[i]))
+
+            # If at any point the path gets within half a path width of a previously computed point. And is also closer
+            # to that point than it is to the computed centre mark this direction as invalid.
+
+            if distance_to_computed_path < 5 and distance_to_centre > 5:
+                return length, False
+
+            # If the path gets sufficiently far from the precious path - same to assume that we have not done a u
+            if distance_to_computed_path > 40:
+                break
+
+    return length, True
+
+
+def distance_point_to_point(pointA, pointB):
+    return math.hypot(pointA[0] - pointB[0], pointA[1] - pointB[1])
+
+def distance_point_to_line_segment(point, line_seg_start, line_seg_end):
+    v = line_seg_end - line_seg_start
+    w = point - line_seg_start
+
+    # point is before start of line, closest point is start point.
+    c1 = np.dot(w, v)
+    if c1 <= 0:
+        return distance_point_to_point(point, line_seg_start)
+
+    # point is after end of line, closest point is end point.
+    c2 = np.dot(v, v)
+    if c2 <= c1:
+        return distance_point_to_point(point, line_seg_end)
+
+
+    # Closest point is on line segment calculate point and then calculate distance.
+    b = c1 / c2
+    closest_point_on_line = line_seg_start + b * v
+    return distance_point_to_point(point, closest_point_on_line)
+
+def compute_next_direction_feelers(image, processed_image, current_direction):
+    # This has drawbacks as mention by JB.
+
+    (north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length) = compute_feeler_lengths(processed_image, current_direction)
+
+    max_feeler_length = max(north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length)
+
+    # If no feelers were found in the processed image use the raw image to find the direction.
+    if max_feeler_length == 0:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        (north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length) = compute_feeler_lengths(
+            image, current_direction)
+        max_feeler_length = max(north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length)
+
+    if max_feeler_length == north_feeler_length:
+        return Direction.NORTH
+    elif max_feeler_length == east_feeler_length:
+        return Direction.EAST
+    elif max_feeler_length == south_feeler_length:
+        return Direction.SOUTH
+    elif max_feeler_length == west_feeler_length:
+        return Direction.WEST
+
+
+def compute_feeler_lengths(processed_image, current_direction):
+
+    north_feeler_length = 0
+    east_feeler_length = 0
+    west_feeler_length = 0
+    south_feeler_length = 0
+
+    if current_direction is not Direction.NORTH:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and y_index < processed_image.shape[0] - 1:
+            y_index += 1
+            south_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    if current_direction is not Direction.EAST:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and x_index > 0:
+            x_index -= 1
+            west_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    if current_direction is not Direction.SOUTH:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and y_index > 0:
+            y_index -= 1
+            north_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    if current_direction is not Direction.WEST:
+        y_index = int(processed_image.shape[0] / 2)
+        x_index = int(processed_image.shape[1] / 2)
+        current_pixel = processed_image[y_index, x_index]
+
+        while current_pixel > white_threshold and x_index < processed_image.shape[1] - 1:
+            x_index += 1
+            east_feeler_length += 1
+            current_pixel = processed_image[y_index, x_index]
+
+    return (north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length)
+
+
+## Legacy ##
+def find_first_black_row(image, current_row, column):
+    """
+    This function finds the number of rows from the current row until a black pixel is found.
+    :param current_row: The index of the current row being analysed.
+    :param column: The column index of the last valid index found.
+    :return: The number of rows until the next black row.
+    """
+
+    # Initially set the pixel to the last valid pixel found.
+    pixel = image[current_row, column]
+    count = 0
+
+    # While the pixel is classed as white move down a row
+    while pixel > white_threshold and current_row < image.shape[0] - 1:
+        current_row += 1
+        pixel = image[current_row, column]
+        count += 1
+
+    return count
+
