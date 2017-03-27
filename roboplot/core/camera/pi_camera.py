@@ -26,6 +26,7 @@ class Camera:
             with picamera.array.PiRGBArray(camera) as output:
                 camera.capture(output, 'bgr', use_video_port=True)
                 outputarray = output.array
+                outputarray = np.rot90(outputarray, 3)
 
             # Save photo.
             cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_{:03}.jpg'.format(self._photo_index)),
