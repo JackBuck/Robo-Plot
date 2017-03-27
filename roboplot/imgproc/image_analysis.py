@@ -208,7 +208,7 @@ def process_image(image):
                        [1, 1, 1, 1, 1],
                        [0, 1, 1, 1, 0]], np.uint8)
 
-    processed_img = cv2.erode(processed_img, kernel, iterations=10)
+    processed_img = cv2.erode(processed_img, kernel, iterations=7)
 
     # Debugging code - useful to show the images are being eroded correctly.
     #spacer = processed_img[:, 0:2].copy()
@@ -271,13 +271,6 @@ def compute_pixel_path(image, search_width):
             debug_sub_image = iadebug.save_average_rows(sub_image, rotated_indices, is_rotated=True)
         else:
             debug_sub_image = None
-
-        # Check that the turns do not disagree. If neither are straight and the disagree compromise on
-        # straight.
-        if turn_to_next_scan is not Turning.STRAIGHT \
-                and rotated_turn_to_next_scan is not Turning.STRAIGHT \
-                and turn_to_next_scan is not rotated_turn_to_next_scan:
-            turn_to_next_scan = Turning.STRAIGHT
 
         # Compute approximate lines on sub_image
         rotated_pixel_segments = approximate_path(rotated_indices)
@@ -480,7 +473,7 @@ def approximate_path(pixel_indices):
     segment_index = 0
 
     # Max distance allowed between line and average pixel.
-    tol = 3
+    tol = 2
 
     # Check each calculated segment and check all average pixels are within tolerance of the line.
     # If not split the line and recheck the generated segments.

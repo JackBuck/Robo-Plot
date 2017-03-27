@@ -40,14 +40,13 @@ class PathFromImageTest(unittest.TestCase):
         turn_to_next_scan = self.computePathFromImage('right_angle_right')
         self.assertEqual(turn_to_next_scan, image_analysis.Turning.RIGHT)
 
-    # Results for acute corners are not yet good enough
-    #def test_acute_angle_left(self):
-    #    turn_to_next_scan = self.computePathFromImage('acute_angle_left')
-    #    self.assertEqual(turn_to_next_scan, image_analysis.Turning.LEFT)
-#
-    #def test_acute_angle_right(self):
-    #    turn_to_next_scan = self.computePathFromImage('acute_angle_right')
-    #    self.assertEqual(turn_to_next_scan, image_analysis.Turning.RIGHT)
+    def test_acute_angle_left(self):
+        turn_to_next_scan = self.computePathFromImage('acute_angle_left')
+        self.assertEqual(turn_to_next_scan, image_analysis.Turning.LEFT)
+
+    def test_acute_angle_right(self):
+            turn_to_next_scan = self.computePathFromImage('acute_angle_right')
+            self.assertEqual(turn_to_next_scan, image_analysis.Turning.RIGHT)
 
     def test_curve_left(self):
         turn_to_next_scan = self.computePathFromImage('curve_left')
@@ -83,8 +82,8 @@ class PathFromImageTest(unittest.TestCase):
         expected_results_file = os.path.join(self.path_to_test_data,
                                              'expected_pixel_path_' + filename_without_extension + '.csv')
 
-        #  debug_sub_image = iadebug.save_line_approximation(image, pixel_path)
-        #  self._overwrite_expected_results_file(expected_results_file, pixel_path)  # For creating test data
+        debug_sub_image = iadebug.save_line_approximation(image, pixel_path, False)
+        # self._overwrite_expected_results_file(expected_results_file, pixel_path)  # For creating test data
 
         expected_pixel_path = np.loadtxt(expected_results_file, delimiter=",")
         self.assertTrue(np.array_equal(pixel_path, expected_pixel_path),
