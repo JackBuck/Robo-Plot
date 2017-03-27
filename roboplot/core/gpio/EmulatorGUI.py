@@ -407,6 +407,7 @@ class GPIO:
             drawBindUpdateButtonIn(str(channel), objTemp.In)
             dictionaryPins[str(channel)] = objTemp
 
+    @staticmethod
     @typeassert(int, int)
     def output(channel, outmode):
         global dictionaryPins
