@@ -18,7 +18,7 @@ if __name__ == '__main__':
     img.process_image()
 
     # Print output
-    img.print_recognised_numbers()
+    img.print_recognised_local_numbers()
 
     # Save and display images
     img.delete_intermediate_image_files()

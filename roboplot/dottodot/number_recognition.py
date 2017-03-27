@@ -251,7 +251,7 @@ class DotToDotImage:
             image = img.image.copy()
             threading.Thread(target=lambda: cv2.imwrite(save_path, image)).start()
 
-    def print_recognised_numbers(self):
+    def print_recognised_local_numbers(self):
         print("Recognised {} numbers:".format(len(self.recognised_numbers)))
         for number in self.recognised_numbers:
             print("  * ", end='')
@@ -259,7 +259,7 @@ class DotToDotImage:
                 print("{:2d}".format(number.numeric_value), end='')
             else:
                 print("??", end='')
-            print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx))
+            print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx_pixels))
         print('')
 
 
@@ -344,3 +344,15 @@ def draw_image_with_contours(img, contours, window_title="Image with contours"):
 def draw_image(img, window_title="Image"):
     cv2.imshow(window_title, img)
     cv2.waitKey(0)
+
+
+def print_recognised_global_numbers(global_numbers: list):
+    print("Recognised {} numbers:".format(len(global_numbers)))
+    for number in global_numbers:
+        print("  * ", end='')
+        if number.numeric_value is not None:
+            print("{:2d}".format(number.numeric_value), end='')
+        else:
+            print("??", end='')
+        print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx_mm))
+    print('')

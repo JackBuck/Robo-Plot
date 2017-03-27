@@ -4,11 +4,14 @@ import argparse
 import statistics
 import time
 import warnings
+import glob
 
 import numpy as np
 import svgpathtools as svg
+import cv2
 
 import context
+import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.page_search as page_search
 import roboplot.dottodot.clustering as clustering
@@ -42,16 +45,26 @@ try:
     start_time = time.time()
 
     recognised_numbers = []
+    image_paths = sorted(glob.glob('/home/jack/Documents/SoftwareDevelopment/Projects/Hackspace2016-2017/Resources'
+                                   '/OutputFromDotToDot_Bat_2/Photo*.jpg'))
+    # i=0
     for target_position in target_positions:
         plotter.move_camera_to(target_position)
         photo = camera.take_photo_at(target_position)
+        # print(target_position)
+        # print(image_paths[i])
+        # photo = cv2.imread(image_paths[i], cv2.IMREAD_GRAYSCALE)
+        # i += 1
 
         dot_to_dot_image = number_recognition.DotToDotImage(photo)
         dot_to_dot_image.process_image()
-        dot_to_dot_image.print_recognised_numbers()
+        # dot_to_dot_image.print_recognised_local_numbers()
 
-        recognised_numbers.extend(
-            [number_recognition.GlobalNumber.from_local(n, target_position) for n in dot_to_dot_image.recognised_numbers])
+        new_global_numbers = [number_recognition.GlobalNumber.from_local(n, target_position)
+                              for n in dot_to_dot_image.recognised_numbers]
+
+        number_recognition.print_recognised_global_numbers(new_global_numbers)
+        recognised_numbers.extend(new_global_numbers)
 
     end_time = time.time()
     print('Time to collect photos: {:.1f} seconds'.format(end_time-start_time))
@@ -84,10 +97,11 @@ try:
             print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\nRetrying...'.format(location_yx_mm))
             plotter.move_camera_to(location_yx_mm)
             photo = camera.take_photo_at(location_yx_mm)
+            # break
 
             dot_to_dot_image = number_recognition.DotToDotImage(photo)
             dot_to_dot_image.process_image()
-            dot_to_dot_image.print_recognised_numbers()
+            dot_to_dot_image.print_recognised_local_numbers()
 
             global_numbers = [number_recognition.GlobalNumber(n, location_yx_mm) for n in dot_to_dot_image.recognised_numbers]
             group.extend([n for n in global_numbers if np.linalg.norm(n.dot_location_yx_mm - location_yx_mm) < 5])
@@ -107,20 +121,25 @@ try:
     for i in range(len(final_numbers)):
         if final_numbers[i].numeric_value != i:
             warnings.warn('Did not find a set of consecutive numbers starting at 1!\n'
-                          'Instead found {}'.format(', '.join([n.numeric_value for n in final_numbers])))
+                          'Instead found {}'.format(', '.join([str(n.numeric_value) for n in final_numbers])))
             break
 
     # Draw the dot-to-dot
-    path = svg.Path()
-    for i in range(1, len(final_numbers)):
-        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[i-1].dot_location_yx_mm),
-                             svg_parsing.yx_to_complex(final_numbers[i].dot_location_yx_mm)))
-
+    path_curve = [curves.LineSegment(final_numbers[i-1].dot_location_yx_mm, final_numbers[i].dot_location_yx_mm)
+                  for i in range(1, len(final_numbers))]
     if len(final_numbers) > 0:
-        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[-1].dot_location_yx_mm),
-                             svg_parsing.yx_to_complex(final_numbers[0].dot_location_yx_mm)))
+        path_curve.append(curves.LineSegment(final_numbers[-1].dot_location_yx_mm, final_numbers[0].dot_location_yx_mm))
 
-    path_curve = svg_parsing.SVGPath(path, mm_per_unit=1)
+    # path = svg.Path()
+    # for i in range(1, len(final_numbers)):
+    #     path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[i-1].dot_location_yx_mm),
+    #                          svg_parsing.yx_to_complex(final_numbers[i].dot_location_yx_mm)))
+    #
+    # if len(final_numbers) > 0:
+    #     path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[-1].dot_location_yx_mm),
+    #                          svg_parsing.yx_to_complex(final_numbers[0].dot_location_yx_mm)))
+    #
+    # path_curve = svg_parsing.SVGPath(path, mm_per_unit=1)
 
     plotter.draw(path_curve)
 
