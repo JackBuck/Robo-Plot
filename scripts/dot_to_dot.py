@@ -51,6 +51,7 @@ try:
     for target_position in target_positions:
         plotter.move_camera_to(target_position)
         photo = camera.take_photo_at(target_position)
+        photo = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
         # print(target_position)
         # print(image_paths[i])
         # photo = cv2.imread(image_paths[i], cv2.IMREAD_GRAYSCALE)
@@ -97,6 +98,7 @@ try:
             print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\nRetrying...'.format(location_yx_mm))
             plotter.move_camera_to(location_yx_mm)
             photo = camera.take_photo_at(location_yx_mm)
+            photo = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
             # break
 
             dot_to_dot_image = number_recognition.DotToDotImage(photo)
