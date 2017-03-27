@@ -33,6 +33,8 @@ def compute_complete_path(image, current_direction):
                                                           current_direction,
                                                           camera_location)
     k = 0
+    stop_computation = False
+
     while k<70:  # Should be true but restricting path for debugging.
         k += 1
 
@@ -64,9 +66,13 @@ def compute_complete_path(image, current_direction):
             current_direction = image_analysis.Direction(i)
             sub_image = image_analysis.extract_sub_image(image_to_analyse, current_direction)
 
-            next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(
-                sub_image,
-                search_width)
+            try:
+                next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(
+                    sub_image,
+                    search_width)
+            except:
+                stop_computation = True
+                break
 
             # Convert the co-ordinates.
             if len(next_computed_pixel_path_segment) > 1 and next_computed_pixel_path_segment[1][1] != -1:
@@ -90,6 +96,9 @@ def compute_complete_path(image, current_direction):
                 selected_candidate = i
                 selected_candidate_length = length
 
+        if stop_computation:
+            break
+
         # Append the computed path with the new values.
         computed_path.extend(candidate_path_segments[selected_candidate])
 
@@ -101,14 +110,9 @@ def compute_complete_path(image, current_direction):
 
 def follow_computed_path(computed_path):
 
-    # Move to start of the computed path.
-    hardware.plotter.move_pen_to(computed_path[0])
-
-    # Move to next point in the computed path. # This can be updated when new follow exists.
-    line_segments = [curves.LineSegment(hardware.plotter._axes.current_location,
-                                       list(map(operator.sub, point, config.CAMERA_OFFSET)))
-                    for point in computed_path]
-
+    # Calculate and draw lines.
+    line_segments = [curves.LineSegment(computed_path[i-1], computed_path[i])
+                     for i in range(1, len(computed_path))]
     hardware.plotter.draw(line_segments)
 
 
