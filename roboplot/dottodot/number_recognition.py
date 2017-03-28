@@ -127,7 +127,11 @@ class DotToDotImage:
         self._img = contour_tools.mask_using_contour_groups(self._img, self.contour_groups)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Contours near edge removed'))
 
-    def _contour_group_is_near_edge(self, contour_group: list[np.ndarray]) -> bool:
+    def _contour_group_is_near_edge(self, contour_group) -> bool:
+        """
+        Args:
+            contour_group (list[np.ndarray]):
+        """
         # A contour is an nx2 numpy array of (x,y) points
         min_xy = [self._min_pixels_between_contour_groups, self._min_pixels_between_contour_groups]
         max_xy = np.array([self._img.shape[1], self._img.shape[1]]) - self._min_pixels_between_contour_groups
@@ -135,7 +139,11 @@ class DotToDotImage:
         contour_is_near_edge = [np.any(contour < min_xy) or np.any(contour >= max_xy) for contour in contour_group]
         return any(contour_is_near_edge)
 
-    def _log_contours_on_current_image(self, contours: list[np.ndarray], name: str) -> None:
+    def _log_contours_on_current_image(self, contours, name: str) -> None:
+        """
+        Args:
+            contours (list[np,ndarray]):
+        """
         img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
         cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
         self.intermediate_images.append(NamedImage(img, name))
@@ -326,8 +334,7 @@ def _invert(img: np.ndarray) -> np.ndarray:
     return 255 - img
 
 
-def draw_image_with_keypoints(img: np.ndarray, keypoints: list[cv2.KeyPoint],
-                              window_title: str ="Image with keypoints") -> None:
+def draw_image_with_keypoints(img: np.ndarray, keypoints, window_title: str ="Image with keypoints") -> None:
     """An apparently unused method which is actually quite useful when debugging!"""
 
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
@@ -336,8 +343,7 @@ def draw_image_with_keypoints(img: np.ndarray, keypoints: list[cv2.KeyPoint],
     draw_image(img_with_keypoints, window_title)
 
 
-def draw_image_with_contours(img: np.ndarray, contours: list[np.ndarray],
-                             window_title: str = "Image with contours") -> None:
+def draw_image_with_contours(img: np.ndarray, contours, window_title: str = "Image with contours") -> None:
     img_colour = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     cv2.drawContours(img_colour, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
     draw_image(img_colour, window_title)
@@ -348,7 +354,11 @@ def draw_image(img: np.ndarray, window_title: str = "Image") -> None:
     cv2.waitKey(0)
 
 
-def print_recognised_global_numbers(global_numbers: list[GlobalNumber]) -> None:
+def print_recognised_global_numbers(global_numbers) -> None:
+    """
+    Args:
+        global_numbers (list[GlobalNumber]):
+    """
     print("Recognised {} numbers:".format(len(global_numbers)))
     for number in global_numbers:
         print("  * ", end='')

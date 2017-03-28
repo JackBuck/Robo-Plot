@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def group_objects(objects, distance_function, min_dist_between_items_in_different_groups: float) -> list[list[object]]:
+def group_objects(objects, distance_function, min_dist_between_items_in_different_groups: float):
     """
     Group objects into clusters using single-linkage clustering.
 
