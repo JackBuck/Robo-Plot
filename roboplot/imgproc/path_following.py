@@ -33,77 +33,72 @@ def compute_complete_path(image, current_direction):
                                                           current_direction,
                                                           camera_location)
     k = 0
-    stop_computation = False
-
     while k<70:  # Should be true but restricting path for debugging.
         k += 1
+        if True: #try:
+            # Move to new camera position and take photo.
+            hardware.plotter.move_camera_to(computed_path[-1])
+            image = hardware.plotter.take_photo_at(computed_path[-1])
 
-        # Move to new camera position and take photo.
-        hardware.plotter.move_camera_to(computed_path[-1])
-        image = hardware.plotter.take_photo_at(computed_path[-1])
+            # Analyse photo to check if red is found.
 
-        # Analyse photo to check if red is found.
+            if len(image.shape) == 3:
+                red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_near_centre(image, red_min_size)
 
-        if len(image.shape) == 3:
-            red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_near_centre(image, red_min_size)
+            if red_triangle_found:
+                global_centre_of_red = convert_to_global_coords(centre_of_red, current_direction,
+                                                                hardware.both_axes.current_location)
+                computed_path.append(centre_of_red)
+                break
 
-        if red_triangle_found:
-            global_centre_of_red = convert_to_global_coords(centre_of_red, current_direction,
-                                                            hardware.both_axes.current_location)
-            computed_path.append(centre_of_red)
-            break
+             # Process image for analysis.
+            image_to_analyse = image_analysis.process_image(image)
 
-         # Process image for analysis.
-        image_to_analyse = image_analysis.process_image(image)
+            # Analyse image in all four directions.
 
-        # Analyse image in all four directions.
+            candidate_path_segments = [[], [], [], []]
+            selected_candidate = -1
+            selected_candidate_length = -1
+            for i in range(0, 4):
+                # Extract sub image.
+                current_direction = image_analysis.Direction(i)
+                sub_image = image_analysis.extract_sub_image(image_to_analyse, current_direction)
 
-        candidate_path_segments = [[], [], [], []]
-        selected_candidate = -1
-        selected_candidate_length = -1
-        for i in range(0, 4):
-            # Extract sub image.
-            current_direction = image_analysis.Direction(i)
-            sub_image = image_analysis.extract_sub_image(image_to_analyse, current_direction)
-
-            try:
                 next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(
                     sub_image,
                     search_width)
-            except:
-                stop_computation = True
-                break
 
-            # Convert the co-ordinates.
-            if len(next_computed_pixel_path_segment) > 1 and next_computed_pixel_path_segment[1][1] != -1:
-                camera_location = computed_path[-1]
-                candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                                      current_direction,
-                                                                      camera_location)
+                # Convert the co-ordinates.
+                if len(next_computed_pixel_path_segment) > 1 and next_computed_pixel_path_segment[1][1] != -1:
+                    camera_location = computed_path[-1]
+                    candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                                          current_direction,
+                                                                          camera_location)
 
-                # Analyse candidate path.
-                length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
+                    # Analyse candidate path.
+                    length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
 
-                if __debug__:
-                    iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image.copy(), computed_path, False)
+                    if __debug__:
+                        iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image.copy(), computed_path, False)
 
-                    iadebug.save_candidate_line_approximation(hardware.plotter.debug_image.debug_image.copy(),
-                                                              computed_path, candidate_path_segments[i],  i)
-            else:
-                is_valid_path = False
+                        iadebug.save_candidate_line_approximation(hardware.plotter.debug_image.debug_image.copy(),
+                                                                  computed_path, candidate_path_segments[i],  i)
+                else:
+                    is_valid_path = False
 
-            if is_valid_path and length > selected_candidate_length:
-                selected_candidate = i
-                selected_candidate_length = length
+                if is_valid_path and length > selected_candidate_length:
+                    selected_candidate = i
+                    selected_candidate_length = length
 
-        if stop_computation:
-            break
+            # Append the computed path with the new values.
+            computed_path.extend(candidate_path_segments[selected_candidate])
 
-        # Append the computed path with the new values.
-        computed_path.extend(candidate_path_segments[selected_candidate])
+            if __debug__:
+                iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image, computed_path, False)
 
-        if __debug__:
-            iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image, computed_path, False)
+        #except Exception as e:
+        #    print('Exception: ' + str(e))
+        #    break
 
     return computed_path
 
