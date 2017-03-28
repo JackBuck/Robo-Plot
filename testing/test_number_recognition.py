@@ -46,7 +46,13 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
 
             self._test_on_file(img_file, expected_numbers)
 
-    def _test_on_file(self, file_path, expected_numbers):
+    def _test_on_file(self, file_path: str, expected_numbers):
+        """
+        Args:
+            file_path (str):
+            expected_numbers (list[number_recognition.LocalNumber]):
+        """
+
         with self.subTest(filename=os.path.basename(file_path)):
             # Perform the number recognition
             img = number_recognition.DotToDotImage.load_image_from_file(file_path)
@@ -56,11 +62,11 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
             for expected_number in expected_numbers:
                 recognised_numbers_at_this_location =\
                     [n for n in img.recognised_numbers
-                     if np.allclose(n.dot_location_yx_pixels, expected_number.dot_location_yx, rtol=0, atol=2)]
+                     if np.allclose(n.dot_location_yx_pixels, expected_number.dot_location_yx_pixels, rtol=0, atol=2)]
 
                 self.assertEqual(len(recognised_numbers_at_this_location), 1,
                                  'Did not find a unique matching recognised number at (y{0[0]}x{0[1]}).'.format(
-                                     expected_number.dot_location_yx))
+                                     expected_number.dot_location_yx_pixels))
 
                 recognised_number = recognised_numbers_at_this_location[0]
 

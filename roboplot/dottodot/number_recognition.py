@@ -139,15 +139,6 @@ class DotToDotImage:
         contour_is_near_edge = [np.any(contour < min_xy) or np.any(contour >= max_xy) for contour in contour_group]
         return any(contour_is_near_edge)
 
-    def _log_contours_on_current_image(self, contours, name: str) -> None:
-        """
-        Args:
-            contours (list[np,ndarray]):
-        """
-        img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
-        cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
-        self.intermediate_images.append(NamedImage(img, name))
-
     def _extract_spots(self) -> None:
         # Dilate and Erode to 'clean' the spot (nb that this harms the number itself, so we only do it to extract spots)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -193,21 +184,38 @@ class DotToDotImage:
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Neighbourhood of Keypoint'))
 
     def _rotate_keypoint_to_bottom_right(self, keypoint: cv2.KeyPoint) -> None:
-        current_angle = self._estimate_degrees_from_centroid_to_location(y=keypoint.pt[1], x=keypoint.pt[0])
-        desired_angle = -28
-        self._img = _rotate_image_anticlockwise_without_cropping(desired_angle - current_angle, self._img)
+        current_degrees = self._estimate_current_anticlockwise_degrees(approx_bottom_right_corner_xy=keypoint.pt)
+        self._img = _rotate_image_anticlockwise_without_cropping(-current_degrees, self._img)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
 
-    def _estimate_degrees_from_centroid_to_location(self, y: float, x: float) -> float:
-        inverted_image = _invert(self._img)
+    def _estimate_current_anticlockwise_degrees(self, approx_bottom_right_corner_xy) -> float:
+        # Find the minimum area rectangle around the number
+        nearby_contour_groups = contour_tools.extract_contour_groups_close_to(
+            self.contour_groups, approx_bottom_right_corner_xy, delta=self._min_pixels_between_contour_groups)
+        nearby_contours = [c for grp in nearby_contour_groups for c in grp]
+        box = cv2.minAreaRect(np.row_stack(nearby_contours))
+        corners_xy = cv2.boxPoints(box).astype(np.int32)
+        self._log_contours_on_current_image([corners_xy], name="Minimum area rectangle")
 
-        total_intensity = np.sum(inverted_image)
-        centroid_y = np.sum(
-            np.arange(inverted_image.shape[0]).reshape(-1, 1) * inverted_image) / total_intensity
-        centroid_x = np.sum(
-            np.arange(inverted_image.shape[1]).reshape(1, -1) * inverted_image) / total_intensity
+        # Construct a vector which, once correctly rotated, goes from the bottom right corner up & left at 135 degrees
+        sorted_corners = sorted(corners_xy, key=lambda pt: np.linalg.norm(approx_bottom_right_corner_xy - pt))
+        bottom_right_corner = sorted_corners[0]
+        adjacent_corners = sorted_corners[1:3]
 
-        return np.rad2deg(np.arctan2(-(y - centroid_y), x - centroid_x))
+        unit_vectors_along_box_edge = misc.normalised(adjacent_corners - bottom_right_corner)
+        up_left_diagonal = unit_vectors_along_box_edge.sum(axis=0)
+
+        degrees_of_up_left_diagonal = np.rad2deg(np.arctan2(-up_left_diagonal[1], up_left_diagonal[0]))
+        return degrees_of_up_left_diagonal - 135
+
+    def _log_contours_on_current_image(self, contours, name: str) -> None:
+        """
+        Args:
+            contours (list[np,ndarray]):
+        """
+        img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
+        cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
+        self.intermediate_images.append(NamedImage(img, name))
 
     def _recognise_number(self) -> int:
         text = self._recognise_number_text()
