@@ -50,7 +50,7 @@ class GlobalNumber:
 
 
 class NamedImage:
-    def __init__(self, image, name):
+    def __init__(self, image: np.ndarray, name: str):
         self.image = image
         self.name = name
 
@@ -65,7 +65,7 @@ class DotToDotImage:
     _min_pixels_between_contour_groups = 10
 
     @staticmethod
-    def load_image_from_file(file_path: str):
+    def load_image_from_file(file_path: str) -> 'DotToDotImage':
         """
         Load an image from a supplied file path.
 
@@ -105,19 +105,19 @@ class DotToDotImage:
         self._extract_spots()
         self._recognise_number_near_each_spot()
 
-    def _clean_image(self):
+    def _clean_image(self) -> None:
         self._img = cv2.medianBlur(self._img, ksize=3)
         self._img = cv2.adaptiveThreshold(self._img, maxValue=255, adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                           thresholdType=cv2.THRESH_BINARY, blockSize=11, C=2)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Clean Image'))
 
-    def _extract_contour_groups(self):
+    def _extract_contour_groups(self) -> None:
         contours = contour_tools.extract_black_contours(self._img)
         self._log_contours_on_current_image(contours, 'Contours')
         self.contour_groups = contour_tools.group_contours(contours, self._min_pixels_between_contour_groups)
 
     def _mask_to_remove_contour_groups_near_edge(self) -> None:
-        contours_near_edge = []
+        contours_near_edge = []  # type: list[np.ndarray]
         for i in reversed(range(len(self.contour_groups))):
             if self._contour_group_is_near_edge(self.contour_groups[i]):
                 contours_near_edge.extend(
@@ -127,15 +127,20 @@ class DotToDotImage:
         self._img = contour_tools.mask_using_contour_groups(self._img, self.contour_groups)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Contours near edge removed'))
 
-    def _contour_group_is_near_edge(self, contour_group) -> bool:
-        # A contour is a numpy array of (x,y) points
+    def _contour_group_is_near_edge(self, contour_group: list[np.ndarray]) -> bool:
+        # A contour is an nx2 numpy array of (x,y) points
         min_xy = [self._min_pixels_between_contour_groups, self._min_pixels_between_contour_groups]
         max_xy = np.array([self._img.shape[1], self._img.shape[1]]) - self._min_pixels_between_contour_groups
 
         contour_is_near_edge = [np.any(contour < min_xy) or np.any(contour >= max_xy) for contour in contour_group]
         return any(contour_is_near_edge)
 
-    def _extract_spots(self):
+    def _log_contours_on_current_image(self, contours: list[np.ndarray], name: str) -> None:
+        img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
+        cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
+        self.intermediate_images.append(NamedImage(img, name))
+
+    def _extract_spots(self) -> None:
         # Dilate and Erode to 'clean' the spot (nb that this harms the number itself, so we only do it to extract spots)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         img = cv2.dilate(self._img, kernel, iterations=1)
@@ -160,8 +165,8 @@ class DotToDotImage:
                                                flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         self.intermediate_images.append(NamedImage(img_with_keypoints, 'Spot Detection Image'))
 
-    def _recognise_number_near_each_spot(self):
-        self.recognised_numbers = []
+    def _recognise_number_near_each_spot(self) -> None:
+        self.recognised_numbers = []  # type: list[LocalNumber]
         original_image = self._img
         for spot in self.spot_keypoints:
             self._img = original_image
@@ -174,23 +179,18 @@ class DotToDotImage:
                             dot_location_yx_pixels=(spot.pt[1], spot.pt[0]))
             )
 
-    def _mask_to_contour_groups_close_to(self, point_xy, delta):
+    def _mask_to_contour_groups_close_to(self, point_xy, delta: float) -> None:
         nearby_contour_groups = contour_tools.extract_contour_groups_close_to(self.contour_groups, point_xy, delta)
         self._img = contour_tools.mask_using_contour_groups(self._img, nearby_contour_groups)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Neighbourhood of Keypoint'))
 
-    def _log_contours_on_current_image(self, contours, name):
-        img = cv2.cvtColor(self._img.copy(), cv2.COLOR_GRAY2BGR)
-        cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
-        self.intermediate_images.append(NamedImage(img, name))
-
-    def _rotate_keypoint_to_bottom_right(self, keypoint):
+    def _rotate_keypoint_to_bottom_right(self, keypoint: cv2.KeyPoint) -> None:
         current_angle = self._estimate_degrees_from_centroid_to_location(y=keypoint.pt[1], x=keypoint.pt[0])
         desired_angle = -28
         self._img = _rotate_image_anticlockwise_without_cropping(desired_angle - current_angle, self._img)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
 
-    def _estimate_degrees_from_centroid_to_location(self, y, x):
+    def _estimate_degrees_from_centroid_to_location(self, y: float, x: float) -> float:
         inverted_image = _invert(self._img)
 
         total_intensity = np.sum(inverted_image)
@@ -213,7 +213,7 @@ class DotToDotImage:
         return pytesseract.image_to_string(img, config='-psm 8, digits')
 
     @staticmethod
-    def _extract_number_from_recognised_text(recognised_text) -> int:
+    def _extract_number_from_recognised_text(recognised_text: str) -> int:
         # Forcing a terminating period helps us to filter out bad results
         # Allowing an initial period is a (small) hack to make one of the tests pass (the test recognises '.17.' due
         # to a small amount of noise in the photo next to the 1). Ideally this would be done through image processing.
@@ -222,7 +222,7 @@ class DotToDotImage:
         if match is not None:
             return int(match.group(1))
 
-    def display_intermediate_images(self):
+    def display_intermediate_images(self) -> None:
         for img in self.intermediate_images:
             cv2.imshow(winname=img.name, mat=img.image)
             cv2.waitKey(0)
@@ -230,11 +230,11 @@ class DotToDotImage:
     _default_intermediate_image_save_path_prefix = os.path.join(config.debug_output_folder, 'numrec_')
 
     @staticmethod
-    def delete_intermediate_image_files(save_path_prefix: str = _default_intermediate_image_save_path_prefix):
+    def delete_intermediate_image_files(save_path_prefix: str = _default_intermediate_image_save_path_prefix) -> None:
         for f in glob.glob(save_path_prefix + '*.jpg'):
             os.remove(f)
 
-    def save_intermediate_images(self, save_path_prefix: str = _default_intermediate_image_save_path_prefix):
+    def save_intermediate_images(self, save_path_prefix: str = _default_intermediate_image_save_path_prefix) -> None:
         counter = -1
         for img in self.intermediate_images:
             counter += 1
@@ -251,7 +251,7 @@ class DotToDotImage:
             image = img.image.copy()
             threading.Thread(target=lambda: cv2.imwrite(save_path, image)).start()
 
-    def print_recognised_local_numbers(self):
+    def print_recognised_local_numbers(self) -> None:
         print("Recognised {} numbers:".format(len(self.recognised_numbers)))
         for number in self.recognised_numbers:
             print("  * ", end='')
@@ -280,7 +280,7 @@ def read_image(file_path: str) -> np.ndarray:
         raise TypeError("Could not open image file: {}".format(file_path))
 
 
-def _rotate_image_anticlockwise_without_cropping(degrees, img):
+def _rotate_image_anticlockwise_without_cropping(degrees: float, img: np.ndarray) -> np.ndarray:
     # Adapted from:
     # http://stackoverflow.com/questions/22041699/rotate-an-image-without-cropping-in-opencv-in-c/33564950#33564950
 
@@ -309,7 +309,7 @@ def _rotate_image_anticlockwise_without_cropping(degrees, img):
     return rotated_image
 
 
-def _crop_about(img, centre, new_side_length):
+def _crop_about(img, centre: (int, int), new_side_length: float) -> (int, int):
     new_side_length = 2 * int(new_side_length / 2)
 
     cropped_img = img[
@@ -326,7 +326,8 @@ def _invert(img: np.ndarray) -> np.ndarray:
     return 255 - img
 
 
-def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints"):
+def draw_image_with_keypoints(img: np.ndarray, keypoints: list[cv2.KeyPoint],
+                              window_title: str ="Image with keypoints") -> None:
     """An apparently unused method which is actually quite useful when debugging!"""
 
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
@@ -335,18 +336,19 @@ def draw_image_with_keypoints(img, keypoints, window_title="Image with keypoints
     draw_image(img_with_keypoints, window_title)
 
 
-def draw_image_with_contours(img, contours, window_title="Image with contours"):
+def draw_image_with_contours(img: np.ndarray, contours: list[np.ndarray],
+                             window_title: str = "Image with contours") -> None:
     img_colour = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     cv2.drawContours(img_colour, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
     draw_image(img_colour, window_title)
 
 
-def draw_image(img, window_title="Image"):
+def draw_image(img: np.ndarray, window_title: str = "Image") -> None:
     cv2.imshow(window_title, img)
     cv2.waitKey(0)
 
 
-def print_recognised_global_numbers(global_numbers: list):
+def print_recognised_global_numbers(global_numbers: list[GlobalNumber]) -> None:
     print("Recognised {} numbers:".format(len(global_numbers)))
     for number in global_numbers:
         print("  * ", end='')

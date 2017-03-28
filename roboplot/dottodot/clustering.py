@@ -1,19 +1,20 @@
 import numpy as np
 
 
-def group_objects(objects, distance_function, min_dist_between_items_in_different_groups) -> list:
+def group_objects(objects, distance_function, min_dist_between_items_in_different_groups: float) -> list[list[object]]:
     """
     Group objects into clusters using single-linkage clustering.
 
     Args:
-        objects: the objects to cluster
-        distance_function (func): a function accepting two objects and returning the distance between them
+        objects (list[object]): the objects to cluster
+        distance_function ((object, object) -> float): a function accepting two objects and returning the distance
+                                                       between them
         min_dist_between_items_in_different_groups: the clusters returned will be minimal subject to the distance
                                                     between any pair of items from different clusters being at least
                                                     this value.
 
     Returns:
-        list[list[object]]: each element is a group of contours.
+        list[list[object]]: each element is a group of objects.
     """
     distance_matrix = _compute_distance_matrix(objects, distance_function)
 
@@ -95,8 +96,9 @@ def _compute_distance_matrix(objects, distance_function):
     Compute a distance matrix.
 
     Args:
-        objects (list): the objects whose distance matrix is to be computed
-        distance_function (func): a function accepting two objects and returning the distance between them
+        objects (list[object]): the objects whose distance matrix is to be computed
+        distance_function ((object, object) -> float): a function accepting two objects and returning the distance
+                                                       between them
 
     Returns:
         np.ndarray: the distance matrix
@@ -108,4 +110,3 @@ def _compute_distance_matrix(objects, distance_function):
             contour_distance_matrix[i, j] = distance_function(objects[i], objects[j])
     contour_distance_matrix = contour_distance_matrix + contour_distance_matrix.T
     return contour_distance_matrix
-
