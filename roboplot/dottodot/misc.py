@@ -19,3 +19,19 @@ def convert_image_point_to_global_coordinates(points, camera_location):
     # Do the computation
     image_centre = camera_resolution / 2
     return camera_location + scale_factors * (points - image_centre)
+
+
+def normalised(a: np.ndarray, order: int = None, axis: int = -1) -> np.ndarray:
+    """
+    Normalise vectors in a numpy array.
+
+    Args:
+        a (np.ndarray): The array holding the vectors to normalise.
+        order (int): The order of the norm to use. This is passed directly to np.linalg.norm().
+        axis (int): The axis which holds the vectors to normalise.
+
+    Returns:
+        np.ndarray: An array with the same size as a, but whose vectors in the specified axis are normalised.
+    """
+    norm = np.atleast_1d(np.linalg.norm(a, order, axis))
+    return a / np.expand_dims(norm, axis)
