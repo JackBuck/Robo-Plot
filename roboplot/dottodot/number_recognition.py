@@ -3,6 +3,7 @@ import PIL.Image as Image
 import os
 import re
 import threading
+import warnings
 
 import cv2
 import numpy as np
@@ -261,10 +262,13 @@ class DotToDotImage:
         # Forcing a terminating period helps us to filter out bad results
         # Allowing an initial period is a (small) hack to make one of the tests pass (the test recognises '.17.' due
         # to a small amount of noise in the photo next to the 1). Ideally this would be done through image processing.
-        match = re.match(r'\.?(\d+)\.$', recognised_text)
+        match = re.match(r'(\.)?(\d+)\.$', recognised_text)
 
         if match is not None:
-            return int(match.group(1))
+            if match.group(1) is not None:
+                warnings.warn('Matched partially non-conforming text: {}'.format(recognised_text))
+
+            return int(match.group(2))
 
     def display_intermediate_images(self) -> None:
         for img in self.intermediate_images:
