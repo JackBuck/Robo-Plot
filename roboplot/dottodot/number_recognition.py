@@ -184,29 +184,57 @@ class DotToDotImage:
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Neighbourhood of Keypoint'))
 
     def _rotate_keypoint_to_bottom_right(self, keypoint: cv2.KeyPoint) -> None:
-        current_degrees = self._estimate_current_anticlockwise_degrees(approx_bottom_right_corner_xy=keypoint.pt)
+        current_degrees = self._estimate_current_anticlockwise_degrees(keypoint)
         self._img = _rotate_image_anticlockwise_without_cropping(-current_degrees, self._img)
         self.intermediate_images.append(NamedImage(self._img.copy(), 'Rotated Image'))
 
-    def _estimate_current_anticlockwise_degrees(self, approx_bottom_right_corner_xy) -> float:
+    def _estimate_current_anticlockwise_degrees(self, keypoint):
+        # We use two methods of estimating the  angle.
+        # For most numbers, righting the minimum-area-rectangle suffices.
+        # However, for the number 4 it is skewed.
+        # Hence, we compare it with the estimate from using the angle from the spot to the centroid, and if they
+        # differ too much, rotate it using the centroid (because it is likely we have the number 4!)
+        degrees_minarearect = self._estimate_current_anticlockwise_degrees_using_minarearect(spot_xy=keypoint.pt)
+        degrees_centroid = self._estimate_current_anticlockwise_degrees_using_centroid(spot_xy=keypoint.pt)
+
+        if abs(degrees_centroid - degrees_minarearect) < 15:
+            return degrees_minarearect
+        else:
+            return degrees_centroid
+
+    def _estimate_current_anticlockwise_degrees_using_minarearect(self, spot_xy) -> float:
         # Find the minimum area rectangle around the number
         nearby_contour_groups = contour_tools.extract_contour_groups_close_to(
-            self.contour_groups, approx_bottom_right_corner_xy, delta=self._min_pixels_between_contour_groups)
+            self.contour_groups, target_point_xy=spot_xy, delta=self._min_pixels_between_contour_groups)
         nearby_contours = [c for grp in nearby_contour_groups for c in grp]
         box = cv2.minAreaRect(np.row_stack(nearby_contours))
         corners_xy = cv2.boxPoints(box).astype(np.int32)
         self._log_contours_on_current_image([corners_xy], name="Minimum area rectangle")
 
         # Construct a vector which, once correctly rotated, goes from the bottom right corner up & left at 135 degrees
-        sorted_corners = sorted(corners_xy, key=lambda pt: np.linalg.norm(approx_bottom_right_corner_xy - pt))
-        bottom_right_corner = sorted_corners[0]
-        adjacent_corners = sorted_corners[1:3]
+        sorted_corners = sorted(corners_xy, key=lambda pt: np.linalg.norm(spot_xy - pt))
+        bottom_right_corner = sorted_corners[0]  # The closest corner to the spot
+        adjacent_corners = sorted_corners[1:3]  # The next two closest corners
 
         unit_vectors_along_box_edge = misc.normalised(adjacent_corners - bottom_right_corner)
         up_left_diagonal = unit_vectors_along_box_edge.sum(axis=0)
 
         degrees_of_up_left_diagonal = np.rad2deg(np.arctan2(-up_left_diagonal[1], up_left_diagonal[0]))
         return degrees_of_up_left_diagonal - 135
+
+    def _estimate_current_anticlockwise_degrees_using_centroid(self, spot_xy) -> float:
+        inverted_image = _invert(self._img)
+
+        total_intensity = np.sum(inverted_image)
+        centroid_y = np.sum(
+            np.arange(inverted_image.shape[0]).reshape(-1, 1) * inverted_image) / total_intensity
+        centroid_x = np.sum(
+            np.arange(inverted_image.shape[1]).reshape(1, -1) * inverted_image) / total_intensity
+
+        x = spot_xy[0]
+        y = spot_xy[1]
+        # The subtracted number fails with number 4 for both 150 and 147. But 148.5 also fails!
+        return np.rad2deg(np.arctan2(-(centroid_y - y), centroid_x - x)) - 149
 
     def _log_contours_on_current_image(self, contours, name: str) -> None:
         """
