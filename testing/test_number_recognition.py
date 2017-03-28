@@ -56,7 +56,7 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
             for expected_number in expected_numbers:
                 recognised_numbers_at_this_location =\
                     [n for n in img.recognised_numbers
-                     if np.allclose(n.dot_location_yx, expected_number.dot_location_yx, rtol=0, atol=2)]
+                     if np.allclose(n.dot_location_yx_pixels, expected_number.dot_location_yx, rtol=0, atol=2)]
 
                 self.assertEqual(len(recognised_numbers_at_this_location), 1,
                                  'Did not find a unique matching recognised number at (y{0[0]}x{0[1]}).'.format(
