@@ -6,15 +6,15 @@ def group_objects(objects, distance_function, min_dist_between_items_in_differen
     Group objects into clusters using single-linkage clustering.
 
     Args:
-        objects (list[object]): the objects to cluster
-        distance_function ((object, object) -> float): a function accepting two objects and returning the distance
-                                                       between them
+        objects (list[T]): the objects to cluster
+        distance_function ((T, T) -> float): a function accepting two objects and returning the distance
+                                             between them
         min_dist_between_items_in_different_groups: the clusters returned will be minimal subject to the distance
                                                     between any pair of items from different clusters being at least
                                                     this value.
 
     Returns:
-        list[list[object]]: each element is a group of objects.
+        list[list[T]]: each element is a group of objects.
     """
     distance_matrix = _compute_distance_matrix(objects, distance_function)
 
@@ -23,9 +23,7 @@ def group_objects(objects, distance_function, min_dist_between_items_in_differen
     inds_of_mergeable_pair = _compute_indices_of_one_pair_of_mergeable_groups(distance_matrix,
                                                                               min_dist_between_items_in_different_groups)
     while inds_of_mergeable_pair is not None:
-        groups, distance_matrix = _merge_groups(groups,
-                                                distance_matrix,
-                                                inds_of_mergeable_pair)
+        groups, distance_matrix = _merge_groups(groups, distance_matrix, inds_of_mergeable_pair)
         inds_of_mergeable_pair = \
             _compute_indices_of_one_pair_of_mergeable_groups(distance_matrix,
                                                              min_dist_between_items_in_different_groups)
@@ -48,7 +46,7 @@ def _compute_indices_of_one_pair_of_mergeable_groups(distance_matrix, min_dist_b
         a pair of indices corresponding to a mergeable pair of groups
     """
     # Get all indices (i,j) with i<j, in a 2-element tuple (all rows indices, all column indices).
-    inds = np.triu_indices_from(distance_matrix, 1)
+    inds = np.triu_indices_from(distance_matrix, 1)  # type: tuple
     # Get a boolean vector which indexes both elements of inds and tells whether the pair of groups should be merged
     groups_could_be_merged = distance_matrix[inds] < min_dist_between_items_in_different_groups
     # Get the subset of indices for groups we can merge
@@ -63,13 +61,14 @@ def _merge_groups(groups, current_distance_matrix, inds_of_mergeable_pair):
     Merge a pair of groups in a group of objects.
 
     Args:
-        groups (list[list[object]]): the groups of objects (a list of lists)
+        groups (list[list[T]]): the groups of objects (a list of lists)
         current_distance_matrix (np.ndarray): the symmetric matrix of distances between groups
-        inds_of_mergeable_pair (indexable): a pair of indices corresponding to the groups to merge
+        inds_of_mergeable_pair: a pair of indices corresponding to the groups to merge
 
     Returns:
-        tuple: The first return value is a new set of groups, with the specified pair of contours merged.
-               The second return value is the distance matrix for the new set of groups.
+        (list[list[T]], np.ndarray): The first return value is a new set of groups, with the specified pair of contours
+                                     merged.
+                                     The second return value is the distance matrix for the new set of groups.
     """
     # Merge the actual groups
     new_groups = groups.copy()
@@ -96,9 +95,9 @@ def _compute_distance_matrix(objects, distance_function):
     Compute a distance matrix.
 
     Args:
-        objects (list[object]): the objects whose distance matrix is to be computed
-        distance_function ((object, object) -> float): a function accepting two objects and returning the distance
-                                                       between them
+        objects (list[T]): the objects whose distance matrix is to be computed
+        distance_function ((T, T) -> float): a function accepting two objects and returning the distance
+                                             between them
 
     Returns:
         np.ndarray: the distance matrix
