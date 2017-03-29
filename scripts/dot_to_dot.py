@@ -12,12 +12,11 @@ import svgpathtools as svg
 import cv2
 
 import context
-import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.page_search as page_search
 import roboplot.dottodot.clustering as clustering
+import roboplot.dottodot.curve_creation as curve_creation
 import roboplot.dottodot.number_recognition as number_recognition
-import roboplot.svg.svg_parsing as svg_parsing
 from roboplot.core.camera.dummy_camera_from_image_paths import DummyCameraFromImagePaths
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
@@ -137,22 +136,9 @@ try:
     with open(tmpsavefile, 'rb') as f:
         final_numbers = pickle.load(f)
 
-    # path_curve = [curves.LineSegment(final_numbers[i - 1].dot_location_yx_mm, final_numbers[i].dot_location_yx_mm)
-    #               for i in range(1, len(final_numbers))]
-    # if len(final_numbers) > 0:
-    #     path_curve.append(curves.LineSegment(final_numbers[-1].dot_location_yx_mm, final_numbers[0].dot_location_yx_mm))
-
-    path = svg.Path()
-    for i in range(1, len(final_numbers)):
-        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[i-1].dot_location_yx_mm),
-                             svg_parsing.yx_to_complex(final_numbers[i].dot_location_yx_mm)))
-
-    if len(final_numbers) > 0:
-        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[-1].dot_location_yx_mm),
-                             svg_parsing.yx_to_complex(final_numbers[0].dot_location_yx_mm)))
-
-    path_curve = svg_parsing.SVGPath(path, mm_per_unit=1)
-
+    # path_curve = curve_creation.points_to_line_segments([n.dot_location_yx_mm for n in final_numbers], is_closed = True)
+    path_curve = curve_creation.points_to_svg_line_segments([n.dot_location_yx_mm for n in final_numbers],
+                                                            is_closed=True)
     plotter.draw(path_curve)
 
 finally:
