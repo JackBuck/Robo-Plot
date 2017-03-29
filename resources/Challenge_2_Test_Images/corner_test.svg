@@ -15,7 +15,7 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.1 r15371"
-   sodipodi:docname="start_direction_test.svg">
+   sodipodi:docname="corner_test.svg">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -26,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="178.97286"
-     inkscape:cy="702.76675"
+     inkscape:cx="411.11572"
+     inkscape:cy="531.33818"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -44,7 +44,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -57,11 +57,11 @@
        id="rect3680"
        width="184.60001"
        height="271.60001"
-       x="16.77"
-       y="3.6299939" />
+       x="12.77"
+       y="12.629999" />
     <g
        id="g4515"
-       transform="translate(0.12635674,-14.162912)">
+       transform="translate(-3.8736428,-5.1629069)">
       <path
          sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"
@@ -106,7 +106,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="translate(101.991,-2.8236261)"
+       transform="translate(97.990997,6.1763792)"
        id="g4515-5">
       <g
          id="g4592"
@@ -156,7 +156,7 @@
       </g>
     </g>
     <g
-       transform="rotate(46.421299,39.367835,187.93281)"
+       transform="rotate(46.421299,26.873929,187.76886)"
        id="g4515-6">
       <path
          sodipodi:nodetypes="cc"
@@ -202,7 +202,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(88.803452,32.837482,60.987816)"
+       transform="rotate(88.803452,26.242508,63.44561)"
        id="g4515-0">
       <path
          sodipodi:nodetypes="cc"
@@ -248,7 +248,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(135.25994,45.745007,109.61631)"
+       transform="rotate(135.25994,41.892993,113.29319)"
        id="g4515-58">
       <path
          sodipodi:nodetypes="cc"
@@ -294,7 +294,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(179.76141,59.859629,75.81799)"
+       transform="rotate(179.76141,57.85026,80.313829)"
        id="g4515-1">
       <path
          sodipodi:nodetypes="cc"
@@ -340,7 +340,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(-90.002158,69.237367,55.793322)"
+       transform="rotate(-90.002158,71.7372,62.293249)"
        id="g4515-3">
       <path
          sodipodi:nodetypes="cc"
@@ -386,7 +386,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(-140.00587,95.683857,36.959327)"
+       transform="rotate(-140.00587,95.321463,42.187154)"
        id="g4515-3-1">
       <path
          sodipodi:nodetypes="cc"
@@ -432,7 +432,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(-170.34466,107.33572,71.059613)"
+       transform="rotate(-170.34466,105.71578,75.728533)"
        id="g4515-1-6">
       <path
          sodipodi:nodetypes="cc"
@@ -478,7 +478,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(156.07173,29.732014,135.47037)"
+       transform="rotate(156.07173,26.778453,139.54657)"
        id="g4515-1-6-1"
        inkscape:transform-center-x="-8.4502693"
        inkscape:transform-center-y="-12.325359">
@@ -526,7 +526,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(60.925044,-69.421223,232.17993)"
+       transform="rotate(60.925044,-79.072151,233.27952)"
        id="g4515-1-6-9">
       <path
          sodipodi:nodetypes="cc"
@@ -572,7 +572,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(-70.120675,235.02078,75.524791)"
+       transform="rotate(-70.120675,239.43307,82.874697)"
        id="g4515-1-6-9-4">
       <path
          sodipodi:nodetypes="cc"
@@ -618,7 +618,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(149.08935,24.680809,106.28687)"
+       transform="rotate(149.08935,21.436626,110.2339)"
        id="g4515-1-2"
        inkscape:transform-center-x="2.3884423"
        inkscape:transform-center-y="-7.7246274">
@@ -666,7 +666,7 @@
          sodipodi:type="star" />
     </g>
     <g
-       transform="rotate(-115.07043,158.56134,61.203823)"
+       transform="rotate(-115.07043,159.42427,66.976239)"
        id="g4515-3-1-6">
       <path
          sodipodi:nodetypes="cc"
