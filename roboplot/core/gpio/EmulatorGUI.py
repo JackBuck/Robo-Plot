@@ -7,7 +7,7 @@ from roboplot.core.gpio.PIN import PIN
 
 # http://www.tutorialspoint.com/python/tk_button.htm
 
-draw_changes = True
+draw_changes = False  # Set this to true at the top of scripts in order to view the changing pin statuses on the GUI
 
 dictionaryPins = {}  # type: dict[str, PIN]
 dictionaryPinsTkinter = {}  # type: dict[str, Button]
@@ -308,8 +308,8 @@ def buttonClickRelease(self):
 
 
 def drawGPIOOut(gpioID):
-    global dictionaryPins
-    global dictionaryPinsTkinter
+    if not draw_changes:
+        return
 
     gpioID = str(gpioID)
     objPin = dictionaryPins[gpioID]
