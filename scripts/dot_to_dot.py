@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-import statistics
 import time
-import warnings
 import glob
 import pickle
 
-import numpy as np
-import svgpathtools as svg
-import cv2
-
 import context
 import roboplot.core.hardware as hardware
-import roboplot.imgproc.page_search as page_search
-import roboplot.dottodot.clustering as clustering
 import roboplot.dottodot.curve_creation as curve_creation
-import roboplot.dottodot.number_recognition as number_recognition
+import roboplot.dottodot.data_capture as data_capture
 from roboplot.core.camera.dummy_camera_from_image_paths import DummyCameraFromImagePaths
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
@@ -39,102 +31,21 @@ try:
                                        image_paths=image_paths)
 
     # Scan the bed for photos
-    a4_height_y_mm = 297
-    a4_width_x_mm = 210
-    target_positions = page_search.compute_positions(a4_width_x_mm, a4_height_y_mm,
-                                                     photo_size=int(camera.resolution_mm_xy[0]),
-                                                     millimetres_between_photos=int(camera.resolution_mm_xy[0] / 2))
-
     plotter.home()
 
     # Take and analyse the photos
     start_time = time.time()
-
-    recognised_numbers = []
-    for target_position in target_positions:
-        plotter.move_camera_to(target_position)
-        photo = camera.take_photo_at(target_position)
-        photo = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
-
-        dot_to_dot_image = number_recognition.DotToDotImage(photo)
-        dot_to_dot_image.process_image()
-        # dot_to_dot_image.print_recognised_local_numbers()
-
-        new_global_numbers = [number_recognition.GlobalNumber.from_local(n, target_position)
-                              for n in dot_to_dot_image.recognised_numbers]
-
-        number_recognition.print_recognised_global_numbers(new_global_numbers)
-        recognised_numbers.extend(new_global_numbers)
-
+    final_numbers = data_capture.search_for_numbers(camera, plotter)
     end_time = time.time()
-    print('Time to collect photos: {:.1f} seconds'.format(end_time - start_time))
-
-
-    # Filter the results
-    def millimetres_between_numbers(first: number_recognition.GlobalNumber, second: number_recognition.GlobalNumber):
-        return np.linalg.norm(first.dot_location_yx_mm - second.dot_location_yx_mm)
-
-
-    groups = clustering.group_objects(recognised_numbers,
-                                      distance_function=millimetres_between_numbers,
-                                      min_dist_between_items_in_different_groups=5)
-
-    final_numbers = []
-    for group in groups:
-        assert len(group) > 0, 'Groups returned from the clustering should all be non-empty!!'
-
-        location_yx_mm = np.mean([number.dot_location_yx_mm for number in group], axis=0)
-
-        # Try to get the modal numeric value
-        try:
-            numeric_value = statistics.mode([n.numeric_value for n in group])
-        except statistics.StatisticsError:
-            numeric_value = None
-
-        num_retries = 0
-        while numeric_value is None and num_retries < 3:
-            num_retries += 1
-
-            # Take a new photo
-            print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\nRetrying...'.format(location_yx_mm))
-            plotter.move_camera_to(location_yx_mm)
-            photo = camera.take_photo_at(location_yx_mm)
-            photo = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
-            # break
-
-            dot_to_dot_image = number_recognition.DotToDotImage(photo)
-            dot_to_dot_image.process_image()
-            dot_to_dot_image.print_recognised_local_numbers()
-
-            global_numbers = [number_recognition.GlobalNumber.from_local(n, location_yx_mm) for n in
-                              dot_to_dot_image.recognised_numbers]
-            group.extend([n for n in global_numbers if np.linalg.norm(n.dot_location_yx_mm - location_yx_mm) < 5])
-
-            # Try again to get the mode values
-            try:
-                numeric_value = statistics.mode([n.numeric_value for n in group])  # This _is_ 'None' friendly
-            except statistics.StatisticsError:  # No unique value, or empty data
-                numeric_value = None
-
-        if numeric_value is not None:
-            final_numbers.append(number_recognition.GlobalNumber(numeric_value, location_yx_mm))
-
-    final_numbers = sorted(final_numbers, key=lambda n: n.numeric_value)
-
-    # Warn if we don't have a list of unique, consecutive numbers starting at 1
-    for i in range(len(final_numbers)):
-        if final_numbers[i].numeric_value != i:
-            warnings.warn('Did not find a set of consecutive numbers starting at 1!\n'
-                          'Instead found {}'.format(', '.join([str(n.numeric_value) for n in final_numbers])))
-            break
+    print('Time to collect and analyse photos: {:.1f} seconds'.format(end_time - start_time))
 
     # Draw the dot-to-dot
-    tmpsavefile = '/tmp/roboplot_final_numbers'
+    # tmpsavefile = '/tmp/roboplot_final_numbers'
     # with open(tmpsavefile, 'wb') as f:
     #     pickle.dump(final_numbers, f)
 
-    with open(tmpsavefile, 'rb') as f:
-        final_numbers = pickle.load(f)
+    # with open(tmpsavefile, 'rb') as f:
+    #     final_numbers = pickle.load(f)
 
     # path_curve = curve_creation.points_to_line_segments([n.dot_location_yx_mm for n in final_numbers], is_closed = True)
     path_curve = curve_creation.points_to_svg_line_segments([n.dot_location_yx_mm for n in final_numbers],

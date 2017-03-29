@@ -30,6 +30,10 @@ class Plotter:
         self._camera = camera
         self._pen_to_camera_offset = np.array(pen_to_camera_offset)
 
+    @property
+    def is_homed(self):
+        return self._axes.is_homed
+
     def home(self):
         self._pen.lift()
         self._axes.home()

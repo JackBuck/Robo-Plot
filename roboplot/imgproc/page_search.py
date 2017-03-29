@@ -1,3 +1,6 @@
+a4_paper_width_height = (210, 297)
+
+
 def compute_perimeter_positions(width, height, photo_size):
     """Finds the positions needed for the camera to capture the entire border of page.
     
@@ -55,7 +58,7 @@ def compute_positions(width: int, height: int, photo_size: int, millimetres_betw
                                           the photo_size will be used instead.
 
     Returns:
-        positions (list of points) The path required to scan entire page.
+        positions (list[list[int]]) The path required to scan entire page.
     """
 
     if millimetres_between_photos is None:
