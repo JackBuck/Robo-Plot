@@ -22,17 +22,17 @@ try:
     args = parser.parse_args()
 
     # Get hardware
-    plotter = DotToDotPlotter.create_from(hardware.plotter)
-
     if args.file_glob is not None:
         image_paths = sorted(glob.glob(args.file_glob))
-        plotter._camera = camera = DummyCameraFromImagePaths(resolution_pixels_xy=(200, 200),
-                                                             pixels_to_mm_scale_factors_xy=(0.233, 0.237),
-                                                             image_paths=image_paths)
+        hardware.plotter._camera = camera = DummyCameraFromImagePaths(resolution_pixels_xy=(200, 200),
+                                                                      pixels_to_mm_scale_factors_xy=(0.233, 0.237),
+                                                                      image_paths=image_paths)
+    plotter = DotToDotPlotter(hardware.plotter)
+
 
     # Do the dot-to-dot
     start_time = time.time()
-    final_numbers = plotter.do_dot_to_dot()
+    plotter.do_dot_to_dot()
     end_time = time.time()
     print('Elapsed: {:.0f} seconds'.format(end_time - start_time))
 

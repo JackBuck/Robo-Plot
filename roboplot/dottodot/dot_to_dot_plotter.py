@@ -11,18 +11,15 @@ import roboplot.imgproc.page_search as page_search
 from roboplot.core.plotter import Plotter
 
 
-class DotToDotPlotter(Plotter):
-    @staticmethod
-    def create_from(plotter: Plotter):
-        return DotToDotPlotter(axes=plotter._axes,
-                               pen=plotter._pen,
-                               camera=plotter._camera,
-                               pen_to_camera_offset=plotter._pen_to_camera_offset)
+# TODO: This doesn't allow me to decorate any type of plotter I pass in... it reinitialises the base type :/
+class DotToDotPlotter:
+    def __init__(self, plotter: Plotter):
+        self._plotter = plotter
 
     def do_dot_to_dot(self) -> None:
         """Take pictures to explore the page for dots, then draw a picture to join them."""
-        if not self.is_homed:
-            self.home()
+        if not self._plotter.is_homed:
+            self._plotter.home()
 
         numbers = self.search_for_numbers()
         self.draw_joined_dots(numbers)
@@ -35,7 +32,8 @@ class DotToDotPlotter(Plotter):
             list[number_recognition.GlobalNumber]: the recognised numbers
         """
 
-        target_positions = _compute_raster_scan_positions(self._camera.resolution_mm_xy)
+        # TODO: Sort out this illegal reference to a _camera
+        target_positions = _compute_raster_scan_positions(self._plotter._camera.resolution_mm_xy)
         recognised_numbers = self._take_and_analyse_initial_photos(target_positions)
         final_numbers = self._extract_sorted_numbers_at_unique_locations(recognised_numbers)
 
@@ -53,7 +51,7 @@ class DotToDotPlotter(Plotter):
 
     def _take_greyscale_photo_at(self, target_camera_centre):
         # TODO: Move this to a method on the Plotter class
-        img = self._camera.take_photo_at(target_camera_centre)
+        img = self._plotter._camera.take_photo_at(target_camera_centre)
         return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     def _extract_sorted_numbers_at_unique_locations(self, recognised_numbers):
@@ -122,7 +120,7 @@ class DotToDotPlotter(Plotter):
         return numeric_value, target_numbers
 
     def _take_photo_and_extract_numbers(self, target_position: (float, float)):
-        self.move_camera_to(target_position)
+        self._plotter.move_camera_to(target_position)
         photo = self._take_greyscale_photo_at(target_position)
 
         dot_to_dot_image = number_recognition.DotToDotImage(photo)
@@ -143,7 +141,7 @@ class DotToDotPlotter(Plotter):
         """
         path_curve = curve_creation.points_to_svg_line_segments([n.dot_location_yx_mm for n in dot_to_dot_numbers],
                                                                 is_closed=True)
-        self.draw(path_curve)
+        self._plotter.draw(path_curve)
 
 
 def _compute_raster_scan_positions(camera_resolution_mm_xy: (float, float),
