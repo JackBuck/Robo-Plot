@@ -29,7 +29,7 @@ class DummyCameraFromImagePaths:
             return img
         else:
             print('Default image')
-            return self._default_image_colour * np.ones(self.resolution_pixels_xy, dtype=np.uint8)
+            return self._default_image_colour * np.ones(np.append(self.resolution_pixels_xy, 1), dtype=np.uint8)
 
     @property
     def resolution_mm_xy(self):
