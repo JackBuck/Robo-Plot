@@ -17,7 +17,7 @@ import roboplot.dottodot.misc as misc
 class LocalNumber:
     """Represents a number on a photo taken of a local area on the dot-to-dot."""
 
-    def __init__(self, numeric_value: int, dot_location_yx_pixels):
+    def __init__(self, numeric_value: int, dot_location_yx_pixels, recognised_text: str=None):
         """
         Create an instance to represent a number on the dot-to-dot picture.
         
@@ -27,6 +27,7 @@ class LocalNumber:
         """
         self.numeric_value = numeric_value
         self.dot_location_yx_pixels = np.array(dot_location_yx_pixels)
+        self.recognised_text = recognised_text
 
 
 class GlobalNumber:
@@ -36,9 +37,9 @@ class GlobalNumber:
     def from_local(local_number: LocalNumber, camera_location):
         global_location = misc.convert_image_point_to_global_coordinates(local_number.dot_location_yx_pixels,
                                                                          camera_location)
-        return GlobalNumber(local_number.numeric_value, global_location)
+        return GlobalNumber(local_number.numeric_value, global_location, local_number.recognised_text)
 
-    def __init__(self, numeric_value: int, dot_location_yx_mm):
+    def __init__(self, numeric_value: int, dot_location_yx_mm, recognised_text: str = None):
         """
         Create an instance to represent a number on the dot-to-dot picture.
 
@@ -48,6 +49,7 @@ class GlobalNumber:
         """
         self.numeric_value = numeric_value
         self.dot_location_yx_mm = np.array(dot_location_yx_mm)
+        self.recognised_text = recognised_text
 
 
 class NamedImage:
@@ -172,11 +174,12 @@ class DotToDotImage:
             self._img = original_image
             self._mask_to_contour_groups_close_to(spot.pt, 2 * spot.size)
             self._rotate_keypoint_to_bottom_right(spot)
-            number = self._recognise_number()
+            number, text = self._recognise_number()
 
             self.recognised_numbers.append(
                 LocalNumber(numeric_value=number,
-                            dot_location_yx_pixels=(spot.pt[1], spot.pt[0]))
+                            dot_location_yx_pixels=(spot.pt[1], spot.pt[0]),
+                            recognised_text=text)
             )
 
     def _mask_to_contour_groups_close_to(self, point_xy, delta: float) -> None:
@@ -246,9 +249,9 @@ class DotToDotImage:
         cv2.drawContours(img, contours, contourIdx=-1, color=(0, 0, 255), thickness=1)
         self.intermediate_images.append(NamedImage(img, name))
 
-    def _recognise_number(self) -> int:
+    def _recognise_number(self) -> (int, str):
         text = self._recognise_number_text()
-        return self._extract_number_from_recognised_text(text)
+        return self._extract_number_from_recognised_text(text), text
 
     def _recognise_number_text(self) -> str:
         img = Image.fromarray(self._img)
@@ -307,6 +310,8 @@ class DotToDotImage:
                 print("{:2d}".format(number.numeric_value), end='')
             else:
                 print("??", end='')
+            if number.recognised_text is not None:
+                print(" ({!r})".format(number.recognised_text), end='')
             print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx_pixels))
         print('')
 
@@ -406,5 +411,7 @@ def print_recognised_global_numbers(global_numbers) -> None:
             print("{:2d}".format(number.numeric_value), end='')
         else:
             print("??", end='')
+        if number.recognised_text is not None:
+            print(" ({!r})".format(number.recognised_text), end='')
         print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx_mm))
     print('')
