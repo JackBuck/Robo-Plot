@@ -159,4 +159,4 @@ class SVGPathRotatedBy90Degrees(SVGPath):
 
 
 def yx_to_complex(yx_location) -> complex:
-    return complex(yx_location[1] + yx_location[0])
+    return complex(yx_location[1], yx_location[0])
