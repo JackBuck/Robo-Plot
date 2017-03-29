@@ -33,7 +33,7 @@ def compute_complete_path(image, current_direction):
                                                           current_direction,
                                                           camera_location)
     k = 0
-    while k<70:  # Should be true but restricting path for debugging.
+    while True:  # Should be true but restricting path for debugging.
         k += 1
         if True: #try:
             # Move to new camera position and take photo.
