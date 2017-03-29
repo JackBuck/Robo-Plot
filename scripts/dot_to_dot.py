@@ -5,6 +5,7 @@ import statistics
 import time
 import warnings
 import glob
+import pickle
 
 import numpy as np
 import svgpathtools as svg
@@ -129,21 +130,28 @@ try:
             break
 
     # Draw the dot-to-dot
-    path_curve = [curves.LineSegment(final_numbers[i - 1].dot_location_yx_mm, final_numbers[i].dot_location_yx_mm)
-                  for i in range(1, len(final_numbers))]
-    if len(final_numbers) > 0:
-        path_curve.append(curves.LineSegment(final_numbers[-1].dot_location_yx_mm, final_numbers[0].dot_location_yx_mm))
+    tmpsavefile = '/tmp/roboplot_final_numbers'
+    # with open(tmpsavefile, 'wb') as f:
+    #     pickle.dump(final_numbers, f)
 
-    # path = svg.Path()
-    # for i in range(1, len(final_numbers)):
-    #     path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[i-1].dot_location_yx_mm),
-    #                          svg_parsing.yx_to_complex(final_numbers[i].dot_location_yx_mm)))
-    #
+    with open(tmpsavefile, 'rb') as f:
+        final_numbers = pickle.load(f)
+
+    # path_curve = [curves.LineSegment(final_numbers[i - 1].dot_location_yx_mm, final_numbers[i].dot_location_yx_mm)
+    #               for i in range(1, len(final_numbers))]
     # if len(final_numbers) > 0:
-    #     path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[-1].dot_location_yx_mm),
-    #                          svg_parsing.yx_to_complex(final_numbers[0].dot_location_yx_mm)))
-    #
-    # path_curve = svg_parsing.SVGPath(path, mm_per_unit=1)
+    #     path_curve.append(curves.LineSegment(final_numbers[-1].dot_location_yx_mm, final_numbers[0].dot_location_yx_mm))
+
+    path = svg.Path()
+    for i in range(1, len(final_numbers)):
+        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[i-1].dot_location_yx_mm),
+                             svg_parsing.yx_to_complex(final_numbers[i].dot_location_yx_mm)))
+
+    if len(final_numbers) > 0:
+        path.append(svg.Line(svg_parsing.yx_to_complex(final_numbers[-1].dot_location_yx_mm),
+                             svg_parsing.yx_to_complex(final_numbers[0].dot_location_yx_mm)))
+
+    path_curve = svg_parsing.SVGPath(path, mm_per_unit=1)
 
     plotter.draw(path_curve)
 
