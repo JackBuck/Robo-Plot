@@ -392,24 +392,20 @@ def analyse_rows(pixels, search_width, is_rotated):
     return indices, turn_to_next_scan
 
 
-def approximate_with_line(indices):
+def approximate_with_line(start_point, end_point):
     """
-    Approximates gradient of line assuming that the line goes through the start point
+    Calculates the line between the first and last point in the indices list.
     Args:
-        indices: The points to be approximated.
+        start_point: Start of the line.
+        end_point: Start of the line.
 
     Returns:
-        The gradient and constant of the approximation line.
+        The gradient and constant of the line.
     """
 
-    # Indices are ordered y, x in list.
-    x_translated = np.array(indices)[:, 1] - indices[0][1]
-    y_translated = np.array(indices)[:, 0] - indices[0][0]
-    y_translated = y_translated[:, np.newaxis]
-    a, _, _, _ = np.linalg.lstsq(y_translated, x_translated)
-
-    c = indices[0][1] - indices[0][0] * a[0]
-    return a[0], c
+    gradient = (end_point[1] - start_point[1])/(end_point[0] - start_point[0])
+    c = start_point[1] - gradient*start_point[0]
+    return gradient, c
 
 
 def error_from_line(line, indices, max_error):
@@ -423,7 +419,7 @@ def error_from_line(line, indices, max_error):
     Returns:
         The indices of the point that first breaks the maximum error.
     """
-    if line[0]:
+    if abs(line[0]):
         line_normal = np.array([1, -1 / line[0]])
         line_normal /= math.sqrt(1 + 1 / (line[0] * line[0]))
     else:
@@ -469,51 +465,53 @@ def approximate_path(pixel_indices):
     # Approximate the pixels with a line. Start with a line between first and last average pixel.
     # Pixels in the segment index are ordered y, x
 
-    pixel_segments = [pixel_indices[0], pixel_indices[-1]]
+    pixel_segments = [pixel_indices[0]]
     segment_index = 0
 
     # Max distance allowed between line and average pixel.
     tol = 2
 
-    # Check each calculated segment and check all average pixels are within tolerance of the line.
-    # If not split the line and recheck the generated segments.
-    while pixel_segments[segment_index][0] < pixel_indices[-1][0] - 1:
-        first_error_exceeding_index = 1
-        max_interval_index = pixel_segments[segment_index + 1][0]
-        while first_error_exceeding_index != -1:
+    # Start by trying to approximate the indices with a single line through the first and last average indices.
+    line_start_index = 0
 
-            # Set the start and end of the indices this line covers.
-            start_index = int(math.ceil(pixel_segments[segment_index][0] - 0.5))
-            end_index = int(math.ceil(max_interval_index))
+    while line_start_index < len(pixel_indices) - 1:
+        # Record the first index in the interval of interest (line start - line end) that violates the tolerance.
+        first_local_error_exceeding_index = 1
+
+        # Start by trying to end the next line segment with the final index.
+        candidate_line_end_index = len(pixel_indices)-1
+
+        # Keep reducing the index of the candidate line end until all average points lie within the tolerance.
+        while first_local_error_exceeding_index != -1:
 
             # Approximate the interval with a line
-            subset = pixel_indices[start_index: end_index]
+            subset = pixel_indices[line_start_index: candidate_line_end_index]
 
-            current_line = approximate_with_line(subset)
+            current_line = approximate_with_line(pixel_indices[line_start_index], pixel_indices[candidate_line_end_index])
 
             # Determine the index at which the distance to the line first exceeds the tolerance. If no index
             # exceeds the tolerance this returns -1.
-            first_error_exceeding_index = error_from_line(current_line, subset, tol)
+            first_local_error_exceeding_index = error_from_line(current_line, subset, tol)
 
-            if first_error_exceeding_index != -1:
-                # Shorten the interval to end at the first point the error became too great.
+            if first_local_error_exceeding_index != -1:
+                # Shorten the interval to end at maximum of the first point the error became too great or
+                # half the interval.
                 # Modify the lowest index to a global index.
-                max_interval_index = first_error_exceeding_index + start_index - 1
-
+                
+                half_interval_index = line_start_index + int((candidate_line_end_index - line_start_index)/2)
+                first_error_index = line_start_index + first_local_error_exceeding_index
+                
+                candidate_line_end_index = max(half_interval_index, first_error_index)
             else:
                 # Add this line to the list of lines. (y , x)
 
-                # Can use computed point but this would require this to be added to the list of indices
-                # considered for the next line to remove kinks.
-                # new_point = [pixel_indices[end_index][0], int(pixel_indices[end_index][0]*current_line[0] + current_line[1])]
-
-                # Currently simply use the last index as can only be tolerance out.
-                pixel_segments.insert(segment_index + 1, pixel_indices[end_index])
+                pixel_segments.insert(segment_index + 1, pixel_indices[candidate_line_end_index])
+                line_start_index = candidate_line_end_index
 
         # Good approximation found for this interval move to next interval.
         segment_index += 1
 
-    return pixel_segments[:-1]
+    return pixel_segments
 
 
 def create_rotated_sub_image(image, centre, search_width, angle_rad):

@@ -82,7 +82,8 @@ class PathFromImageTest(unittest.TestCase):
         expected_results_file = os.path.join(self.path_to_test_data,
                                              'expected_pixel_path_' + filename_without_extension + '.csv')
 
-        debug_sub_image = iadebug.save_line_approximation(image, pixel_path, False)
+        debug_sub_image = iadebug.create_debug_image(image)
+        iadebug.save_line_approximation(debug_sub_image, pixel_path, False)
         # self._overwrite_expected_results_file(expected_results_file, pixel_path)  # For creating test data
 
         expected_pixel_path = np.loadtxt(expected_results_file, delimiter=",")
