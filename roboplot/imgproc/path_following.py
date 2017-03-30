@@ -30,8 +30,10 @@ def compute_complete_path(image, current_direction):
     # Convert the co-ordinates and append them move
     camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
     computed_path = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                          current_direction,
-                                                          camera_location)
+                                             current_direction,
+                                             camera_location,
+                                             0,
+                                             image_to_analyse.shape[1] / 2)
     k = 0
     while True:  # Should be true but restricting path for debugging.
         k += 1
@@ -46,8 +48,11 @@ def compute_complete_path(image, current_direction):
                 red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_near_centre(image, red_min_size)
 
             if red_triangle_found:
-                global_centre_of_red = convert_to_global_coords(centre_of_red, current_direction,
-                                                                hardware.both_axes.current_location)
+                global_centre_of_red = convert_to_global_coords(centre_of_red,
+                                                                current_direction,
+                                                                hardware.both_axes.current_location,
+                                                                image.shape[0]/2,
+                                                                image.shape[1]/2)
                 computed_path.append(centre_of_red)
                 break
 
@@ -73,7 +78,9 @@ def compute_complete_path(image, current_direction):
                     camera_location = computed_path[-1]
                     candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
                                                                           current_direction,
-                                                                          camera_location)
+                                                                          camera_location,
+                                                                          0,
+                                                                          sub_image.shape[1] / 2)
 
                     # Analyse candidate path.
                     length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
@@ -111,26 +118,24 @@ def follow_computed_path(computed_path):
     hardware.plotter.draw(line_segments)
 
 
-def convert_to_global_coords(points, scan_direction, origin):
+def convert_to_global_coords(points, scan_direction, origin, y_offset, x_offset):
 
     # Scale factors
     x_scaling = config.X_PIXELS_TO_MILLIMETRE_SCALE
     y_scaling = config.Y_PIXELS_TO_MILLIMETRE_SCALE
 
-    offset = config.CAMERA_RESOLUTION[0]/2
-
     # Rotate and scale points to global orientation.
     if scan_direction is image_analysis.Direction.SOUTH:
-        output_points = [list(map(operator.add, origin, (y * y_scaling, (x - offset) * x_scaling)))
+        output_points = [list(map(operator.add, origin, ((y-y_offset) * y_scaling, (x - x_offset) * x_scaling)))
                          for y, x in points]
     elif scan_direction is image_analysis.Direction.EAST:
-        output_points = [list(map(operator.add, origin, (-(x - offset) * x_scaling, y * y_scaling)))
+        output_points = [list(map(operator.add, origin, (-(x - x_offset) * x_scaling, (y-y_offset) * y_scaling)))
                          for y, x in points]
     elif scan_direction is image_analysis.Direction.WEST:
-        output_points = [list(map(operator.add, origin, ((x - offset) * x_scaling, -y * y_scaling)))
+        output_points = [list(map(operator.add, origin, ((x - x_offset) * x_scaling, -(y-y_offset) * y_scaling)))
                          for y, x in points]
     else:
-        output_points = [list(map(operator.add, origin, (-y * y_scaling, -(x - offset) * x_scaling)))
+        output_points = [list(map(operator.add, origin, (-(y-y_offset) * y_scaling, -(x - x_offset) * x_scaling)))
                          for y, x in points]
 
     return output_points

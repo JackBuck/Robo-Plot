@@ -202,16 +202,14 @@ def process_image(image):
     if config.real_hardware:
         num_iterations = 8
     else:
-        num_iterations = 12
+        num_iterations = 11
 
         processed_img = cv2.GaussianBlur(processed_img, (21, 21), 0)
     _, processed_img = cv2.threshold(processed_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # Put a border around the image to stop the edges of the images creating artifacts.
     padded_image = np.zeros((processed_img.shape[0] + 10, processed_img.shape[1] + 10), np.uint8)
-
-    padded_image[5:padded_image.shape[0]-5, 5:padded_image.shape[1]-5] = processed_img
-
+    padded_image[5:processed_img.shape[0]+5, 5:processed_img.shape[1]+5] = processed_img
 
     kernel = np.array([[0, 1, 1, 1, 0],
                        [1, 1, 1, 1, 1],
@@ -219,8 +217,14 @@ def process_image(image):
                        [1, 1, 1, 1, 1],
                        [0, 1, 1, 1, 0]], np.uint8)
 
-    padded_image = cv2.erode(padded_image, kernel, iterations=10)
-    processed_img = padded_image[5:padded_image.shape[0]-5, 5:padded_image.shape[1]-5]
+    padded_image = cv2.erode(padded_image, kernel, iterations=num_iterations)
+    processed_img = padded_image[25:padded_image.shape[0] - 25, 25:padded_image.shape[1] - 25]
+
+    #cv2.imshow('Padded Image', padded_image)
+    #cv2.imshow('Processed image', processed_img)
+    #cv2.waitKey(0)
+
+
 
     # Debugging code - useful to show the images are being eroded correctly.
     #spacer = processed_img[:, 0:2].copy()
