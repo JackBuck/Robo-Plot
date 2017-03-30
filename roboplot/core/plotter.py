@@ -9,7 +9,7 @@ from roboplot.core.camera.camera_wrapper import Camera
 
 class Plotter:
     default_pen_speed = np.inf  # I.e. as fast as possible
-    default_resolution = 0.1
+    default_resolution = 0.5
 
     def __init__(self,
                  axes: stepper_control.AxisPair,
@@ -29,6 +29,10 @@ class Plotter:
         self._pen = pen
         self._camera = camera
         self._pen_to_camera_offset = np.array(pen_to_camera_offset)
+
+    @property
+    def is_homed(self):
+        return self._axes.is_homed
 
     def home(self):
         self._pen.lift()

@@ -7,7 +7,6 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import os
-import time
 
 import cv2
 import numpy as np
@@ -27,10 +26,25 @@ class Camera:
             with picamera.array.PiRGBArray(camera) as output:
                 camera.capture(output, 'bgr', use_video_port=True)
                 outputarray = output.array
+                outputarray = np.rot90(outputarray, 3)
 
             # Save photo.
-            cv2.imwrite(os.path.join(config.debug_output_folder, "Photo_" + str(self._photo_index) + ".jpg"),
+            cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_{:03}.jpg'.format(self._photo_index)),
                         outputarray)
             self._photo_index += 1
 
             return outputarray
+
+    @property
+    def resolution_mm_xy(self):
+        """The size of a photo (width, height) in mm"""
+        return self.resolution_pixels_xy * self.pixels_to_mm_scale_factors_xy
+
+    @property
+    def resolution_pixels_xy(self):
+        """The size of a photo in pixels"""
+        return np.array(config.CAMERA_RESOLUTION)
+
+    @property
+    def pixels_to_mm_scale_factors_xy(self):
+        return np.array([config.X_PIXELS_TO_MILLIMETRE_SCALE, config.Y_PIXELS_TO_MILLIMETRE_SCALE])

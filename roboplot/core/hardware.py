@@ -64,7 +64,7 @@ if not config.real_hardware:
 both_axes = stepper_control.AxisPair(y_axis, x_axis)
 
 pen = liftable_pen.LiftablePen(servo=servo, position_when_down=0.03, position_when_up=0.055)
-plotter = plotter_module.Plotter(both_axes, pen, camera, config.camera_offset)
+plotter = plotter_module.Plotter(both_axes, pen, camera, config.CAMERA_OFFSET)
 
 if __debug__:
     both_axes = stepper_control.AxisPairWithDebugImage.create_from(both_axes)

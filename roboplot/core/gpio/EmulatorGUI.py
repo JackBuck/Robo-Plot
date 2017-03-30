@@ -1,5 +1,4 @@
 import threading
-import time
 import tkinter as tk
 from tkinter import *
 
@@ -8,9 +7,10 @@ from roboplot.core.gpio.PIN import PIN
 
 # http://www.tutorialspoint.com/python/tk_button.htm
 
+draw_changes = False  # Set this to true at the top of scripts in order to view the changing pin statuses on the GUI
 
-dictionaryPins = {}
-dictionaryPinsTkinter = {}
+dictionaryPins = {}  # type: dict[str, PIN]
+dictionaryPinsTkinter = {}  # type: dict[str, Button]
 
 GPIONames = ["14", "15", "18", "23", "24", "25", "8", "7", "12", "16", "20", "21", "2", "3", "4", "17", "27", "22",
              "10", "9", "11", "5", "6", "13", "19", "26"]
@@ -18,6 +18,7 @@ GPIONames = ["14", "15", "18", "23", "24", "25", "8", "7", "12", "16", "20", "21
 
 class App(threading.Thread):
     def __init__(self):
+        self.root = None
         self.loaded_event = threading.Event()
         threading.Thread.__init__(self, daemon=True)
         self.start()
@@ -146,7 +147,7 @@ class App(threading.Thread):
 
         dictionaryPinsTkinter["21"] = pin40btn
 
-        #####bottom
+        # ----- bottom row ----- #
 
         # 3V3
         pin1label = Label(text="3V3", fg="dark orange")
@@ -275,7 +276,7 @@ class App(threading.Thread):
         self.loaded_event.set()
         self.root.mainloop()
 
-    ##        button1.unbind("<Button-1>")
+        # button1.unbind("<Button-1>")
 
 
 app = App()
@@ -286,37 +287,37 @@ def toggleButton(gpioID):
     objBtn = dictionaryPinsTkinter[str(gpioID)]
     objPin = dictionaryPins[str(gpioID)]
 
-    if (objPin.In == "1"):
+    if objPin.In == "1":
         objPin.In = "0"
-    elif (objPin.In == "0"):
+    elif objPin.In == "0":
         objPin.In = "1"
 
     objBtn["text"] = "gpio" + str(gpioID) + "\nIN=" + str(objPin.In)
 
 
 def buttonClick(self):
-    ##    print("clicked")
+    # print("clicked")
     gpioID = (self.widget.config('command')[-1])
     toggleButton(gpioID)
 
 
 def buttonClickRelease(self):
-    ##    print("released")
+    # print("released")
     gpioID = (self.widget.config('command')[-1])
     toggleButton(gpioID)
 
 
 def drawGPIOOut(gpioID):
-    global dictionaryPins
-    global dictionaryPinsTkinter
+    if not draw_changes:
+        return
 
     gpioID = str(gpioID)
     objPin = dictionaryPins[gpioID]
     objBtn = dictionaryPinsTkinter[gpioID]
 
-    if (objPin.SetMode == "OUT"):
+    if objPin.SetMode == "OUT":
         objBtn["text"] = "gpio" + str(gpioID) + "\nOUT=" + str(objPin.Out)
-        if (str(objPin.Out) == "1"):
+        if str(objPin.Out) == "1":
             objBtn.configure(background='tan2')
             objBtn.configure(activebackground='tan2')
         else:
@@ -350,19 +351,22 @@ class GPIO:
     setModeDone = False
 
     # Extra functions
+    @staticmethod
     def checkModeValidator():
-        if (GPIO.setModeDone == False):
+        if GPIO.setModeDone is False:
             raise Exception('Setup your gpio mode. Must be set to BCM')
 
     # gpio LIBRARY Functions
+    @staticmethod
     @typeassert(int)
     def setmode(mode):
         app.loaded_event.wait()  # So that we wait for the minimum possible time
-        if (mode == GPIO.BCM):
+        if mode == GPIO.BCM:
             GPIO.setModeDone = True
         else:
             GPIO.setModeDone = False
 
+    @staticmethod
     @typeassert(bool)
     def setwarnings(flag):
         pass
@@ -381,26 +385,26 @@ class GPIO:
         if str(channel) in dictionaryPins:
             raise Exception('gpio is already setup')
 
-        if (state == GPIO.OUT):
+        if state == GPIO.OUT:
             # gpio is set as output, default OUT 0
             objTemp = PIN("OUT")
-            if (initial == GPIO.HIGH):
+            if initial == GPIO.HIGH:
                 objTemp.Out = "1"
 
             dictionaryPins[str(channel)] = objTemp
             drawGPIOOut(channel)
 
-        elif (state == GPIO.IN):
+        elif state == GPIO.IN:
             # set input
             objTemp = PIN("IN")
-            if (pull_up_down == -1):
+            if pull_up_down == -1:
                 objTemp.pull_up_down = "PUD_DOWN"  # by default pud_down
                 objTemp.In = "0"
-            elif (pull_up_down == GPIO.PUD_DOWN):
+            elif pull_up_down == GPIO.PUD_DOWN:
                 objTemp.pull_up_down = "PUD_DOWN"
                 objTemp.In = "0"
 
-            elif (pull_up_down == GPIO.PUD_UP):
+            elif pull_up_down == GPIO.PUD_UP:
                 objTemp.pull_up_down = "PUD_UP"
                 objTemp.In = "1"
 
@@ -420,21 +424,22 @@ class GPIO:
             raise Exception('gpio must be setup before used')
         else:
             objPin = dictionaryPins[channel]
-            if (objPin.SetMode == "IN"):
+            if objPin.SetMode == "IN":
                 # if channel is setup as IN and used as an OUTPUT
                 raise Exception('gpio must be setup as OUT')
 
-        if (outmode != GPIO.LOW and outmode != GPIO.HIGH):
+        if outmode != GPIO.LOW and outmode != GPIO.HIGH:
             raise Exception('Output must be set to HIGH/LOW')
 
         objPin = dictionaryPins[channel]
-        if (outmode == GPIO.LOW):
+        if outmode == GPIO.LOW:
             objPin.Out = "0"
-        elif (outmode == GPIO.HIGH):
+        elif outmode == GPIO.HIGH:
             objPin.Out = "1"
 
         drawGPIOOut(channel)
 
+    @staticmethod
     @typeassert(int)
     def input(channel):
         global dictionaryPins
@@ -448,22 +453,22 @@ class GPIO:
         else:
             objPin = dictionaryPins[channel]
 
-            if (objPin.SetMode == "OUT"):
+            if objPin.SetMode == "OUT":
                 # if channel is setup as OUTPUT and used as an INPUT
                 # I have allowed this to work and commented out the exception as I believe
                 # the real gpio pins does not throw here.
 
-                if (objPin.Out == "1"):
+                if objPin.Out == "1":
                     return True
-                elif (objPin.Out == "0"):
+                elif objPin.Out == "0":
                     return False
                     # raise Exception('gpio must be setup as IN')
 
             else:  # Mode is INPUT
                 objPin = dictionaryPins[channel]
-                if (objPin.In == "1"):
+                if objPin.In == "1":
                     return True
-                elif (objPin.In == "0"):
+                elif objPin.In == "0":
                     return False
 
     @staticmethod
