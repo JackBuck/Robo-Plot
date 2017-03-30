@@ -15,8 +15,8 @@ class DummyCamera:
 
         self._map = cv2.imread(config.debug_image_file_path)
 
-        map_width = int(210 / self._conversion_factor)
-        map_height = int(297 / self._conversion_factor)
+        a4paper_with_border = np.array([315, 445.5])  # openCV asks for image dimensions as width then height.
+        map_width, map_height = (a4paper_with_border / self._conversion_factor).astype(int)
         if self._map is None:
             self._map = np.zeros((map_height, map_width) + (3,), np.uint8)
 
