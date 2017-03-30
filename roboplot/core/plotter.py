@@ -4,7 +4,6 @@ import datetime
 
 import numpy as np
 
-
 import roboplot.config as config
 import roboplot.core.curves as curves
 import roboplot.core.debug_movement as debug_movement
@@ -71,7 +70,8 @@ class Plotter:
                 self._axes.follow(curve, pen_speed, resolution)
             self._lift_pen()
 
-    def follow_with_camera(self, curve_list, camera_speed: float = default_pen_speed, resolution: float = default_resolution):
+    def follow_with_camera(self, curve_list, camera_speed: float = default_pen_speed,
+                           resolution: float = default_resolution):
         if isinstance(curve_list, curves.Curve):
             curve_list = [curve_list]
 
@@ -118,26 +118,37 @@ class Plotter:
         self._lift_pen()
         self._axes.move_to(target_location, pen_speed)
 
-    def take_photo_at(self, target_photo_centre):
+    def take_greyscale_photo_at(self,
+                                target_camera_centre,
+                                padding_gray_value=camera_utils.default_padding_grey_value) -> np.ndarray:
+        img = self.take_photo_at(target_camera_centre, padding_gray_value)
+        return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    def take_photo_at(self,
+                      target_photo_centre,
+                      padding_gray_value=camera_utils.default_padding_grey_value) -> np.ndarray:
         current_camera_location = self._axes.current_location + config.CAMERA_OFFSET
 
-        #TODO if overstep is fixed this fudge can be removed.
+        # TODO if overstep is fixed this fudge can be removed.
         is_at_centre = abs(current_camera_location[0] - target_photo_centre[0]) < 0.05 and \
                        abs(current_camera_location[1] - target_photo_centre[1]) < 0.05
 
         if not is_at_centre:
-            photo = self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
+            photo = self._camera.take_photo_at(self.camera_location)
 
-            centre_displacement = [target_photo_centre[0] - config.CAMERA_OFFSET[0] - self._axes.current_location[0],
-                                   target_photo_centre[1] - config.CAMERA_OFFSET[1] - self._axes.current_location[1]]
+            centre_displacement = target_photo_centre - self.camera_location
 
-            pixel_centre_displacement = [int(photo.shape[0]/2) + centre_displacement[0] / config.Y_PIXELS_TO_MILLIMETRE_SCALE,
-                                         int(photo.shape[1] / 2) + centre_displacement[1] / config.X_PIXELS_TO_MILLIMETRE_SCALE]
+            pixel_centre_displacement = [
+                int(photo.shape[0] / 2) + centre_displacement[0] / config.Y_PIXELS_TO_MILLIMETRE_SCALE,
+                int(photo.shape[1] / 2) + centre_displacement[1] / config.X_PIXELS_TO_MILLIMETRE_SCALE]
 
-            photo = camera_utils.pad_image(photo, pixel_centre_displacement)
+            photo = camera_utils.pad_image(photo,
+                                           target_photo_centre=pixel_centre_displacement,
+                                           grey_value=padding_gray_value)
 
             if __debug__:
                 # Save photo.
+                # TODO: Repeated code from pi_camera.Camera AND dummy_camera.DummyCamera needs refactoring
                 filename = datetime.datetime.now().strftime("%M%S.%f_") + \
                            str(self._axes.current_location[0]) \
                            + '_' \
@@ -146,9 +157,17 @@ class Plotter:
                 cv2.imwrite(os.path.join(config.debug_output_folder, filename), photo)
 
         else:
-            photo = self._camera.take_photo_at(self._axes.current_location + config.CAMERA_OFFSET)
+            photo = self._camera.take_photo_at(self.camera_location)
 
         return photo
+
+    @property
+    def pen_location(self):
+        return self._axes.current_location
+
+    @property
+    def camera_location(self):
+        return self._axes.current_location + self._pen_to_camera_offset
 
     def _lift_pen(self):
         self._pen.lift()
@@ -173,7 +192,6 @@ class PlotterWithDebugImage(Plotter):
                  pen: liftable_pen.LiftablePen,
                  camera: Camera,
                  pen_to_camera_offset):
-
         # Setup the axes member to use a debug image
         if not isinstance(axes, stepper_control.AxisPairWithDebugImage):
             axes = stepper_control.AxisPairWithDebugImage.create_from(axes)

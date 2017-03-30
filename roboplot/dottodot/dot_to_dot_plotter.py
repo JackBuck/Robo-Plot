@@ -11,7 +11,6 @@ import roboplot.imgproc.page_search as page_search
 from roboplot.core.plotter import Plotter
 
 
-# TODO: This doesn't allow me to decorate any type of plotter I pass in... it reinitialises the base type :/
 class DotToDotPlotter:
     def __init__(self, plotter: Plotter):
         self._plotter = plotter
@@ -48,11 +47,6 @@ class DotToDotPlotter:
             recognised_numbers.extend(new_global_numbers)
 
         return recognised_numbers
-
-    def _take_greyscale_photo_at(self, target_camera_centre):
-        # TODO: Move this to a method on the Plotter class
-        img = self._plotter._camera.take_photo_at(target_camera_centre)
-        return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     def _extract_sorted_numbers_at_unique_locations(self, recognised_numbers):
         """
@@ -121,7 +115,7 @@ class DotToDotPlotter:
 
     def _take_photo_and_extract_numbers(self, target_position: (float, float)):
         self._plotter.move_camera_to(target_position)
-        photo = self._take_greyscale_photo_at(target_position)
+        photo = self._plotter.take_greyscale_photo_at(target_position, padding_gray_value=255)
 
         dot_to_dot_image = number_recognition.DotToDotImage(photo)
         dot_to_dot_image.process_image()
