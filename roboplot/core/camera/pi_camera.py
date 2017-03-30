@@ -7,6 +7,7 @@ All distances in the module are expressed in MILLIMETRES.
 
 """
 import os
+import datetime
 
 import cv2
 import numpy as np
@@ -26,11 +27,17 @@ class Camera:
             with picamera.array.PiRGBArray(camera) as output:
                 camera.capture(output, 'bgr', use_video_port=True)
                 outputarray = output.array
-                outputarray = np.rot90(outputarray, 3)
+
+            # Rotate image to oriented it with paper.
+            outputarray = np.rot90(outputarray, 3)
 
             # Save photo.
-            cv2.imwrite(os.path.join(config.debug_output_folder, 'Photo_{:03}.jpg'.format(self._photo_index)),
-                        outputarray)
+            filename = datetime.datetime.now().strftime("%M%S.%f_") + \
+                       str(camera_centre[0]) \
+                       + '_' \
+                       + str(camera_centre[1]) + '_Photo_' + str(self._photo_index) + '.jpg'
+
+            cv2.imwrite(os.path.join(config.debug_output_folder, filename), outputarray)
             self._photo_index += 1
 
             return outputarray

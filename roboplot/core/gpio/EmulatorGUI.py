@@ -392,7 +392,7 @@ class GPIO:
                 objTemp.Out = "1"
 
             dictionaryPins[str(channel)] = objTemp
-            drawGPIOOut(channel)
+            #drawGPIOOut(channel)
 
         elif state == GPIO.IN:
             # set input
@@ -437,7 +437,7 @@ class GPIO:
         elif outmode == GPIO.HIGH:
             objPin.Out = "1"
 
-        drawGPIOOut(channel)
+        #drawGPIOOut(channel)
 
     @staticmethod
     @typeassert(int)

@@ -27,15 +27,9 @@ try:
     time.sleep(args.wait)
     
     # Needs homing 
-    hardware.both_axes.home()
-    
-    line_to_camera_location = curves.LineSegment(hardware.both_axes.current_location,
-                                                 [args.centre[0] - config.CAMERA_OFFSET[0],
-                                                  args.centre[1] - config.CAMERA_OFFSET[1]])
-    hardware.both_axes.follow(curve=line_to_camera_location, pen_speed=args.pen_millimetres_per_second)
-  
-    a_camera = Camera()
-    image = a_camera.take_photo_at(hardware.both_axes.current_location)
+    hardware.plotter.home()
+    hardware.plotter.move_camera_to(args.centre)
+    image = hardware.plotter.take_photo_at()
 
     if args.file_path is not None:
         cv2.imwrite(args.file_path, image)

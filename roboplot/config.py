@@ -27,6 +27,6 @@ debug_output_folder = os.path.join(resources_dir, 'DebugImages')
 X_PIXELS_TO_MILLIMETRE_SCALE = 0.237
 Y_PIXELS_TO_MILLIMETRE_SCALE = 0.233
 
-CAMERA_RESOLUTION = (200, 200)
 
+CAMERA_RESOLUTION = (200, 200)
 CAMERA_OFFSET = [-2.56, -45.7]  # Needs calibration. This is translation (y,x) to move from pen centre to camera centre.
