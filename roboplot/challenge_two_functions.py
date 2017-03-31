@@ -107,7 +107,7 @@ def find_green_centre(initial_centre, min_size):
     camera_centre = initial_centre
 
     # While the new and old centres are not within 2 pixels of each other recheck the centre.
-    while error > 2:
+    for i in range(2):
 
         # Find the centre of the largest green contour found on the image (if one exists)
         new_centre, photo = find_green_at_position(camera_centre, min_size)

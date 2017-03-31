@@ -28,14 +28,11 @@ try:
     for i in range(0, len(camera_positions)):
 
         camera_centre = camera_positions[i]
-        displacement_x, displacement_y, photo = challenge2.find_green_at_position(camera_centre, 10)
+        green_location, photo = challenge2.find_green_at_position(camera_centre, 10)
 
         # Check if any green was detected.
-        if displacement_x != -1:
+        if green_location[0] != -1:
             green_found = True
-
-        green_location = camera_centre[0] + displacement_y * config.Y_PIXELS_TO_MILLIMETRE_SCALE, \
-                         camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE
 
         centre, photo = challenge2.find_green_centre(green_location, 20)
 
@@ -43,7 +40,6 @@ try:
         starting_direction = image_analysis.find_start_direction(photo)
         computed_camera_path = path_following.compute_complete_path(photo, starting_direction)
         path_following.follow_computed_path(computed_camera_path)
-
 
     end_time = time.time()
 
