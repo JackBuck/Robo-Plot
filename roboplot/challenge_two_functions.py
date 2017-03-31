@@ -9,6 +9,8 @@ import roboplot.config as config
 import roboplot.imgproc.colour_detection as CD
 import roboplot.imgproc.page_search as page_search
 import roboplot.core.hardware as hardware
+import roboplot.imgproc.path_following as path_following
+import roboplot.imgproc.image_analysis as image_analysis
 
 
 
@@ -28,11 +30,10 @@ a4_width_x_mm = 210
 photo_size_mm = 40
 
 
-def find_green_triangle(pen_speed, min_size):
+def find_green_triangle(min_size):
     """
 
     Args:
-        pen_speed: speed to move
         min_size: minimum size of artifact to recognise
 
     Returns:
@@ -50,18 +51,17 @@ def find_green_triangle(pen_speed, min_size):
 
         camera_centre = camera_positions[i]
 
-        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, min_size)
+        green_position, photo = find_green_at_position(camera_centre, min_size)
 
         # Check if any green was detected.
-        if displacement_x != -1:
+        if green_position[0] != -1:
             green_found = True
             break
 
     if not green_found:
         raise AssertionError("No green was found on paper")
 
-    return camera_centre[0] + displacement_y * config.Y_PIXELS_TO_MILLIMETRE_SCALE, \
-        camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE
+    return green_position
 
 
 def find_green_at_position(camera_centre, min_size):
@@ -69,7 +69,7 @@ def find_green_at_position(camera_centre, min_size):
         Args:
             co - ordinates in global mm of camera location for photo.
         Returns:
-            np.ndarray: An 1x2 matrix representing the global mm co-ordinates of the centre of the green artifact found.
+            np.ndarray: An 1x2 matrix representing global co-ordinates of the centre of the green.
             This is returned as (-1, -1) if no green found.
     """
 
@@ -82,17 +82,22 @@ def find_green_at_position(camera_centre, min_size):
     # Create hsv version of image to analyse for colour detection.
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
 
-    # Find the centre of the largest greed contour found on the image (if one exists)
+    # Find the centre of the largest green contour found on the image (if one exists)
     (cX, cY) = CD.detect_green(hsv_image, min_size, True)
 
-    # Check if any green was detected.
     if cX != -1:
-        # Change to global mm co-ordinates from co-ordinates within photo.
-        displacement_x = (cX - int(photo.shape[0] / 2))
-        displacement_y = (cY - int(photo.shape[1] / 2))
-        return displacement_x, displacement_y, hsv_image[:, :, 2]
+        new_centre_list = path_following.convert_to_global_coords([[cY, cX]],
+                                                                  image_analysis.Direction.SOUTH,
+                                                                  hardware.plotter._axes.current_location + config.CAMERA_OFFSET,
+                                                                  int(photo.shape[0] / 2),
+                                                                  int(photo.shape[1] / 2))
+        new_centre = new_centre_list[0]
     else:
-        return -1, -1, hsv_image[:, :, 2]
+        new_centre = [cX, cY]
+
+
+    return new_centre, hsv_image[:, :, 2]
+
 
 
 def find_green_centre(initial_centre, min_size):
@@ -105,9 +110,7 @@ def find_green_centre(initial_centre, min_size):
     while error > 2:
 
         # Find the centre of the largest green contour found on the image (if one exists)
-        displacement_x, displacement_y, photo = find_green_at_position(camera_centre, min_size)
-        new_centre = (camera_centre[0] + displacement_y * config.Y_PIXELS_TO_MILLIMETRE_SCALE,
-                      camera_centre[1] + displacement_x * config.X_PIXELS_TO_MILLIMETRE_SCALE)
+        new_centre, photo = find_green_at_position(camera_centre, min_size)
 
         # Calculate the error between old centre and new centre
         error = math.sqrt((new_centre[0] - camera_centre[0])**2 + (new_centre[1] - camera_centre[1])**2)

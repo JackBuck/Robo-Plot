@@ -1,4 +1,5 @@
 import operator
+import math
 
 import numpy as np
 import cv2
@@ -34,8 +35,10 @@ def compute_complete_path(image, current_direction):
                                              camera_location,
                                              0,
                                              image_to_analyse.shape[1] / 2)
+    fudge_distance = 0
+    fudge_index = -1
     k = 0
-    while True:  # Should be true but restricting path for debugging.
+    while fudge_distance < 20 and k < 200:  # Should be true but restricting path for debugging.
         k += 1
         if True: #try:
             # Move to new camera position and take photo.
@@ -43,17 +46,21 @@ def compute_complete_path(image, current_direction):
             image = hardware.plotter.take_photo_at(computed_path[-1])
 
             # Analyse photo to check if red is found.
+            if True:
+                temp = 0
 
-            if len(image.shape) == 3:
-                red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_near_centre(image, red_min_size)
+            temp
+            red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_near_centre(image, red_min_size)
 
             if red_triangle_found:
-                global_centre_of_red = convert_to_global_coords(centre_of_red,
-                                                                current_direction,
-                                                                hardware.both_axes.current_location,
-                                                                image.shape[0]/2,
-                                                                image.shape[1]/2)
-                computed_path.append(centre_of_red)
+                global_centre_of_red_list = convert_to_global_coords([centre_of_red],
+                                                                     image_analysis.Direction.SOUTH,
+                                                                     hardware.plotter._axes.current_location + config.CAMERA_OFFSET,
+                                                                     int(image.shape[0] / 2),
+                                                                     int(image.shape[1] / 2))
+
+                global_centre_of_red = global_centre_of_red_list[0]
+                computed_path.append(global_centre_of_red)
                 break
 
              # Process image for analysis.
@@ -64,6 +71,7 @@ def compute_complete_path(image, current_direction):
             candidate_path_segments = [[], [], [], []]
             selected_candidate = -1
             selected_candidate_length = -1
+
             for i in range(0, 4):
                 # Extract sub image.
                 current_direction = image_analysis.Direction(i)
@@ -97,8 +105,31 @@ def compute_complete_path(image, current_direction):
                     selected_candidate = i
                     selected_candidate_length = length
 
-            # Append the computed path with the new values.
-            computed_path.extend(candidate_path_segments[selected_candidate])
+            if selected_candidate == -1:
+
+                if fudge_index is not -1 and fudge_index is not len(computed_path):
+                    current_index = len(computed_path)
+                    new_path_distance = 0
+                    for i in range(fudge_index, current_index - 1):
+                        new_path_distance += math.hypot(computed_path[i+1][0] - computed_path[i][0],
+                                                        computed_path[i+1][1] - computed_path[i][1])
+
+                    if new_path_distance < fudge_distance:
+                        break
+                    else:
+                        fudge_distance = 0
+
+                computed_path.pop()
+                fudge_distance += math.hypot(computed_path[-1][0] - computed_path[-2][0],
+                                             computed_path[-1][1] - computed_path[-2][1])
+
+                fudge_index = len(computed_path)
+
+            else:
+                # Append the computed path with the new values.
+                computed_path.extend(candidate_path_segments[selected_candidate])
+                fudge_distance = 0
+
 
             if __debug__:
                 iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image, computed_path, False)

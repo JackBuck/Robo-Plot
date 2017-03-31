@@ -553,14 +553,16 @@ def create_rotated_sub_image(image, centre, search_width, angle_rad):
 
 def search_for_red_triangle_near_centre(photo, min_size):
     mid_point = int(photo.shape[0] / 2)
-    restricted_image = photo[mid_point - 20:mid_point + 20, mid_point - 20:mid_point + 20]
+    half_restricted_size = 20
+    restricted_image = photo[mid_point - half_restricted_size:mid_point + half_restricted_size,
+                             mid_point - half_restricted_size:mid_point + half_restricted_size]
     hsv_restricted_image = cv2.cvtColor(restricted_image, cv2.COLOR_BGR2HSV)
     (cX, cY) = cd.detect_red(hsv_restricted_image, min_size, change_to_white=False)
 
     if cX == -1:
         return False, [cX, cY]
     else:
-        return True, [mid_point - 20 + cX, mid_point - 20 + cY]
+        return True, [mid_point - half_restricted_size + cY, mid_point - half_restricted_size + cX]
 
 
 def find_start_direction(img):
