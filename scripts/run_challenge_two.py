@@ -31,6 +31,10 @@ try:
 
     end_time = time.time()
 
+    # Present paper.
+
+    hardware.plotter.move_pen_to([148.5, 0])
+
 finally:
     GPIO.cleanup()
 

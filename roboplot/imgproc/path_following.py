@@ -14,27 +14,21 @@ import roboplot.core.curves as curves
 
 def compute_complete_path(image, centre, current_direction):
     # Set up variables.
-    search_width = int(config.CAMERA_RESOLUTION[0]/5)
-    red_triangle_found = False
+    search_width = 15/config.X_PIXELS_TO_MILLIMETRE_SCALE
     red_min_size = 30
 
     kernel = np.ones((5, 5), np.uint8)
     image = cv2.dilate(image, kernel, iterations=10)
 
+    computed_path = [centre]
     # Process picture and extract image for analysis.
     image_to_analyse = image_analysis.process_image(image)
-    image_to_analyse = image_analysis.extract_sub_image(image_to_analyse, current_direction)
 
-    # Analyse image
-    next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse,
-                                                                                                 search_width)
-    # Convert the co-ordinates and append them move, make sure to use the centre as the photo may
-    # have been take in the soft limits.
-    computed_path = convert_to_global_coords(next_computed_pixel_path_segment,
-                                             current_direction,
-                                             centre,
-                                             0,
-                                             image_to_analyse.shape[1] / 2)
+    _, _, _ = calculate_path_from_image(image_to_analyse,
+                                        search_width,
+                                        computed_path,
+                                        0,
+                                        0)
     fudge_distance = 0
     fudge_index = -1
     k = 0
@@ -62,73 +56,13 @@ def compute_complete_path(image, centre, current_direction):
              # Process image for analysis.
             image_to_analyse = image_analysis.process_image(bw_image)
 
-            # Analyse image in all four directions.
-
-            candidate_path_segments = [[], [], [], []]
-            selected_candidate = -1
-            selected_candidate_length = -1
-
-            for i in range(0, 4):
-                # Extract sub image.
-                current_direction = image_analysis.Direction(i)
-                sub_image = image_analysis.extract_sub_image(image_to_analyse, current_direction)
-
-                next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(
-                    sub_image,
-                    search_width)
-
-                # Convert the co-ordinates.
-                if len(next_computed_pixel_path_segment) > 1 and next_computed_pixel_path_segment[1][1] != -1:
-                    camera_location = computed_path[-1]
-                    candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
-                                                                          current_direction,
-                                                                          camera_location,
-                                                                          0,
-                                                                          sub_image.shape[1] / 2)
-
-                    # Analyse candidate path.
-                    length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
-
-                    if __debug__:
-                        iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image.copy(), computed_path, False)
-
-                        iadebug.save_candidate_line_approximation(hardware.plotter.debug_image.debug_image.copy(),
-                                                                  computed_path, candidate_path_segments[i],  i)
-                else:
-                    is_valid_path = False
-
-                if is_valid_path and length > selected_candidate_length:
-                    selected_candidate = i
-                    selected_candidate_length = length
-
-            if selected_candidate == -1:
-
-                if fudge_index is not -1 and fudge_index is not len(computed_path):
-                    current_index = len(computed_path)
-                    new_path_distance = 0
-                    for i in range(fudge_index, current_index - 1):
-                        new_path_distance += math.hypot(computed_path[i+1][0] - computed_path[i][0],
-                                                        computed_path[i+1][1] - computed_path[i][1])
-
-                    if new_path_distance < fudge_distance:
-                        break
-                    else:
-                        fudge_distance = 0
-
-                computed_path.pop()
-                fudge_distance += math.hypot(computed_path[-1][0] - computed_path[-2][0],
-                                             computed_path[-1][1] - computed_path[-2][1])
-
-                fudge_index = len(computed_path)
-
-            else:
-                # Append the computed path with the new values.
-                computed_path.extend(candidate_path_segments[selected_candidate])
-                fudge_distance = 0
-
-
-            if __debug__:
-                iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image, computed_path, False)
+            continue_path_analysis, fudge_index, fudge_distance = calculate_path_from_image(image_to_analyse,
+                                                                                            search_width,
+                                                                                            computed_path,
+                                                                                            fudge_index,
+                                                                                            fudge_distance)
+            if not continue_path_analysis:
+                break
 
         #except Exception as e:
         #    print('Exception: ' + str(e))
@@ -166,3 +100,74 @@ def convert_to_global_coords(points, scan_direction, origin, y_offset, x_offset)
                          for y, x in points]
 
     return output_points
+
+
+def calculate_path_from_image(image_to_analyse, search_width, computed_path, fudge_index, fudge_distance):
+    # Analyse image in all four directions.
+
+    candidate_path_segments = [[], [], [], []]
+    selected_candidate = -1
+    selected_candidate_length = -1
+
+    for i in range(0, 4):
+        # Extract sub image.
+        current_direction = image_analysis.Direction(i)
+        sub_image = image_analysis.extract_sub_image(image_to_analyse, current_direction)
+
+        next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(
+            sub_image,
+            search_width)
+
+        # Convert the co-ordinates.
+        if len(next_computed_pixel_path_segment) > 1 and next_computed_pixel_path_segment[1][1] != -1:
+            camera_location = computed_path[-1]
+            candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
+                                                                  current_direction,
+                                                                  camera_location,
+                                                                  0,
+                                                                  sub_image.shape[1] / 2)
+
+            # Analyse candidate path.
+            length, is_valid_path = image_analysis.analyse_candidate_path(computed_path, candidate_path_segments[i])
+
+            if __debug__:
+                iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image.copy(), computed_path, False)
+
+                iadebug.save_candidate_line_approximation(hardware.plotter.debug_image.debug_image.copy(),
+                                                          computed_path, candidate_path_segments[i], i)
+        else:
+            is_valid_path = False
+
+        if is_valid_path and length > selected_candidate_length:
+            selected_candidate = i
+            selected_candidate_length = length
+
+    if selected_candidate == -1:
+
+        if fudge_index is not -1 and fudge_index is not len(computed_path):
+            current_index = len(computed_path)
+            new_path_distance = 0
+            for i in range(fudge_index, current_index - 1):
+                new_path_distance += math.hypot(computed_path[i + 1][0] - computed_path[i][0],
+                                                computed_path[i + 1][1] - computed_path[i][1])
+
+            if new_path_distance < fudge_distance:
+                return False, None, None
+            else:
+                fudge_distance = 0
+
+        computed_path.pop()
+        fudge_distance += math.hypot(computed_path[-1][0] - computed_path[-2][0],
+                                     computed_path[-1][1] - computed_path[-2][1])
+
+        fudge_index = len(computed_path)
+
+    else:
+        # Append the computed path with the new values.
+        computed_path.extend(candidate_path_segments[selected_candidate])
+        fudge_distance = 0
+
+    if __debug__:
+        iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image, computed_path, False)
+
+    return True, fudge_index, fudge_distance
