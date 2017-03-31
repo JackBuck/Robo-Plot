@@ -12,6 +12,8 @@ from roboplot.core.plotter import Plotter
 
 
 class DotToDotPlotter:
+    _min_millimetres_between_distinct_spots = 3
+
     def __init__(self, plotter: Plotter):
         self._plotter = plotter
 
@@ -64,7 +66,7 @@ class DotToDotPlotter:
         """
         groups = clustering.group_objects(recognised_numbers,
                                           distance_function=_millimetres_between_numbers,
-                                          min_dist_between_items_in_different_groups=5)
+                                          min_dist_between_items_in_different_groups=self._min_millimetres_between_distinct_spots)
         final_numbers = []
         for group in groups:
             assert len(group) > 0, 'Groups returned from the clustering should all be non-empty!!'
@@ -108,7 +110,7 @@ class DotToDotPlotter:
                   'Retrying...'.format(average_location))
             new_global_numbers = self._take_photo_and_extract_numbers(average_location + jitters[retry_number])
             new_global_numbers = [n for n in new_global_numbers
-                                  if np.linalg.norm(n.dot_location_yx_mm - average_location) < 5]
+                                  if np.linalg.norm(n.dot_location_yx_mm - average_location) < self._min_millimetres_between_distinct_spots]
 
             number_recognition.print_recognised_global_numbers(new_global_numbers)
             target_numbers.extend(new_global_numbers)
