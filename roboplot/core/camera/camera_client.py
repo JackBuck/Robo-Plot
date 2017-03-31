@@ -72,5 +72,5 @@ def take_remote_photo():
         # turn the array into a cv2 image
         image = cv2.imdecode(data, 1)
 
-        return image
         s.close()
+        return image

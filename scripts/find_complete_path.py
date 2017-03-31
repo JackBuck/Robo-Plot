@@ -15,14 +15,14 @@ try:
     # Home axes.
     hardware.plotter.home()
 
-    global_centre = challenge2.find_green_triangle(32, 20)
+    global_centre = challenge2.find_green_triangle(20)
     centre, photo = challenge2.find_green_centre(global_centre, 20)
 
     # Need function to compute first direction here.
 
     starting_direction = image_analysis.find_start_direction(photo)
 
-    computed_camera_path = path_following.compute_complete_path(photo, starting_direction)
+    computed_camera_path = path_following.compute_complete_path(photo, centre, starting_direction)
 
 
 finally:

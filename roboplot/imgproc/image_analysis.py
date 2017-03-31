@@ -295,12 +295,12 @@ def compute_pixel_path(image, search_width):
         if __debug__:
             iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, is_rotated=True)
 
-            # Rotate line indices back.
-            extra_pixel_segments = [list(map(operator.add,
-                                             (int(pixel_segments[-1][0]),
-                                              int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
-                                             rotate(rotated_pixel_segments[0], point, -angle_rad)))
-                                    for point in rotated_pixel_segments]
+        # Rotate line indices back.
+        extra_pixel_segments = [list(map(operator.add,
+                                         (int(pixel_segments[-1][0]),
+                                          int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
+                                         rotate(rotated_pixel_segments[0], point, -angle_rad)))
+                                for point in rotated_pixel_segments]
         # Add segments to list.
         pixel_segments += extra_pixel_segments
 
