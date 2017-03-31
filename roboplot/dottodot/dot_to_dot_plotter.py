@@ -12,7 +12,7 @@ from roboplot.core.plotter import Plotter
 
 
 class DotToDotPlotter:
-    _min_millimetres_between_distinct_spots = 3
+    _min_millimetres_between_distinct_spots = 2.5
 
     def __init__(self, plotter: Plotter):
         self._plotter = plotter
