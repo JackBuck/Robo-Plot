@@ -12,7 +12,7 @@ import roboplot.imgproc.image_analysis as image_analysis
 import roboplot.core.curves as curves
 
 
-def compute_complete_path(image, current_direction):
+def compute_complete_path(image, centre, current_direction):
     # Set up variables.
     search_width = int(config.CAMERA_RESOLUTION[0]/5)
     red_triangle_found = False
@@ -28,11 +28,11 @@ def compute_complete_path(image, current_direction):
     # Analyse image
     next_computed_pixel_path_segment, turn_to_next_direction = image_analysis.compute_pixel_path(image_to_analyse,
                                                                                                  search_width)
-    # Convert the co-ordinates and append them move
-    camera_location = hardware.plotter._axes.current_location + config.CAMERA_OFFSET
+    # Convert the co-ordinates and append them move, make sure to use the centre as the photo may
+    # have been take in the soft limits.
     computed_path = convert_to_global_coords(next_computed_pixel_path_segment,
                                              current_direction,
-                                             camera_location,
+                                             centre,
                                              0,
                                              image_to_analyse.shape[1] / 2)
     fudge_distance = 0

@@ -88,13 +88,12 @@ def find_green_at_position(camera_centre, min_size):
     if cX != -1:
         new_centre_list = path_following.convert_to_global_coords([[cY, cX]],
                                                                   image_analysis.Direction.SOUTH,
-                                                                  hardware.plotter._axes.current_location + config.CAMERA_OFFSET,
+                                                                  camera_centre,
                                                                   int(photo.shape[0] / 2),
                                                                   int(photo.shape[1] / 2))
         new_centre = new_centre_list[0]
     else:
         new_centre = [cX, cY]
-
 
     return new_centre, hsv_image[:, :, 2]
 

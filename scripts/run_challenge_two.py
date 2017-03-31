@@ -25,7 +25,7 @@ try:
 
     starting_direction = image_analysis.find_start_direction(photo)
 
-    computed_camera_path = path_following.compute_complete_path(photo, starting_direction)
+    computed_camera_path = path_following.compute_complete_path(photo, centre, starting_direction)
 
     path_following.follow_computed_path(computed_camera_path)
 
