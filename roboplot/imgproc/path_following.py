@@ -46,10 +46,6 @@ def compute_complete_path(image, current_direction):
             image = hardware.plotter.take_photo_at(computed_path[-1])
 
             # Analyse photo to check if red is found.
-            if True:
-                temp = 0
-
-            temp
             red_triangle_found, centre_of_red = image_analysis.search_for_red_triangle_near_centre(image, red_min_size)
 
             if red_triangle_found:
