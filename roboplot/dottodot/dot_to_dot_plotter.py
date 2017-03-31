@@ -75,7 +75,7 @@ class DotToDotPlotter:
 
         return sorted(final_numbers, key=lambda n: n.numeric_value)
 
-    def _retake_photos_until_unique_mode(self, target_numbers, maximum_retries: int = 3):
+    def _retake_photos_until_unique_mode(self, target_numbers):
         """
         Take 0 or more extra photos at the average location of the target numbers in order to find the modal numeric
         value recognised.
@@ -94,14 +94,19 @@ class DotToDotPlotter:
 
         numeric_value = _try_compute_mode([n.numeric_value for n in target_numbers])
 
-        num_retries = 0
-        while numeric_value is None and num_retries < maximum_retries:
-            num_retries += 1
+        jitters = np.array([[0, 0],
+                            [10, 0],
+                            [10, 10],
+                            [0, 10]])
+
+        retry_number = -1
+        while numeric_value is None and retry_number + 1 < len(jitters):
+            retry_number += 1
 
             # Take a new photo
-            print(
-                'Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\nRetrying...'.format(average_location))
-            new_global_numbers = self._take_photo_and_extract_numbers(average_location)
+            print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\n'
+                  'Retrying...'.format(average_location))
+            new_global_numbers = self._take_photo_and_extract_numbers(average_location + jitters[retry_number])
             new_global_numbers = [n for n in new_global_numbers
                                   if np.linalg.norm(n.dot_location_yx_mm - average_location) < 5]
 
