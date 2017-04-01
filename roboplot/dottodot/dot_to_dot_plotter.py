@@ -199,7 +199,7 @@ def _warn_if_unexpected_numeric_values(final_numbers) -> None:
         final_numbers (list[number_recognition.GlobalNumber]): the final set of recognised numbers
     """
     for i in range(len(final_numbers)):
-        if final_numbers[i].numeric_value != i:
+        if final_numbers[i].numeric_value != i+1:
             warnings.warn('Did not find a set of consecutive numbers starting at 1!\n'
                           'Instead found {}'.format(', '.join([str(n.numeric_value) for n in final_numbers])))
             break
