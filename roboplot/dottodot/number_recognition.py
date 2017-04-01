@@ -172,7 +172,7 @@ class DotToDotImage:
         original_image = self._img
         for spot in self.spot_keypoints:
             self._img = original_image
-            self._mask_to_contour_groups_close_to(spot.pt, 2 * spot.size)
+            self._mask_to_contour_groups_close_to(spot.pt, self._min_pixels_between_contour_groups)
             self._rotate_keypoint_to_bottom_right(spot)
             number, text = self._recognise_number()
 
