@@ -46,6 +46,10 @@ try:
     end_time = time.time()
     print('Elapsed: {:.0f} seconds'.format(end_time - start_time))
 
+    # Present the paper
+    hardware.plotter.present_paper()
+
+    # Copy the debug output so that it doesn't get deleted by accident!
     debug_images_copy_target = find_free_debug_images_subfolder()
     os.mkdir(debug_images_copy_target)
     for f in glob.glob(os.path.join(config.debug_output_folder, '*.jpg')):
