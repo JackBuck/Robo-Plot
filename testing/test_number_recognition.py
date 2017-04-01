@@ -46,6 +46,21 @@ class NumberRecognitionRegressionTests(unittest.TestCase):
 
             self._subtest_on_file(img_file, expected_numbers, is_expected_failure='expected_failure' in filename)
 
+    def test_on_other_problem_cases(self):
+        """Regression test number recognition on difficult images for the various dot-to-dots"""
+        file_glob = os.path.join(self.test_data_directory, 'other_problem_cases', '*.jpg')
+        for img_file in glob.glob(file_glob):
+            filename = os.path.basename(img_file)
+
+            expected_numbers = []
+            for file_name_match in re.finditer(r'(?P<numeric_value>\d+)y(?P<spot_y>\d+)x(?P<spot_x>\d+)', filename):
+                numeric_value = int(file_name_match.group('numeric_value'))
+                dot_location_yx = (int(file_name_match.group('spot_y')), int(file_name_match.group('spot_x')))
+                expected_numbers.append(number_recognition.LocalNumber(numeric_value, dot_location_yx))
+
+            self._subtest_on_file(img_file, expected_numbers, is_expected_failure='expected_failure' in filename)
+        pass
+
     def _subtest_on_file(self, file_path: str, expected_numbers, is_expected_failure: bool = False):
         """
         Args:
