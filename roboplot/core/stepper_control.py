@@ -35,6 +35,7 @@ class Axis:
                  motor: StepperMotor,
                  lead: float,
                  limit_switch_pair,
+                 limit_switch_separation: float,
                  home_position: HomePosition = home_position,
                  invert_axis: bool = False):
         """
@@ -44,6 +45,7 @@ class Axis:
             motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
             limit_switch_pair (iterable of LimitSwitch): The pair of limit switches at each end of the axis.
+            limit_switch_separation (float): The distance between the limit switches (for determining soft limits)
             home_position (HomePosition): The direction and location of the (primary) limit switch to use when homing.
             invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
@@ -55,6 +57,7 @@ class Axis:
         self.limit_switches = limit_switch_pair
         self._invert_axis = invert_axis
         self.home_position = home_position
+        self.limit_switch_separation = limit_switch_separation
 
     @property
     def back_off_millimetres(self):
@@ -97,11 +100,17 @@ class Axis:
         distance_moved_since_switch_pressed = self.current_location - hit_location
         self.current_location = self.home_position.location + distance_moved_since_switch_pressed
 
-        # Step back until a switch is hit
-        hit_location = self.explore_limit_switch(not self.home_position.forwards)
-
-        # Set the upper home limits of the home position at the point where the limit switch is hit.
-        self.secondary_home_position = HomePosition(location=hit_location, forwards=not self.home_position.forwards)
+        # Set the soft limit based on the limit switch separation
+        if self.home_position.forwards:
+            self.secondary_home_position = HomePosition(
+                location=self.home_position.location - self.limit_switch_separation,
+                forwards=False
+            )
+        else:
+            self.secondary_home_position = HomePosition(
+                location=self.home_position.location + self.limit_switch_separation,
+                forwards=True
+            )
 
         self._is_homed = True
 

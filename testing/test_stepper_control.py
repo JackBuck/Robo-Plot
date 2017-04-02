@@ -23,8 +23,12 @@ class BaseTestCases:
             self._mock_limit_switches = (MagicMock(name='switch_1', spec_set=LimitSwitch, is_pressed=False),
                                          MagicMock(name='switch_2', spec_set=LimitSwitch, is_pressed=False))
             self._mock_motor = MagicMock(name='motor', spec_set=StepperMotor, steps_per_revolution=200, clockwise=True)
-            self._axis = stepper_control.Axis(self._mock_motor, 8, self._mock_limit_switches,
-                                              roboplot.core.home_position.HomePosition(forwards=False, location=0))
+            self._axis = stepper_control.Axis(
+                self._mock_motor,
+                lead=8,
+                limit_switch_pair=self._mock_limit_switches,
+                limit_switch_separation=10000,  # Large enough that it doesn't interfere with our tests
+                home_position=roboplot.core.home_position.HomePosition(forwards=False, location=0))
 
 
 class AxisStepTests(BaseTestCases.Axis):
@@ -112,6 +116,7 @@ class AxisHomingTest(BaseTestCases.Axis):
         super().setUp()
         self.true_motor_location_in_steps = 20  # Some non-zero start location
         self._mock_motor.step.side_effect = self._default_motor_side_effect
+        self._axis.limit_switch_separation = 200 * self._axis.millimetres_per_step
 
     def _default_motor_side_effect(self):
         # Advance the 'real' location (in steps)
@@ -134,10 +139,10 @@ class AxisHomingTest(BaseTestCases.Axis):
         self._mock_motor.step.side_effect = new_motor_side_effect
         self._axis.home()
 
-    def test_ends_2mm_behind_secondary_limit_switch(self):
+    def test_ends_2mm_in_front_of_primary_limit_switch(self):
         self._axis.home()
         steps_in_2mm = 2 / self._axis.millimetres_per_step
-        self.assertEqual(self.true_motor_location_in_steps, 200 - steps_in_2mm)
+        self.assertEqual(self.true_motor_location_in_steps, steps_in_2mm)
 
     def test_current_location_would_be_home_location_at_limit_switch(self):
         self._axis.home()
