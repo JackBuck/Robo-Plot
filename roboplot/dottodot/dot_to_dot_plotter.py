@@ -75,6 +75,7 @@ class DotToDotPlotter:
 
     def _retake_photos_to_remove_repeated_numeric_values(self):
         # Find repeated elements
+        # noinspection PyArgumentList
         numeric_value_counts = collections.Counter([c.modal_numeric_value for c in self._number_clusters])
         clusters_with_repeated_numeric_value = []  # type: list[GlobalNumberCluster]
         for cluster in self._number_clusters:
@@ -175,6 +176,7 @@ class GlobalNumberCluster(list):
         Args:
             initial_global_numbers (list[number_recognition.GlobalNumber]):
         """
+        # noinspection PyTypeChecker
         list.__init__(self, initial_global_numbers)
 
     @property
