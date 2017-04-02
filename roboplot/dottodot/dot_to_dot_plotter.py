@@ -43,10 +43,12 @@ class DotToDotPlotter:
         self._number_clusters = self._group_nearby_numbers(recognised_numbers)
 
         self._retake_photos_until_unique_valid_candidate_at_each_location(max_numeric_value_allowed)
-        self._remove_unrecognised_number_clusters()
+        self._remove_unrecognised_number_clusters()  # Unnecessary?
         self._retake_photos_to_remove_repeated_numeric_values()
+        self._retake_last_number_if_last_two_are_not_consecutive()  # Unfortunately if this leads us to discover
+        # another incorrect number, we will not retake that one...
 
-        candidates = [grp.best_guess for grp in self._number_clusters]
+        candidates = [c for c in [grp.best_guess for grp in self._number_clusters] if c.numeric_value is not None]
         candidates = sorted(candidates, key=lambda n: n.numeric_value)
         _warn_if_unexpected_numeric_values(candidates)
 
@@ -82,7 +84,7 @@ class DotToDotPlotter:
             self._retake_photos_until_valid_mode(grp,
                                                  mode_is_invalid=lambda m: m is None or m > max_numeric_value_allowed)
 
-    def _retake_photos_to_remove_repeated_numeric_values(self):
+    def _retake_photos_to_remove_repeated_numeric_values(self) -> None:
         # Find repeated elements
         # noinspection PyArgumentList
         numeric_value_counts = collections.Counter([c.modal_numeric_value for c in self._number_clusters])
@@ -107,6 +109,17 @@ class DotToDotPlotter:
                 if cluster.modal_numeric_value == new_numeric_value and \
                                 cluster not in clusters_with_repeated_numeric_value:
                     clusters_with_repeated_numeric_value.append(cluster)  # In python these extra items do get iterated!
+
+    def _retake_last_number_if_last_two_are_not_consecutive(self) -> None:
+        clusters = [grp for grp in self._number_clusters if grp.modal_numeric_value is not None]
+        sorted_clusters = sorted(clusters, key=lambda c: c.modal_numeric_value)  # type: list[GlobalNumberCluster]
+
+        if len(sorted_clusters) > 1:
+            largest_numeric_value = sorted_clusters[-1].modal_numeric_value
+            second_largest_numeric_value = sorted_clusters[-2].modal_numeric_value
+            if largest_numeric_value != second_largest_numeric_value + 1:
+                self._retake_photos_until_valid_mode(sorted_clusters[-1],
+                                                     mode_is_invalid=lambda m: m is None or m == largest_numeric_value)
 
     def _retake_photos_until_valid_mode(self, target_number_cluster, mode_is_invalid=lambda m: m is None) -> None:
         """
