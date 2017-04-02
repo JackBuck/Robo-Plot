@@ -87,8 +87,6 @@ class DotToDotPlotter:
         for current_cluster in clusters_with_repeated_numeric_value:
             old_numeric_value = current_cluster.modal_numeric_value
 
-            # TODO: I think the following line will work, because we are only iterating over numbers which repeat the
-            # numeric values of other numbers, but it is obscure!
             self._retake_photos_until_valid_mode(current_cluster,
                                                  mode_is_invalid=lambda m: m is None or m in numeric_value_counts)
 

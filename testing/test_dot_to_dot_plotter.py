@@ -68,7 +68,7 @@ class TestDotToDotPlotter(unittest.TestCase):
         # Assert
         num_times_number_2_rephotographed = \
             len([args for args, kwargs in take_photo_and_extract_numbers_mock.call_args_list
-                 if np.linalg.norm(args[0] - np.array([20, 80])) < 20])
+                 if all(abs(args[0] - np.array([20, 80])) < 20)])
 
         self.assertEqual(num_times_number_2_rephotographed, 2)
 
@@ -109,3 +109,24 @@ class TestDotToDotPlotter(unittest.TestCase):
         self.assertCountEqual(
             [(c.numeric_value, c.dot_location_yx_mm[0], c.dot_location_yx_mm[1]) for c in candidates],
             [(1, 20, 20), (2, 20, 80), (3, 60, 20)])
+
+    def test_does_not_retake_images_of_numbers_which_are_not_repeated(self):
+        # Arrange
+        self._dot_to_dot_plotter._take_and_analyse_initial_photos = mock.MagicMock(
+            return_value=[GlobalNumber(1, (20, 20)),
+                          GlobalNumber(None, (20, 80)),
+                          GlobalNumber(2, (20, 80))])
+
+        take_photo_and_extract_numbers_mock = mock.MagicMock(return_value=[GlobalNumber(2, [20, 80])])
+        self._dot_to_dot_plotter._take_photo_and_extract_numbers = take_photo_and_extract_numbers_mock
+
+        # Act
+        candidates = self._dot_to_dot_plotter.search_for_numbers()
+
+        # Assert
+        for args, kwargs in take_photo_and_extract_numbers_mock.call_args_list:
+            assert not all(abs(args[0] - np.array([20, 20])) < 20)
+
+        self.assertCountEqual(
+            [(c.numeric_value, c.dot_location_yx_mm[0], c.dot_location_yx_mm[1]) for c in candidates],
+            [(1, 20, 20), (2, 20, 80)])
