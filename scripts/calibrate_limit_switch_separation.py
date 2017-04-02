@@ -4,6 +4,7 @@ import argparse
 
 import numpy as np
 
+import context
 import roboplot.core.hardware as hardware
 from roboplot.core.stepper_control import Axis
 from roboplot.core.gpio.gpio_wrapper import GPIO
