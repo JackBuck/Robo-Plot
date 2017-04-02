@@ -12,6 +12,8 @@ from roboplot.core.plotter import Plotter
 
 
 class DotToDotPlotter:
+    _min_millimetres_between_distinct_spots = 2.5
+
     def __init__(self, plotter: Plotter):
         self._plotter = plotter
 
@@ -64,7 +66,7 @@ class DotToDotPlotter:
         """
         groups = clustering.group_objects(recognised_numbers,
                                           distance_function=_millimetres_between_numbers,
-                                          min_dist_between_items_in_different_groups=5)
+                                          min_dist_between_items_in_different_groups=self._min_millimetres_between_distinct_spots)
         final_numbers = []
         for group in groups:
             assert len(group) > 0, 'Groups returned from the clustering should all be non-empty!!'
@@ -75,7 +77,7 @@ class DotToDotPlotter:
 
         return sorted(final_numbers, key=lambda n: n.numeric_value)
 
-    def _retake_photos_until_unique_mode(self, target_numbers, maximum_retries: int = 3):
+    def _retake_photos_until_unique_mode(self, target_numbers):
         """
         Take 0 or more extra photos at the average location of the target numbers in order to find the modal numeric
         value recognised.
@@ -94,16 +96,21 @@ class DotToDotPlotter:
 
         numeric_value = _try_compute_mode([n.numeric_value for n in target_numbers])
 
-        num_retries = 0
-        while numeric_value is None and num_retries < maximum_retries:
-            num_retries += 1
+        jitters = np.array([[0, 0],
+                            [10, 0],
+                            [10, 10],
+                            [0, 10]])
+
+        retry_number = -1
+        while numeric_value is None and retry_number + 1 < len(jitters):
+            retry_number += 1
 
             # Take a new photo
-            print(
-                'Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\nRetrying...'.format(average_location))
-            new_global_numbers = self._take_photo_and_extract_numbers(average_location)
+            print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\n'
+                  'Retrying...'.format(average_location))
+            new_global_numbers = self._take_photo_and_extract_numbers(average_location + jitters[retry_number])
             new_global_numbers = [n for n in new_global_numbers
-                                  if np.linalg.norm(n.dot_location_yx_mm - average_location) < 5]
+                                  if np.linalg.norm(n.dot_location_yx_mm - average_location) < self._min_millimetres_between_distinct_spots]
 
             number_recognition.print_recognised_global_numbers(new_global_numbers)
             target_numbers.extend(new_global_numbers)
@@ -192,7 +199,7 @@ def _warn_if_unexpected_numeric_values(final_numbers) -> None:
         final_numbers (list[number_recognition.GlobalNumber]): the final set of recognised numbers
     """
     for i in range(len(final_numbers)):
-        if final_numbers[i].numeric_value != i:
+        if final_numbers[i].numeric_value != i+1:
             warnings.warn('Did not find a set of consecutive numbers starting at 1!\n'
                           'Instead found {}'.format(', '.join([str(n.numeric_value) for n in final_numbers])))
             break

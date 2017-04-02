@@ -1,6 +1,7 @@
 """This module defines the servo motor GPIO connection"""
 
 import time
+import threading
 
 import numpy as np
 
@@ -80,6 +81,9 @@ class ServoMotor:
         wiringpi_wrapper.write_pwm_to_pin_18(self._required_output(pwm_input))
         GPIO.output(self._power_control_pin, True)
         self._last_set_position = pwm_input
+
+        # Make sure that the program can't end before the servo has finished moving
+        threading.Thread(target=lambda: time.sleep(0.5), name='Servo Wait Thread')
 
     def input_is_in_range(self, pwm_input):
         return self.min_position <= pwm_input <= self.max_position
