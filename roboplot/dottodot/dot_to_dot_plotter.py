@@ -34,8 +34,7 @@ class DotToDotPlotter:
             list[number_recognition.GlobalNumber]: the recognised numbers
         """
 
-        # TODO: Sort out this illegal reference to a _camera
-        target_positions = _compute_raster_scan_positions(self._plotter._camera.resolution_mm_xy)
+        target_positions = _compute_raster_scan_positions(self._plotter.camera_field_of_view_xy_mm)
         recognised_numbers = self._take_and_analyse_initial_photos(target_positions)
         self._number_clusters = self._group_nearby_numbers(recognised_numbers)
 
