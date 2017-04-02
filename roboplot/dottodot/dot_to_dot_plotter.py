@@ -111,15 +111,21 @@ class DotToDotPlotter:
                     clusters_with_repeated_numeric_value.append(cluster)  # In python these extra items do get iterated!
 
     def _retake_last_number_if_last_two_are_not_consecutive(self) -> None:
-        clusters = [grp for grp in self._number_clusters if grp.modal_numeric_value is not None]
-        sorted_clusters = sorted(clusters, key=lambda c: c.modal_numeric_value)  # type: list[GlobalNumberCluster]
+        last_two_numbers_might_not_be_consecutive = True
 
-        if len(sorted_clusters) > 1:
-            largest_numeric_value = sorted_clusters[-1].modal_numeric_value
-            second_largest_numeric_value = sorted_clusters[-2].modal_numeric_value
-            if largest_numeric_value != second_largest_numeric_value + 1:
-                self._retake_photos_until_valid_mode(sorted_clusters[-1],
-                                                     mode_is_invalid=lambda m: m is None or m == largest_numeric_value)
+        while last_two_numbers_might_not_be_consecutive:
+            last_two_numbers_might_not_be_consecutive = False
+
+            clusters = [grp for grp in self._number_clusters if grp.modal_numeric_value is not None]
+            sorted_clusters = sorted(clusters, key=lambda c: c.modal_numeric_value)  # type: list[GlobalNumberCluster]
+
+            if len(sorted_clusters) > 1:
+                largest_numeric_value = sorted_clusters[-1].modal_numeric_value
+                second_largest_numeric_value = sorted_clusters[-2].modal_numeric_value
+                if largest_numeric_value != second_largest_numeric_value + 1:
+                    self._retake_photos_until_valid_mode(
+                        sorted_clusters[-1], mode_is_invalid=lambda m: m is None or m == largest_numeric_value)
+                    last_two_numbers_might_not_be_consecutive = True
 
     def _retake_photos_until_valid_mode(self, target_number_cluster, mode_is_invalid=lambda m: m is None) -> None:
         """
