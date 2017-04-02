@@ -26,9 +26,13 @@ class DotToDotPlotter:
         numbers = self.search_for_numbers()
         self.draw_joined_dots(numbers)
 
-    def search_for_numbers(self):
+    def search_for_numbers(self, max_numeric_value_allowed=99):
         """
         Take photos of the page to determine all the numbers and their locations.
+
+        Args:
+            max_numeric_value_allowed (int): if the plotter recognises a number greater than this, it will try to
+                                             retake that number.
 
         Returns:
             list[number_recognition.GlobalNumber]: the recognised numbers
@@ -38,7 +42,7 @@ class DotToDotPlotter:
         recognised_numbers = self._take_and_analyse_initial_photos(target_positions)
         self._number_clusters = self._group_nearby_numbers(recognised_numbers)
 
-        self._retake_photos_until_unique_candidate_at_each_location()
+        self._retake_photos_until_unique_valid_candidate_at_each_location(max_numeric_value_allowed)
         self._remove_unrecognised_number_clusters()
         self._retake_photos_to_remove_repeated_numeric_values()
 
@@ -62,16 +66,21 @@ class DotToDotPlotter:
                                           min_dist_between_items_in_different_groups=self._min_millimetres_between_distinct_spots)
         return [GlobalNumberCluster(grp) for grp in groups]
 
-    def _retake_photos_until_unique_candidate_at_each_location(self) -> None:
+    def _retake_photos_until_unique_valid_candidate_at_each_location(self, max_numeric_value_allowed) -> None:
         """
         Process the current set of recognised numbers to extract a list with a single element for each unique
         location in the recognised numbers.
 
         This method may induce the plotter to take more photos if it needs more information.
+
+        Args:
+            max_numeric_value_allowed (int): if the plotter recognises a number greater than this, it will try to
+                                             retake that number.
         """
         for grp in self._number_clusters:
             assert len(grp) > 0, 'Groups returned from the clustering should all be non-empty!!'
-            self._retake_photos_until_valid_mode(grp)
+            self._retake_photos_until_valid_mode(grp,
+                                                 mode_is_invalid=lambda m: m is None or m > max_numeric_value_allowed)
 
     def _retake_photos_to_remove_repeated_numeric_values(self):
         # Find repeated elements

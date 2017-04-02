@@ -130,3 +130,20 @@ class TestDotToDotPlotter(unittest.TestCase):
         self.assertCountEqual(
             [(c.numeric_value, c.dot_location_yx_mm[0], c.dot_location_yx_mm[1]) for c in candidates],
             [(1, 20, 20), (2, 20, 80)])
+
+    def test_by_default_retakes_three_digit_numbers(self):
+        # Arrange
+        self._dot_to_dot_plotter._take_and_analyse_initial_photos = mock.MagicMock(
+            return_value=[GlobalNumber(111, (20, 20))])
+
+        take_photo_and_extract_numbers_mock = mock.MagicMock(return_value=[GlobalNumber(11, [20, 20])])
+        self._dot_to_dot_plotter._take_photo_and_extract_numbers = take_photo_and_extract_numbers_mock
+
+        # Act
+        candidates = self._dot_to_dot_plotter.search_for_numbers()
+
+        # Assert
+        self.assertEqual(take_photo_and_extract_numbers_mock.call_count, 2)
+        self.assertCountEqual(
+            [(c.numeric_value, c.dot_location_yx_mm[0], c.dot_location_yx_mm[1]) for c in candidates],
+            [(11, 20, 20)])
