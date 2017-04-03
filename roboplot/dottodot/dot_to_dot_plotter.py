@@ -104,7 +104,7 @@ class DotToDotPlotter:
             old_numeric_value = current_cluster.modal_numeric_value
 
             self._retake_photos_until_valid_mode(current_cluster,
-                                                 mode_is_invalid=lambda m: m is None or m in numeric_value_counts)
+                                                 mode_is_invalid=lambda m: m is None or numeric_value_counts[m] > 1)
 
             new_numeric_value = current_cluster.modal_numeric_value
             numeric_value_counts[old_numeric_value] -= 1

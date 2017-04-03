@@ -142,7 +142,6 @@ class TestDotToDotPlotter(unittest.TestCase):
         # Assert - called twice to resolve 2 and not at all to resolve 1
         self.assertEqual(take_photo_and_extract_numbers_mock.call_count, 2)
 
-
     def test_does_not_retake_images_of_numbers_which_are_not_repeated(self):
         # Arrange
         self._dot_to_dot_plotter._take_and_analyse_initial_photos = mock.MagicMock(
