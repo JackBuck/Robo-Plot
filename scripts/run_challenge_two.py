@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import time
 
+import context
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.start_end_detection as start_end_detection
 import roboplot.imgproc.image_analysis as image_analysis
