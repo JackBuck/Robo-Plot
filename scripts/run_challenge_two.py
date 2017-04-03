@@ -14,6 +14,8 @@ start_time = time.time()
 try:
     # Home axes.
 
+    start_time = time.time()
+
     hardware.plotter.home()
     global_centre = start_end_detection.find_green_triangle(min_size=10)
     centre, photo = start_end_detection.find_green_centre(global_centre, 20)
@@ -26,6 +28,7 @@ try:
     a_path_finder.follow_computed_path(computed_camera_path)
 
     end_time = time.time()
+    print('Elapsed: {} seconds'.format(end_time - start_time))
 
     # Present paper.
 
