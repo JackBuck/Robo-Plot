@@ -125,7 +125,8 @@ class DotToDotPlotter:
                 if largest_numeric_value != second_largest_numeric_value + 1:
                     self._retake_photos_until_valid_mode(
                         sorted_clusters[-1], mode_is_invalid=lambda m: m is None or m == largest_numeric_value)
-                    last_two_numbers_might_not_be_consecutive = True
+                    if sorted_clusters[-1].modal_numeric_value < largest_numeric_value:  # If it got smaller...
+                        last_two_numbers_might_not_be_consecutive = True
 
     def _retake_photos_until_valid_mode(self, target_number_cluster, mode_is_invalid=lambda m: m is None) -> None:
         """
