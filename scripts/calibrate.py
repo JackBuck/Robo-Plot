@@ -1,13 +1,11 @@
 import context
 import cv2
-import argparse
-import numpy as np
+
 
 import roboplot.config as config
 from roboplot.core.gpio.gpio_wrapper import GPIO
 import roboplot.core.camera.camera_wrapper as camera_wrapper
 import roboplot.imgproc.colour_detection as cd
-import roboplot.core.curves as curves
 import roboplot.core.hardware as hardware
 
 

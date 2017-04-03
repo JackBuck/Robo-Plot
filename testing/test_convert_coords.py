@@ -5,8 +5,9 @@ import unittest
 
 import context
 import roboplot.config as config
+import roboplot.core.camera.camera_utils
 import roboplot.imgproc.path_following as path_following
-import roboplot.imgproc.image_analysis as image_analysis
+import roboplot.imgproc.image_analysis_enums as image_analysis_enums
 
 
 # Each set of tests can be in their own class, but it must derive from unnit.TestCase
@@ -23,8 +24,13 @@ class ConvertCoordsTest(unittest.TestCase):
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
-        scan_direction = image_analysis.Direction.SOUTH
-        output = path_following.convert_to_global_coords(points, scan_direction, centre)
+        scan_direction = image_analysis_enums.Direction.SOUTH
+        output = roboplot.core.camera.camera_utils.convert_to_global_coords(points,
+                                                                            scan_direction,
+                                                                            centre,
+                                                                            0,
+                                                                            config.CAMERA_RESOLUTION[0] //2)
+
         expected_output_points = [[50, 40], [53, 50], [55, 52], [57, 58], [59, 57]]
         self.assertEqual(output, expected_output_points)
 
@@ -35,8 +41,12 @@ class ConvertCoordsTest(unittest.TestCase):
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
-        scan_direction = image_analysis.Direction.NORTH
-        output = path_following.convert_to_global_coords(points, scan_direction, centre)
+        scan_direction = image_analysis_enums.Direction.NORTH
+        output = roboplot.core.camera.camera_utils.convert_to_global_coords(points,
+                                                                            scan_direction,
+                                                                            centre,
+                                                                            0,
+                                                                            config.CAMERA_RESOLUTION[0] //2)
         expected_output_points = [[50, 40], [47, 30], [45, 28], [43, 22], [41, 23]]
         self.assertEqual(output, expected_output_points)
 
@@ -47,8 +57,13 @@ class ConvertCoordsTest(unittest.TestCase):
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
-        scan_direction = image_analysis.Direction.EAST
-        output = path_following.convert_to_global_coords(points, scan_direction, centre)
+        scan_direction = image_analysis_enums.Direction.EAST
+        output = roboplot.core.camera.camera_utils.convert_to_global_coords(points,
+                                                                            scan_direction,
+                                                                            centre,
+                                                                            0,
+                                                                            config.CAMERA_RESOLUTION[0]/2)
+
         expected_output_points = [[50, 40], [40, 43], [38, 45], [32, 47], [33, 49]]
         self.assertEqual(output, expected_output_points)
 
@@ -59,8 +74,13 @@ class ConvertCoordsTest(unittest.TestCase):
         points = [(0, 10), (3, 20), (5, 22), (7, 28), (9, 27)]
         centre = (50, 40)
 
-        scan_direction = image_analysis.Direction.WEST
-        output = path_following.convert_to_global_coords(points, scan_direction, centre)
+        scan_direction = image_analysis_enums.Direction.WEST
+        output = roboplot.core.camera.camera_utils.convert_to_global_coords(points,
+                                                                            scan_direction,
+                                                                            centre,
+                                                                            0,
+                                                                            config.CAMERA_RESOLUTION[0] //2)
+
         expected_output_points = [[50, 40], [60, 37], [62, 35], [68, 33], [67, 31]]
         self.assertEqual(output, expected_output_points)
 
@@ -71,8 +91,13 @@ class ConvertCoordsTest(unittest.TestCase):
         points = [(0, 100), (13, 120), (85, 122), (27, 128), (150, 130)]
         centre = (50, 40)
 
-        scan_direction = image_analysis.Direction.SOUTH
-        output = path_following.convert_to_global_coords(points, scan_direction, centre)
+        scan_direction = image_analysis_enums.Direction.SOUTH
+        output = roboplot.core.camera.camera_utils.convert_to_global_coords(points,
+                                                                            scan_direction,
+                                                                            centre,
+                                                                            0,
+                                                                            config.CAMERA_RESOLUTION[0] //2)
+
         expected_output_points = [[50, 40.0], [102, 120.0], [390, 128.0], [158, 152.0], [650, 160.0]]
         self.assertEqual(output, expected_output_points)
 

@@ -175,5 +175,3 @@ def detect_black(hsv_image, min_size, change_to_white):
     return cX, cY
 
 
-
-

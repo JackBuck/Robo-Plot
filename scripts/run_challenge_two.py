@@ -1,30 +1,32 @@
-import context
-import cv2
-import argparse
-import numpy as np
+import time
 
-import roboplot.config as config
-from roboplot.core.gpio.gpio_wrapper import GPIO
-import roboplot.imgproc.path_following as path_following
-import roboplot.imgproc.image_analysis as image_analysis
-import roboplot.challenge_two_functions as challenge2
 import roboplot.core.hardware as hardware
+import roboplot.imgproc.start_end_detection as start_end_detection
+import roboplot.imgproc.image_analysis as image_analysis
+import roboplot.imgproc.path_following as path_following
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
+start_time = time.time()
 
 try:
     # Home axes.
 
     hardware.plotter.home()
-    global_centre = challenge2.find_green_triangle(32, 20)
-    centre, photo = challenge2.find_green_centre(global_centre, 20)
+    global_centre = start_end_detection.find_green_triangle(min_size=10)
+    centre, photo = start_end_detection.find_green_centre(global_centre, 20)
 
-    # Need function to compute first direction here.
+    # Find path
+    a_path_finder = path_following.PathFinder()
+    computed_camera_path = a_path_finder.compute_complete_path(photo, centre)
 
-    starting_direction = image_analysis.find_start_direction(photo)
+    # Follow Path
+    a_path_finder.follow_computed_path(computed_camera_path)
 
-    computed_camera_path = path_following.compute_complete_path(photo, starting_direction)
-    path_following.follow_computed_path(computed_camera_path)
+    end_time = time.time()
 
+    # Present paper.
+
+    hardware.plotter.move_pen_to([148.5, 0])
 
 finally:
     GPIO.cleanup()
