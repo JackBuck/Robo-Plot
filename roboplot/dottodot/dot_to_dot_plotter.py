@@ -94,6 +94,10 @@ class DotToDotPlotter:
             if numeric_value is not None and numeric_value_counts[numeric_value] > 1:
                 clusters_with_repeated_numeric_value.append(cluster)
 
+        if len(clusters_with_repeated_numeric_value) > 0:
+            print('Repeated numeric values: {}'.format(
+                ', '.join([str(c.modal_numeric_value) for c in clusters_with_repeated_numeric_value])))
+
         # Retake photos
         for current_cluster in clusters_with_repeated_numeric_value:
             old_numeric_value = current_cluster.modal_numeric_value
