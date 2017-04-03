@@ -1,7 +1,7 @@
+import collections
 import statistics
 import warnings
 
-import cv2
 import numpy as np
 
 import roboplot.dottodot.clustering as clustering
@@ -16,6 +16,7 @@ class DotToDotPlotter:
 
     def __init__(self, plotter: Plotter):
         self._plotter = plotter
+        self._number_clusters = []  # type: list[GlobalNumberCluster]
 
     def do_dot_to_dot(self) -> None:
         """Take pictures to explore the page for dots, then draw a picture to join them."""
@@ -25,22 +26,33 @@ class DotToDotPlotter:
         numbers = self.search_for_numbers()
         self.draw_joined_dots(numbers)
 
-    def search_for_numbers(self):
+    def search_for_numbers(self, max_numeric_value_allowed=99):
         """
         Take photos of the page to determine all the numbers and their locations.
+
+        Args:
+            max_numeric_value_allowed (int): if the plotter recognises a number greater than this, it will try to
+                                             retake that number.
 
         Returns:
             list[number_recognition.GlobalNumber]: the recognised numbers
         """
 
-        # TODO: Sort out this illegal reference to a _camera
-        target_positions = _compute_raster_scan_positions(self._plotter._camera.resolution_mm_xy)
+        target_positions = _compute_raster_scan_positions(self._plotter.camera_field_of_view_xy_mm)
         recognised_numbers = self._take_and_analyse_initial_photos(target_positions)
-        final_numbers = self._extract_sorted_numbers_at_unique_locations(recognised_numbers)
+        self._number_clusters = self._group_nearby_numbers(recognised_numbers)
 
-        _warn_if_unexpected_numeric_values(final_numbers)
+        self._retake_photos_until_unique_valid_candidate_at_each_location(max_numeric_value_allowed)
+        self._remove_unrecognised_number_clusters()  # Unnecessary?
+        self._retake_photos_to_remove_repeated_numeric_values()
+        self._retake_last_number_if_last_two_are_not_consecutive()  # Unfortunately if this leads us to discover
+        # another incorrect number, we will not retake that one...
 
-        return final_numbers
+        candidates = [c for c in [grp.best_guess for grp in self._number_clusters] if c.numeric_value is not None]
+        candidates = sorted(candidates, key=lambda n: n.numeric_value)
+        _warn_if_unexpected_numeric_values(candidates)
+
+        return candidates
 
     def _take_and_analyse_initial_photos(self, target_positions):
         recognised_numbers = []
@@ -50,75 +62,116 @@ class DotToDotPlotter:
 
         return recognised_numbers
 
-    def _extract_sorted_numbers_at_unique_locations(self, recognised_numbers):
+    def _group_nearby_numbers(self, recognised_numbers):
+        groups = clustering.group_objects(recognised_numbers,
+                                          distance_function=_millimetres_between_numbers,
+                                          min_dist_between_items_in_different_groups=self._min_millimetres_between_distinct_spots)
+        return [GlobalNumberCluster(grp) for grp in groups]
+
+    def _retake_photos_until_unique_valid_candidate_at_each_location(self, max_numeric_value_allowed) -> None:
         """
         Process the current set of recognised numbers to extract a list with a single element for each unique
-        location in the recognised numbers. The list is sorted by numeric value.
+        location in the recognised numbers.
 
         This method may induce the plotter to take more photos if it needs more information.
 
         Args:
-            recognised_numbers (list[number_recognition.GlobalNumber]): the collection of all numbers recognised so far
-
-        Returns:
-            list[number_recognition.GlobalNumber]: a list of numbers, one for each recognised location, sorted by
-                                                   numeric value
+            max_numeric_value_allowed (int): if the plotter recognises a number greater than this, it will try to
+                                             retake that number.
         """
-        groups = clustering.group_objects(recognised_numbers,
-                                          distance_function=_millimetres_between_numbers,
-                                          min_dist_between_items_in_different_groups=self._min_millimetres_between_distinct_spots)
-        final_numbers = []
-        for group in groups:
-            assert len(group) > 0, 'Groups returned from the clustering should all be non-empty!!'
-            numeric_value, group = self._retake_photos_until_unique_mode(group)
+        for grp in self._number_clusters:
+            assert len(grp) > 0, 'Groups returned from the clustering should all be non-empty!!'
+            self._retake_photos_until_valid_mode(grp,
+                                                 mode_is_invalid=lambda m: m is None or m > max_numeric_value_allowed)
 
-            if numeric_value is not None:
-                final_numbers.append(number_recognition.GlobalNumber(numeric_value, _average_dot_location(group)))
+    def _retake_photos_to_remove_repeated_numeric_values(self) -> None:
+        # Find repeated elements
+        # noinspection PyArgumentList
+        numeric_value_counts = collections.Counter([c.modal_numeric_value for c in self._number_clusters])
+        clusters_with_repeated_numeric_value = []  # type: list[GlobalNumberCluster]
+        for cluster in self._number_clusters:
+            numeric_value = cluster.modal_numeric_value
+            if numeric_value is not None and numeric_value_counts[numeric_value] > 1:
+                clusters_with_repeated_numeric_value.append(cluster)
 
-        return sorted(final_numbers, key=lambda n: n.numeric_value)
+        if len(clusters_with_repeated_numeric_value) > 0:
+            print('Repeated numeric values: {}'.format(
+                ', '.join([str(c.modal_numeric_value) for c in clusters_with_repeated_numeric_value])))
 
-    def _retake_photos_until_unique_mode(self, target_numbers):
+        # Retake photos
+        for current_cluster in clusters_with_repeated_numeric_value:
+            old_numeric_value = current_cluster.modal_numeric_value
+
+            self._retake_photos_until_valid_mode(current_cluster,
+                                                 mode_is_invalid=lambda m: m is None or m in numeric_value_counts)
+
+            new_numeric_value = current_cluster.modal_numeric_value
+            numeric_value_counts[old_numeric_value] -= 1
+            numeric_value_counts[new_numeric_value] += 1
+
+            for cluster in self._number_clusters:
+                if cluster.modal_numeric_value == new_numeric_value and \
+                                cluster not in clusters_with_repeated_numeric_value:
+                    clusters_with_repeated_numeric_value.append(cluster)  # In python these extra items do get iterated!
+
+    def _retake_last_number_if_last_two_are_not_consecutive(self) -> None:
+        last_two_numbers_might_not_be_consecutive = True
+
+        while last_two_numbers_might_not_be_consecutive:
+            last_two_numbers_might_not_be_consecutive = False
+
+            clusters = [grp for grp in self._number_clusters if grp.modal_numeric_value is not None]
+            sorted_clusters = sorted(clusters, key=lambda c: c.modal_numeric_value)  # type: list[GlobalNumberCluster]
+
+            if len(sorted_clusters) > 1:
+                largest_numeric_value = sorted_clusters[-1].modal_numeric_value
+                second_largest_numeric_value = sorted_clusters[-2].modal_numeric_value
+                if largest_numeric_value != second_largest_numeric_value + 1:
+                    self._retake_photos_until_valid_mode(
+                        sorted_clusters[-1], mode_is_invalid=lambda m: m is None or m == largest_numeric_value)
+                    if sorted_clusters[-1].modal_numeric_value < largest_numeric_value:  # If it got smaller...
+                        last_two_numbers_might_not_be_consecutive = True
+
+    def _retake_photos_until_valid_mode(self, target_number_cluster, mode_is_invalid=lambda m: m is None) -> None:
         """
-        Take 0 or more extra photos at the average location of the target numbers in order to find the modal numeric
-        value recognised.
+        Take 0 or more extra photos at the average location of the target numbers to do what we can to ensure a
+        valid modal numeric value exists.
 
         Args:
-            target_numbers (list[number_recognition.GlobalNumber]): the different representations of a single real
-                                                                    life number to be recognised
+            target_number_cluster (GlobalNumberCluster):
+                The different representations of a single real life number to be recognised. This is extended to
+                include all extra photos taken during this method.
 
-        Returns:
-            (int, list[number_recognition.GlobalNumber]): the first return value is the modal numeric value
-                                                          the second return value is the augmented list of global numbers
+            mode_is_invalid:
+                A function which accepts a given mode (int) and returns true if it is invalid. By default this simply
+                returns True if a unique mode does not exist.
         """
-        target_numbers = target_numbers.copy()
-
-        average_location = _average_dot_location(target_numbers)
-
-        numeric_value = _try_compute_mode([n.numeric_value for n in target_numbers])
+        average_location = target_number_cluster.average_dot_location_yx
+        numeric_value = target_number_cluster.modal_numeric_value
 
         jitters = np.array([[0, 0],
                             [10, 0],
-                            [10, 10],
-                            [0, 10]])
+                            [0, 10],
+                            [-10, 0],
+                            [0, -10]])
 
         retry_number = -1
-        while numeric_value is None and retry_number + 1 < len(jitters):
+        while mode_is_invalid(numeric_value) and retry_number + 1 < len(jitters):
             retry_number += 1
 
             # Take a new photo
-            print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}).\n'
-                  'Retrying...'.format(average_location))
+            print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}), current value {1}\n'
+                  'Retrying...'.format(average_location, numeric_value))
             new_global_numbers = self._take_photo_and_extract_numbers(average_location + jitters[retry_number])
             new_global_numbers = [n for n in new_global_numbers
-                                  if np.linalg.norm(n.dot_location_yx_mm - average_location) < self._min_millimetres_between_distinct_spots]
-
+                                  if np.linalg.norm(
+                    n.dot_location_yx_mm - average_location) < self._min_millimetres_between_distinct_spots]
             number_recognition.print_recognised_global_numbers(new_global_numbers)
-            target_numbers.extend(new_global_numbers)
+
+            target_number_cluster.extend(new_global_numbers)
 
             # Try again to get the mode values
-            numeric_value = _try_compute_mode([n.numeric_value for n in target_numbers])
-
-        return numeric_value, target_numbers
+            numeric_value = _try_compute_mode([n.numeric_value for n in target_number_cluster])
 
     def _take_photo_and_extract_numbers(self, target_position: (float, float)):
         self._plotter.move_camera_to(target_position)
@@ -133,6 +186,9 @@ class DotToDotPlotter:
 
         return new_global_numbers
 
+    def _remove_unrecognised_number_clusters(self):
+        self._number_clusters = [n for n in self._number_clusters if n.modal_numeric_value is not None]
+
     def draw_joined_dots(self, dot_to_dot_numbers) -> None:
         """
         Draw a picture, joining the dots between the numbers.
@@ -143,6 +199,30 @@ class DotToDotPlotter:
         path_curve = curve_creation.points_to_svg_line_segments([n.dot_location_yx_mm for n in dot_to_dot_numbers],
                                                                 is_closed=True)
         self._plotter.draw(path_curve)
+
+
+class GlobalNumberCluster(list):
+    def __init__(self, initial_global_numbers=()):
+        """
+        Args:
+            initial_global_numbers (list[number_recognition.GlobalNumber]):
+        """
+        # noinspection PyTypeChecker
+        list.__init__(self, initial_global_numbers)
+
+    @property
+    def best_guess(self):
+        return number_recognition.GlobalNumber(
+            self.modal_numeric_value,
+            self.average_dot_location_yx)
+
+    @property
+    def modal_numeric_value(self):
+        return _try_compute_mode([n.numeric_value for n in self])
+
+    @property
+    def average_dot_location_yx(self):
+        return _average_dot_location(self)
 
 
 def _compute_raster_scan_positions(camera_resolution_mm_xy: (float, float),
@@ -199,7 +279,7 @@ def _warn_if_unexpected_numeric_values(final_numbers) -> None:
         final_numbers (list[number_recognition.GlobalNumber]): the final set of recognised numbers
     """
     for i in range(len(final_numbers)):
-        if final_numbers[i].numeric_value != i+1:
+        if final_numbers[i].numeric_value != i + 1:
             warnings.warn('Did not find a set of consecutive numbers starting at 1!\n'
                           'Instead found {}'.format(', '.join([str(n.numeric_value) for n in final_numbers])))
             break

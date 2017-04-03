@@ -184,6 +184,10 @@ class Plotter:
             pen_speed=pen_speed,
             resolution=resolution)
 
+    @property
+    def camera_field_of_view_xy_mm(self):
+        return self._camera.resolution_mm_xy
+
 
 class PlotterWithDebugImage(Plotter):
     @staticmethod

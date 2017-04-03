@@ -35,9 +35,9 @@ try:
     # Get hardware
     if args.file_glob is not None:
         image_paths = sorted(glob.glob(args.file_glob))
-        hardware.plotter._camera = camera = DummyCameraFromImagePaths(resolution_pixels_xy=(200, 200),
-                                                                      pixels_to_mm_scale_factors_xy=(0.233, 0.237),
-                                                                      image_paths=image_paths)
+        hardware.plotter._camera = DummyCameraFromImagePaths(resolution_pixels_xy=(200, 200),
+                                                             pixels_to_mm_scale_factors_xy=(0.233, 0.237),
+                                                             image_paths=image_paths)
     plotter = DotToDotPlotter(hardware.plotter)
 
     # Do the dot-to-dot
