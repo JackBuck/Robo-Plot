@@ -49,7 +49,7 @@ x_axis = stepper_control.Axis(
     motor=x_axis_motor,
     lead=8,
     limit_switch_pair=x_limit_switches,
-    limit_switch_separation=10000,  # TODO: Needs calibrating!!
+    limit_switch_separation=214.8,
     home_position=x_home_position,
     invert_axis=True)
 
@@ -57,7 +57,7 @@ y_axis = stepper_control.Axis(
     motor=y_axis_motor,
     lead=8,
     limit_switch_pair=y_limit_switches,
-    limit_switch_separation=10000,  # TODO: Needs calibrating!!
+    limit_switch_separation=293.56,
     home_position=y_home_position,
     invert_axis=False)
 
