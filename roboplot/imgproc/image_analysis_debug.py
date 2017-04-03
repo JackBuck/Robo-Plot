@@ -139,7 +139,7 @@ def save_processed_image(image):
                + '_' \
                + str(hardware.plotter._axes.current_location[1]) + '_Processed_Image.jpg'
 
-    cv2.imwrite(os.path.join(config.debug_output_folder,filename), image)
+    cv2.imwrite(os.path.join(config.debug_output_folder, filename), image)
 
 def create_debug_image(image):
     debug_image = cv2.resize(image, (0, 0), fx=DEBUG_SCALE_FACTOR, fy=DEBUG_SCALE_FACTOR)

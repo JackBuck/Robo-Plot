@@ -10,70 +10,9 @@ import cv2
 import roboplot.config as config
 import roboplot.imgproc.image_analysis_debug as iadebug
 import roboplot.imgproc.colour_detection as cd
+import roboplot.imgproc.image_analysis_enums as image_analysis_enums
 
 white_threshold = 130
-
-
-class Centroid(enum.IntEnum):
-    VALID = 0
-    INVALID_RANGE = 1
-    INVALID_NO_WHITE = 2
-
-
-class Direction(enum.IntEnum):
-    NORTH = 0
-    EAST = 1
-    SOUTH = 2
-    WEST = 3
-
-
-def turn_left(current_direction):
-    """
-
-    Args:
-        current_direction: The direction the previous picture was taken in.
-
-    Returns:
-        new_direction: The direction after turning left
-    """
-    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
-    direction_index = (current_direction - 1) % 4
-    return direction_array[direction_index]
-
-
-def turn_right(current_direction):
-    """"
-
-    Args:
-        current_direction: The direction the previous picture was taken in.
-
-    Returns:
-        new_direction: The direction after turning right
-    """
-    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
-    direction_index = (current_direction + 1) % 4
-    return direction_array[direction_index]
-
-
-def turn_around(current_direction):
-    """"
-
-    Args:
-        current_direction: The direction the previous picture was taken in.
-
-    Returns:
-        new_direction: The direction after turning around
-    """
-    direction_array = [Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST]
-    direction_index = (current_direction + 2) % 4
-    return direction_array[direction_index]
-
-
-class Turning(enum.IntEnum):
-    LEFT = 0
-    STRAIGHT = 1
-    RIGHT = 2
-    INVALID = 3
 
 
 def compute_centroid_from_row(current_row, last_centroid, search_width):
@@ -162,13 +101,13 @@ def extract_sub_image(processed_image, scan_direction):
     # must first search for the red triangle.
 
     # Orientate image so we are scanning the bottom half.
-    if scan_direction == Direction.NORTH:
+    if scan_direction == image_analysis_enums.Direction.NORTH:
         processed_image = np.rot90(processed_image, 2)
-    elif scan_direction == Direction.EAST:
+    elif scan_direction == image_analysis_enums.Direction.EAST:
         processed_image = np.rot90(processed_image, 3)
-    elif scan_direction == Direction.SOUTH:
+    elif scan_direction == image_analysis_enums.Direction.SOUTH:
         processed_image = processed_image
-    elif scan_direction == Direction.WEST:
+    elif scan_direction == image_analysis_enums.Direction.WEST:
         processed_image = np.rot90(processed_image, 1)
 
     sub_image = processed_image[int(processed_image.shape[0] / 2):, :]
@@ -262,6 +201,9 @@ def compute_pixel_path(image, search_width):
     else:
         debug_image = None
 
+    if len(indices) == 0:
+        return [[-1, -1], [-1, -1]], turn_to_next_scan
+
     pixel_segments = approximate_path(indices)
 
     # Show current state if debug is set to true.
@@ -270,10 +212,10 @@ def compute_pixel_path(image, search_width):
 
     # If we have ended prematurely try continuing the scan by rotating the image by +/-60.
     if (len(indices) < image.shape[0] - 20) \
-            and (turn_to_next_scan is not Turning.STRAIGHT) \
-            and (turn_to_next_scan is not Turning.INVALID):
+            and (turn_to_next_scan is not image_analysis_enums.Turning.STRAIGHT) \
+            and (turn_to_next_scan is not image_analysis_enums.Turning.INVALID):
 
-        if turn_to_next_scan is Turning.LEFT:
+        if turn_to_next_scan is image_analysis_enums.Turning.LEFT:
             angle_rad = np.deg2rad(-60)
         else:
             angle_rad = np.deg2rad(60)
@@ -289,27 +231,29 @@ def compute_pixel_path(image, search_width):
             debug_sub_image = None
 
         # Compute approximate lines on sub_image
-        rotated_pixel_segments = approximate_path(rotated_indices)
 
-        # Show current state if debug is set to true and reset indices.
-        if __debug__:
-            iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, is_rotated=True)
+        if len(rotated_indices) != 0:
+            rotated_pixel_segments = approximate_path(rotated_indices)
 
-        # Rotate line indices back.
-        extra_pixel_segments = [list(map(operator.add,
-                                         (int(pixel_segments[-1][0]),
-                                          int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
-                                         rotate(rotated_pixel_segments[0], point, -angle_rad)))
-                                for point in rotated_pixel_segments]
-        # Add segments to list.
-        pixel_segments += extra_pixel_segments
+            # Show current state if debug is set to true and reset indices.
+            if __debug__:
+                iadebug.save_line_approximation(debug_sub_image, rotated_pixel_segments, is_rotated=True)
+
+            # Rotate line indices back.
+            extra_pixel_segments = [list(map(operator.add,
+                                             (int(pixel_segments[-1][0]),
+                                              int(pixel_segments[-1][1] - sub_image.shape[1] / 2)),
+                                             rotate(rotated_pixel_segments[0], point, -angle_rad)))
+                                    for point in rotated_pixel_segments]
+            # Add segments to list.
+            pixel_segments += extra_pixel_segments
 
     if __debug__:
         debug_image = iadebug.create_debug_image(image)
         iadebug.save_line_approximation(debug_image, pixel_segments,is_rotated=False)
 
     # If there was not enough path in the photo try another orientation.
-    if turn_to_next_scan is Turning.INVALID:
+    if turn_to_next_scan is image_analysis_enums.Turning.INVALID:
         return [[-1, -1], [-1, -1]], turn_to_next_scan
 
     return pixel_segments, turn_to_next_scan
@@ -336,11 +280,11 @@ def analyse_rows(pixels, search_width, is_rotated):
     indices.append([0, int(pixels.shape[1] / 2)])
 
     # Initially assume that the scan direction for the next image is the same as the current direction
-    turn_to_next_scan = Turning.STRAIGHT
+    turn_to_next_scan = image_analysis_enums.Turning.STRAIGHT
 
     # Initialise the state of the last centroid if a valid average could not be found or is too far
     # from the previous average - indicating noise in the image.
-    last_centroid_validity = Centroid.VALID
+    last_centroid_validity = image_analysis_enums.Centroid.VALID
 
     # Analyse each row at a time from the top moving down the image.
     for rr in range(1, pixels.shape[0]):
@@ -367,24 +311,24 @@ def analyse_rows(pixels, search_width, is_rotated):
         if (rr == 1 and pixels[0, next_centroid] > 130) or abs(next_centroid - indices[-1][1]) < 2:
             # Valid result, add result to arrays
             indices.append([rr, next_centroid])
-            last_centroid_validity = Centroid.VALID
+            last_centroid_validity = image_analysis_enums.Centroid.VALID
 
         elif abs(next_centroid - indices[-1][1]) >= 2 and next_centroid != -1:
             # Invalid result - too much of a gap created.
             # If the last row was also invalid then we stop as another picture needs to be taken.
-            if last_centroid_validity != Centroid.VALID:
+            if last_centroid_validity != image_analysis_enums.Centroid.VALID:
                 if next_centroid - indices[-1][1] < 0:
-                    turn_to_next_scan = Turning.RIGHT
+                    turn_to_next_scan = image_analysis_enums.Turning.RIGHT
                 else:
-                    turn_to_next_scan = Turning.LEFT
+                    turn_to_next_scan = image_analysis_enums.Turning.LEFT
                 break
 
             # Flag last centroid as invalid.
-            last_centroid_validity = Centroid.INVALID_RANGE
+            last_centroid_validity = image_analysis_enums.Centroid.INVALID_RANGE
 
         else:
             # We have an invalid row because no white was found.
-            if last_centroid_validity != Centroid.VALID:
+            if last_centroid_validity != image_analysis_enums.Centroid.VALID:
                 # We have 2 invalid entries in a row. Or too big a jump between averages. This means the
                 # approximation should stop.
 
@@ -392,18 +336,21 @@ def analyse_rows(pixels, search_width, is_rotated):
                 # in them.
 
                 if next_centroid - indices[-1][1] < 0:
-                    turn_to_next_scan = Turning.LEFT
+                    turn_to_next_scan = image_analysis_enums.Turning.LEFT
                 else:
-                    turn_to_next_scan = Turning.RIGHT
+                    turn_to_next_scan = image_analysis_enums.Turning.RIGHT
                 break
 
-            last_centroid_validity = Centroid.INVALID_NO_WHITE
+            last_centroid_validity = image_analysis_enums.Centroid.INVALID_NO_WHITE
 
     # Return the list of average indices and the scan direction for the next picture taken.
 
     min_number = max(10, int(pixels.shape[0]/50))
-    if len(indices) < min_number and last_centroid_validity is Centroid.INVALID_NO_WHITE:
-        turn_to_next_scan = Turning.INVALID
+    if len(indices) < min_number and last_centroid_validity is image_analysis_enums.Centroid.INVALID_NO_WHITE:
+        turn_to_next_scan = image_analysis_enums.Turning.INVALID
+
+    # If we end in black remove the last min number of indices
+    indices = indices[:-min_number+1]
 
     return indices, turn_to_next_scan
 
@@ -535,10 +482,7 @@ def create_rotated_sub_image(image, centre, search_width, angle_rad):
     M = cv2.getRotationMatrix2D((centre[1], centre[0]), np.rad2deg(angle_rad), 1.0)
 
     w = image.shape[1]
-
     h = centre[0] + int((image.shape[0] - centre[0]) * abs(math.sin(angle_rad)))
-    #int(centre[0] + (w / 2 - abs(centre[1] - w / 2)) * abs(math.sin(angle_rad)))
-
     rotated = cv2.warpAffine(image, M, (w, h))
 
     # Centre the last white centroid into the centre of the image.
@@ -609,16 +553,16 @@ def find_start_direction(img):
                          south_whiteness_total, west_whiteness_total)
 
     if max_num_pixels == north_whiteness_total:
-        return Direction.NORTH
+        return image_analysis_enums.Direction.NORTH
 
     if max_num_pixels == east_whiteness_total:
-        return Direction.EAST
+        return image_analysis_enums.Direction.EAST
 
     if max_num_pixels == south_whiteness_total:
-        return Direction.SOUTH
+        return image_analysis_enums.Direction.SOUTH
 
     if max_num_pixels == west_whiteness_total:
-        return Direction.WEST
+        return image_analysis_enums.Direction.WEST
 
 
 def analyse_candidate_path(computed_path, candidate_path):
@@ -639,8 +583,10 @@ def analyse_candidate_path(computed_path, candidate_path):
             # If at any point the path gets within half a path width of a previously computed point. And is also closer
             # to that point than it is to the computed centre mark this direction as invalid.
 
-            if distance_to_computed_path < 5 and distance_to_centre > 5:
+            if distance_to_computed_path < 2.5 and distance_to_centre > 5: # This is based on a minimum angle of 30
                 return length, False
+
+
 
             # If the path gets sufficiently far from the precious path - same to assume that we have not done a u
             if distance_to_computed_path > 40:
@@ -666,11 +612,11 @@ def distance_point_to_line_segment(point, line_seg_start, line_seg_end):
     if c2 <= c1:
         return distance_point_to_point(point, line_seg_end)
 
-
     # Closest point is on line segment calculate point and then calculate distance.
     b = c1 / c2
     closest_point_on_line = line_seg_start + b * v
     return distance_point_to_point(point, closest_point_on_line)
+
 
 def compute_next_direction_feelers(image, processed_image, current_direction):
     # This has drawbacks as mention by JB.
@@ -687,13 +633,13 @@ def compute_next_direction_feelers(image, processed_image, current_direction):
         max_feeler_length = max(north_feeler_length, east_feeler_length, south_feeler_length, west_feeler_length)
 
     if max_feeler_length == north_feeler_length:
-        return Direction.NORTH
+        return image_analysis_enums.Direction.NORTH
     elif max_feeler_length == east_feeler_length:
-        return Direction.EAST
+        return image_analysis_enums.Direction.EAST
     elif max_feeler_length == south_feeler_length:
-        return Direction.SOUTH
+        return image_analysis_enums.Direction.SOUTH
     elif max_feeler_length == west_feeler_length:
-        return Direction.WEST
+        return image_analysis_enums.Direction.WEST
 
 
 def compute_feeler_lengths(processed_image, current_direction):
@@ -703,7 +649,7 @@ def compute_feeler_lengths(processed_image, current_direction):
     west_feeler_length = 0
     south_feeler_length = 0
 
-    if current_direction is not Direction.NORTH:
+    if current_direction is not image_analysis_enums.Direction.NORTH:
         y_index = int(processed_image.shape[0] / 2)
         x_index = int(processed_image.shape[1] / 2)
         current_pixel = processed_image[y_index, x_index]
@@ -713,7 +659,7 @@ def compute_feeler_lengths(processed_image, current_direction):
             south_feeler_length += 1
             current_pixel = processed_image[y_index, x_index]
 
-    if current_direction is not Direction.EAST:
+    if current_direction is not image_analysis_enums.Direction.EAST:
         y_index = int(processed_image.shape[0] / 2)
         x_index = int(processed_image.shape[1] / 2)
         current_pixel = processed_image[y_index, x_index]
@@ -723,7 +669,7 @@ def compute_feeler_lengths(processed_image, current_direction):
             west_feeler_length += 1
             current_pixel = processed_image[y_index, x_index]
 
-    if current_direction is not Direction.SOUTH:
+    if current_direction is not image_analysis_enums.Direction.SOUTH:
         y_index = int(processed_image.shape[0] / 2)
         x_index = int(processed_image.shape[1] / 2)
         current_pixel = processed_image[y_index, x_index]
@@ -733,7 +679,7 @@ def compute_feeler_lengths(processed_image, current_direction):
             north_feeler_length += 1
             current_pixel = processed_image[y_index, x_index]
 
-    if current_direction is not Direction.WEST:
+    if current_direction is not image_analysis_enums.Direction.WEST:
         y_index = int(processed_image.shape[0] / 2)
         x_index = int(processed_image.shape[1] / 2)
         current_pixel = processed_image[y_index, x_index]

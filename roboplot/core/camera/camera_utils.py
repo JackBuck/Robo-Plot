@@ -1,11 +1,10 @@
 # coding=utf-8
-import os
 import operator
 
 import numpy as np
-import cv2
 
-import roboplot.config as config
+from roboplot import config as config
+from roboplot.imgproc import image_analysis_enums as image_analysis_enums
 
 
 def pad_image(image, target_photo_centre):
@@ -82,3 +81,26 @@ def translate_camera_points_to_global_points(points):
     global_points = [list(map(operator.add, point, config.CAMERA_OFFSET)) for point in points]
 
     return global_points
+
+
+def convert_to_global_coords(points, scan_direction, origin, y_offset, x_offset):
+
+    # Scale factors
+    x_scaling = config.X_PIXELS_TO_MILLIMETRE_SCALE
+    y_scaling = config.Y_PIXELS_TO_MILLIMETRE_SCALE
+
+    # Rotate and scale points to global orientation.
+    if scan_direction is image_analysis_enums.Direction.SOUTH:
+        output_points = [list(map(operator.add, origin, ((y-y_offset) * y_scaling, (x - x_offset) * x_scaling)))
+                         for y, x in points]
+    elif scan_direction is image_analysis_enums.Direction.EAST:
+        output_points = [list(map(operator.add, origin, (-(x - x_offset) * x_scaling, (y-y_offset) * y_scaling)))
+                         for y, x in points]
+    elif scan_direction is image_analysis_enums.Direction.WEST:
+        output_points = [list(map(operator.add, origin, ((x - x_offset) * x_scaling, -(y-y_offset) * y_scaling)))
+                         for y, x in points]
+    else:
+        output_points = [list(map(operator.add, origin, (-(y-y_offset) * y_scaling, -(x - x_offset) * x_scaling)))
+                         for y, x in points]
+
+    return output_points

@@ -1,17 +1,12 @@
-import context
 import time
 
-import cv2
-import argparse
-import numpy as np
-
-import roboplot.config as config
-from roboplot.core.gpio.gpio_wrapper import GPIO
-import roboplot.imgproc.path_following as path_following
+import roboplot.core.hardware as hardware
+import roboplot.imgproc.colour_detection as colour_detection
+import roboplot.imgproc.start_end_detection as start_end_detection
 import roboplot.imgproc.image_analysis as image_analysis
 import roboplot.imgproc.page_search as page_search
-import roboplot.challenge_two_functions as challenge2
-import roboplot.core.hardware as hardware
+import roboplot.imgproc.path_following as path_following
+from roboplot.core.gpio.gpio_wrapper import GPIO
 
 start_time = time.time()
 
@@ -28,18 +23,17 @@ try:
     for i in range(0, len(camera_positions)):
 
         camera_centre = camera_positions[i]
-        green_location, photo = challenge2.find_green_at_position(camera_centre, 10)
+        green_location, photo = start_end_detection.find_green_at_position(camera_centre, 10)
 
         # Check if any green was detected.
         if green_location[0] != -1:
             green_found = True
 
-            centre, photo = challenge2.find_green_centre(green_location, 20)
+            centre, photo = start_end_detection.find_green_centre(green_location, 20)
 
-            # Need function to compute first direction here.
-            starting_direction = image_analysis.find_start_direction(photo)
-            computed_camera_path = path_following.compute_complete_path(photo, centre, starting_direction)
-            path_following.follow_computed_path(computed_camera_path)
+            a_path_finder = path_following.PathFinder()
+            computed_camera_path = a_path_finder.compute_complete_path(photo, centre)
+            a_path_finder.follow_computed_path(computed_camera_path)
 
     end_time = time.time()
 
