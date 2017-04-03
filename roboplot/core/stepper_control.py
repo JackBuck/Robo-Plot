@@ -23,7 +23,7 @@ from roboplot.core.stepper_motors import StepperMotor
 
 class Axis:
     # Class variables, present so that we can use spec_set with unittest.Mock
-    current_location = 0
+    current_location = 0  # type: float
     home_position = None
     secondary_home_position = None
     _is_homed = False
@@ -35,6 +35,7 @@ class Axis:
                  motor: StepperMotor,
                  lead: float,
                  limit_switch_pair,
+                 limit_switch_separation: float,
                  home_position: HomePosition = home_position,
                  invert_axis: bool = False):
         """
@@ -44,6 +45,7 @@ class Axis:
             motor (stepper_motors.StepperMotor): The stepper motor driving the axis.
             lead (float): The lead of the axis, in millimetres per revolution of the motor.
             limit_switch_pair (iterable of LimitSwitch): The pair of limit switches at each end of the axis.
+            limit_switch_separation (float): The distance between the limit switches (for determining soft limits)
             home_position (HomePosition): The direction and location of the (primary) limit switch to use when homing.
             invert_axis (bool): Use this parameter to invert the position and direction reported by the axis.
         """
@@ -55,13 +57,14 @@ class Axis:
         self.limit_switches = limit_switch_pair
         self._invert_axis = invert_axis
         self.home_position = home_position
+        self.limit_switch_separation = limit_switch_separation
 
     @property
     def back_off_millimetres(self):
         return self.__back_off_millimetres
 
     @property
-    def millimetres_per_step(self):
+    def millimetres_per_step(self) -> float:
         return self._lead / self._motor.steps_per_revolution
 
     @property
@@ -85,41 +88,60 @@ class Axis:
         setting the home) as well as the value set upon reaching it.
         """
 
-        self.forwards = self.home_position.forwards
-
         # Check that a limit switch is not currently pressed
         if any([switch.is_pressed for switch in self.limit_switches]):
             raise limit_switches.UnexpectedLimitSwitchError("Cannot home if switch is already pressed!")
 
         # Step until a switch is hit
-        hit_location = self._step_expecting_limit_switch()
-        while hit_location is None:
-            hit_location = self._step_expecting_limit_switch()
+        hit_location = self.explore_limit_switch(self.home_position.forwards)
 
         # Set the current location to the home position at the point where the limit switch is hit
         # Note that we back-calculate to account for any back off.
         distance_moved_since_switch_pressed = self.current_location - hit_location
         self.current_location = self.home_position.location + distance_moved_since_switch_pressed
 
-        # Step back until a switch is hit
-        self.forwards = not self.home_position.forwards
+        # Set the soft limit based on the limit switch separation
+        if self.home_position.forwards:
+            self.secondary_home_position = HomePosition(
+                location=self.home_position.location - self.limit_switch_separation,
+                forwards=False
+            )
+        else:
+            self.secondary_home_position = HomePosition(
+                location=self.home_position.location + self.limit_switch_separation,
+                forwards=True
+            )
+
+        self._is_homed = True
+
+    def explore_limit_switch(self, forwards: bool) -> float:
+        """
+        Step in the requested direction until a limit switch is hit. Then report the location of that hit.
+
+        Note that the plotter may have backed off after the hit, before this method returns.
+        However, the returned location _is_ that of the limit switch.
+
+        Args:
+            forwards (bool): true if the plotter should explore in a 'forwards' direction
+
+        Returns:
+            float: the current_location at the time of the limit switch hit
+        """
+        self.forwards = forwards
 
         hit_location = self._step_expecting_limit_switch()
         while hit_location is None:
             hit_location = self._step_expecting_limit_switch()
 
-        # Set the upper home limits of the home position at the point where the limit switch is hit.
-        self.secondary_home_position = HomePosition(location=hit_location, forwards=not self.home_position.forwards)
+        return hit_location
 
-        self._is_homed = True
-
-    def _step_expecting_limit_switch(self):
+    def _step_expecting_limit_switch(self) -> float:
         """
         Step if there is no current limit switch press.
         Instead of raising on a switch press, back off and return the location of the collision.
 
         Returns:
-            The current_location when the switch press occurred.
+            float: The current_location when the switch press occurred.
         """
         a_switch_is_pressed = any(switch.is_pressed for switch in self.limit_switches)
         if not a_switch_is_pressed:

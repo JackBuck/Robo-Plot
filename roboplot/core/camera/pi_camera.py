@@ -41,3 +41,17 @@ class Camera:
             self._photo_index += 1
 
             return outputarray
+
+    @property
+    def resolution_mm_xy(self):
+        """The size of a photo (width, height) in mm"""
+        return self.resolution_pixels_xy * self.pixels_to_mm_scale_factors_xy
+
+    @property
+    def resolution_pixels_xy(self):
+        """The size of a photo in pixels"""
+        return np.array(config.CAMERA_RESOLUTION)
+
+    @property
+    def pixels_to_mm_scale_factors_xy(self):
+        return np.array([config.X_PIXELS_TO_MILLIMETRE_SCALE, config.Y_PIXELS_TO_MILLIMETRE_SCALE])

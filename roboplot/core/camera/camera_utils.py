@@ -6,17 +6,23 @@ import numpy as np
 from roboplot import config as config
 from roboplot.imgproc import image_analysis_enums as image_analysis_enums
 
+default_padding_grey_value = 30
 
-def pad_image(image, target_photo_centre):
+
+def pad_image(image: np.ndarray,
+              target_photo_centre: (float, float),
+              grey_value: np.uint8 = default_padding_grey_value) -> np.ndarray:
     """
     This function takes an image and the pixel indices of the target centre of the photo. It then pads and crops the
     image to achieve the required centre.
+
     Args:
-        image: The image to be modified
-        target_photo_centre: The target centre of the image
+        image: the image to be modified
+        target_photo_centre: the target centre (row,col) of the image in pixels
+        grey_value: the gray value used to pad the image
 
     Returns:
-        modified_image: The image with the new centre.
+        np.ndarray: the modified image with the new centre.
     """
 
     # If the centre is already correct return early with the input image.
@@ -25,7 +31,7 @@ def pad_image(image, target_photo_centre):
 
     # Otherwise create a modified image to populate with the required portion of the photo.
     modified_photo = np.zeros(image.shape, np.uint8)
-    modified_photo.fill(30)
+    modified_photo.fill(grey_value)
 
     # Set min/max x value and placement in the photo
     if 0 > int(target_photo_centre[1]) - int(image.shape[1] / 2):
