@@ -110,6 +110,39 @@ class TestDotToDotPlotter(unittest.TestCase):
             [(c.numeric_value, c.dot_location_yx_mm[0], c.dot_location_yx_mm[1]) for c in candidates],
             [(1, 20, 20), (2, 20, 80), (3, 60, 20)])
 
+    def test_does_not_retake_unnecesary_numbers_once_repeat_has_been_resolved(self):
+        # Arrange
+        self._dot_to_dot_plotter._take_and_analyse_initial_photos = mock.MagicMock(
+            return_value=[GlobalNumber(1, (20, 20)),
+                          GlobalNumber(1, (20, 80))])
+
+        numbers = [GlobalNumber(1, (20, 20)),
+                   GlobalNumber(1, (20, 80))]
+
+        def side_effect(*args, **kwargs):
+            # Ensure that the first number we check resolves as 2
+            if np.linalg.norm(args[0] - np.array([20, 20])) < 20:
+                if all([n.numeric_value == 1 for n in numbers]):
+                    numbers[0].numeric_value = 2
+                return [numbers[0]]
+
+            elif np.linalg.norm(args[0] - np.array([20, 80])) < 20:
+                if all([n.numeric_value == 1 for n in numbers]):
+                    numbers[1].numeric_value = 2
+                return [numbers[1]]
+            else:
+                return []
+
+        take_photo_and_extract_numbers_mock = mock.MagicMock(side_effect=side_effect)
+        self._dot_to_dot_plotter._take_photo_and_extract_numbers = take_photo_and_extract_numbers_mock
+
+        # Act
+        candidates = self._dot_to_dot_plotter.search_for_numbers()
+
+        # Assert - called twice to resolve 2 and not at all to resolve 1
+        self.assertEqual(take_photo_and_extract_numbers_mock.call_count, 2)
+
+
     def test_does_not_retake_images_of_numbers_which_are_not_repeated(self):
         # Arrange
         self._dot_to_dot_plotter._take_and_analyse_initial_photos = mock.MagicMock(
