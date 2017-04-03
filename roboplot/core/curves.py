@@ -58,9 +58,8 @@ class Curve:
 
         Returns:
             np.ndarray: An nx2 matrix the first point in the curve.
-
-               """
-        raise NotImplementedError("The parameterisation method must be overridden in derived classes.")
+        """
+        return self.first_point
 
     def offset(self, amount_by_which_to_offset):
         return OffsetCurve(self, amount_by_which_to_offset)
