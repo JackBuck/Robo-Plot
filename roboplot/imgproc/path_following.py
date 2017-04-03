@@ -204,20 +204,20 @@ class PathFinder:
                 path_found, new_path = self.calculate_path_from_image(image_to_analyse, search_width, computed_path)
 
                 if not path_found:
-
-                    for i in range(0, 4):
-
-                        # Search for new path. - THIS CANNOT BE DONE WITH UNERODED IMAGE.
-                        path_found, new_path = self.calculate_path_from_image(image_to_analyse, search_width,
-                                                                              computed_path, rotation_deg=i*20)
-
-                        if path_found:
-                            break
-
-                    if not path_found:
-
-                        # Break loop and draw what we have found.
-                        break
+                    break
+                    #for i in range(0, 4):
+#
+                    #    # Search for new path. - THIS CANNOT BE DONE WITH UNERODED IMAGE.
+                    #    path_found, new_path = self.calculate_path_from_image(image_to_analyse, search_width,
+                    #                                                          computed_path, rotation_deg=i*20)
+#
+                    #    if path_found:
+                    #        break
+#
+                    #if not path_found:
+#
+                    #    # Break loop and draw what we have found.
+                    #    break
 
                 computed_path.extend(new_path)
 
