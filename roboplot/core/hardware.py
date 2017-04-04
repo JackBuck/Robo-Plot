@@ -41,7 +41,7 @@ camera = camera_wrapper.Camera()
 
 # Substitute objects
 if not config.real_hardware:
-    x_limit_switches = limit_switches.define_pretend_limit_switches(x_home_position, separation=220)
+    x_limit_switches = limit_switches.define_pretend_limit_switches(x_home_position, separation=230)
     y_limit_switches = limit_switches.define_pretend_limit_switches(y_home_position, separation=350)
 
 # Higher level objects

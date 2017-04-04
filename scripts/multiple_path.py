@@ -32,8 +32,8 @@ try:
             centre, photo = start_end_detection.find_green_centre(green_location, 20)
 
             a_path_finder = path_following.PathFinder()
-            computed_camera_path = a_path_finder.compute_complete_path(photo, centre)
-            a_path_finder.follow_computed_path(computed_camera_path)
+            a_path_finder.compute_complete_path(photo, centre)
+            a_path_finder.follow_computed_path()
 
     end_time = time.time()
 

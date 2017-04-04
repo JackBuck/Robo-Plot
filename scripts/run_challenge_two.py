@@ -22,10 +22,10 @@ try:
 
     # Find path
     a_path_finder = path_following.PathFinder()
-    computed_camera_path = a_path_finder.compute_complete_path(photo, centre)
+    a_path_finder.compute_complete_path(photo, centre)
 
     # Follow Path
-    a_path_finder.follow_computed_path(computed_camera_path)
+    a_path_finder.follow_computed_path()
 
     end_time = time.time()
     print('Elapsed: {} seconds'.format(end_time - start_time))

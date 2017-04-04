@@ -141,7 +141,7 @@ def process_image(image):
     if config.real_hardware:
         num_iterations = 8
     else:
-        num_iterations = 11
+        num_iterations = 8
 
         processed_img = cv2.GaussianBlur(processed_img, (21, 21), 0)
     _, processed_img = cv2.threshold(processed_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -349,8 +349,8 @@ def analyse_rows(pixels, search_width, is_rotated):
     if len(indices) < min_number and last_centroid_validity is image_analysis_enums.Centroid.INVALID_NO_WHITE:
         turn_to_next_scan = image_analysis_enums.Turning.INVALID
 
-    # If we end in black remove the last min number of indices
-    indices = indices[:-min_number+1]
+        # If we end in black remove the last min number of indices
+        indices = indices[:-min_number+1]
 
     return indices, turn_to_next_scan
 
