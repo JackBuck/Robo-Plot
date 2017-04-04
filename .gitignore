@@ -1,5 +1,7 @@
 # Robo-Plot files
 DebugImages
+/resources/number_recognition/number_recognition_tmp
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
