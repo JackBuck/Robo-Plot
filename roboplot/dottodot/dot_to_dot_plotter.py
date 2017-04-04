@@ -10,6 +10,7 @@ import roboplot.config as config
 import roboplot.dottodot.clustering as clustering
 import roboplot.dottodot.curve_creation as curve_creation
 import roboplot.dottodot.number_recognition as number_recognition
+import roboplot.dottodot.job_processing_station as job_processing_station
 import roboplot.imgproc.page_search as page_search
 from roboplot.core.plotter import Plotter
 
@@ -30,7 +31,8 @@ class DotToDotPlotter:
         self.save_and_reload_all_photos = save_and_reload_all_photos
         self._number_clusters = []  # type: list[GlobalNumberCluster]
 
-        self.file_name_provider = FileNameProvider(filename_pattern='tmp_{}.jpg')
+        self._file_name_provider = FileNameProvider(filename_pattern='tmp_{}.jpg')
+        self._processing_station = None
 
     def do_dot_to_dot(self) -> None:
         """Take pictures to explore the page for dots, then draw a picture to join them."""
@@ -52,6 +54,8 @@ class DotToDotPlotter:
             list[number_recognition.GlobalNumber]: the recognised numbers
         """
 
+        self._processing_station = job_processing_station.JobProcessingStation(name='Image processing station')
+
         target_positions = _compute_raster_scan_positions(self._plotter.camera_field_of_view_xy_mm)
         recognised_numbers = self._take_and_analyse_initial_photos(target_positions)
         self._number_clusters = self._group_nearby_numbers(recognised_numbers)
@@ -62,6 +66,8 @@ class DotToDotPlotter:
         self._retake_last_number_if_last_two_are_not_consecutive()  # Unfortunately if this leads us to discover
         # another incorrect number, we will not retake that one...
 
+        self._processing_station.signal_no_more_jobs()
+
         candidates = [c for c in [grp.best_guess for grp in self._number_clusters] if c.numeric_value is not None]
         candidates = sorted(candidates, key=lambda n: n.numeric_value)
         _warn_if_unexpected_numeric_values(candidates)
@@ -69,9 +75,15 @@ class DotToDotPlotter:
         return candidates
 
     def _take_and_analyse_initial_photos(self, target_positions):
-        recognised_numbers = []
+        processing_jobs = []
         for target_position in target_positions:
-            new_global_numbers = self._take_photo_and_extract_numbers(target_position)
+            processing_jobs.append(self._take_photo_and_extract_numbers(target_position))
+
+        self._processing_station.join()
+
+        recognised_numbers = []
+        for job in processing_jobs:
+            new_global_numbers = job.return_value
             recognised_numbers.extend(new_global_numbers)
 
         return recognised_numbers
@@ -177,7 +189,10 @@ class DotToDotPlotter:
             # Take a new photo
             print('Could not determine number at location ({0[0]:.0f},{0[1]:.0f}), current value {1}\n'
                   'Retrying...'.format(average_location, numeric_value))
-            new_global_numbers = self._take_photo_and_extract_numbers(average_location + jitters[retry_number])
+            processing_job = self._take_photo_and_extract_numbers(average_location + jitters[retry_number])
+            self._processing_station.join()
+            new_global_numbers = processing_job.return_value
+
             new_global_numbers = [n for n in new_global_numbers
                                   if np.linalg.norm(
                     n.dot_location_yx_mm - average_location) < self._min_millimetres_between_distinct_spots]
@@ -191,23 +206,36 @@ class DotToDotPlotter:
     def _take_photo_and_extract_numbers(self, target_position: (float, float)):
         self._plotter.move_camera_to(target_position)
         photo = self._plotter.take_greyscale_photo_at(target_position, padding_gray_value=255)
-        if self.save_and_reload_all_photos:
-            photo = self._save_and_reload_photo(photo)
 
-        dot_to_dot_image = number_recognition.DotToDotImage(photo)
-        dot_to_dot_image.process_image()
+        class ProcessImageJob(job_processing_station.Job):
+            def __init__(self, dot_to_dot_plotter: DotToDotPlotter, photo: np.ndarray):
+                super().__init__()
+                self._d2dplotter = dot_to_dot_plotter
+                self._photo = photo
 
-        new_global_numbers = [number_recognition.GlobalNumber.from_local(n, target_position)
-                              for n in dot_to_dot_image.recognised_numbers]
-        number_recognition.print_recognised_global_numbers(new_global_numbers)
+            def _do_work_core(self):
+                if self._d2dplotter.save_and_reload_all_photos:
+                    self._photo = self._d2dplotter._save_and_reload_photo(self._photo)
 
-        return new_global_numbers
+                dot_to_dot_image = number_recognition.DotToDotImage(self._photo)
+                dot_to_dot_image.process_image()
+
+                new_global_numbers = [number_recognition.GlobalNumber.from_local(n, target_position)
+                                      for n in dot_to_dot_image.recognised_numbers]
+
+                self.return_value = new_global_numbers
+                self.print_output = number_recognition.print_recognised_global_numbers_to_string(new_global_numbers)
+
+        job = ProcessImageJob(self, photo)
+        self._processing_station.add_job(job)
+
+        return job
 
     def _save_and_reload_photo(self, photo: np.ndarray) -> np.ndarray:
         if not os.path.isdir(self.temporary_directory):
             os.mkdir(self.temporary_directory, 0o750)  # drwxr-x---
 
-        file_path = os.path.join(self.temporary_directory, self.file_name_provider.get_next_name())
+        file_path = os.path.join(self.temporary_directory, self._file_name_provider.get_next_name())
 
         cv2.imwrite(file_path, photo)
         while True:

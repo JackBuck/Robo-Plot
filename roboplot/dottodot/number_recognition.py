@@ -415,3 +415,20 @@ def print_recognised_global_numbers(global_numbers) -> None:
             print(" ({!r})".format(number.recognised_text), end='')
         print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx_mm))
     print('')
+
+
+def print_recognised_global_numbers_to_string(global_numbers) -> list:
+    output = ["Recognised {} numbers:".format(len(global_numbers))]
+    for number in global_numbers:
+        if number.numeric_value is not None:
+            recognised_number = "{:2d}".format(number.numeric_value)
+        else:
+            recognised_number = "??"
+        if number.recognised_text is not None:
+            recognised_text = " ({!r})".format(number.recognised_text)
+        else:
+            recognised_text = ""
+        output.append("  * {}{}: ({2[0]:.1f}, {2[1]:.1f})".format(recognised_number, recognised_text,
+                                                                  number.dot_location_yx_mm))
+    output.append("")
+    return output
