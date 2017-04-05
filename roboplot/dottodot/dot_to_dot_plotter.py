@@ -1,12 +1,9 @@
 import collections
-import os
 import statistics
 import warnings
 
-import cv2
 import numpy as np
 
-import roboplot.config as config
 import roboplot.dottodot.clustering as clustering
 import roboplot.dottodot.curve_creation as curve_creation
 import roboplot.dottodot.number_recognition as number_recognition
@@ -17,21 +14,11 @@ from roboplot.core.plotter import Plotter
 
 class DotToDotPlotter:
     _min_millimetres_between_distinct_spots = 2.5
-    temporary_directory = config.number_recognition_tmp_dir
 
-    def __init__(self, plotter: Plotter, save_and_reload_all_photos: bool = False):
-        """
-        Create an object capable of solving a dot-to-dot.
-
-        Args:
-            plotter (Plotter): a plotter, providing an interface to the hardware
-            save_and_reload_all_photos: if true then all photos taken will be initially saved as .jpg files and reloaded
-        """
+    def __init__(self, plotter: Plotter):
         self._plotter = plotter
-        self.save_and_reload_all_photos = save_and_reload_all_photos
         self._number_clusters = []  # type: list[GlobalNumberCluster]
 
-        self._file_name_provider = FileNameProvider(filename_pattern='tmp_{}.jpg')
         self._processing_station = None
 
     def do_dot_to_dot(self) -> None:
@@ -214,9 +201,6 @@ class DotToDotPlotter:
                 self._photo = photo
 
             def _do_work_core(self):
-                if self._d2dplotter.save_and_reload_all_photos:
-                    self._photo = self._d2dplotter._save_and_reload_photo(self._photo)
-
                 dot_to_dot_image = number_recognition.DotToDotImage(self._photo)
                 dot_to_dot_image.process_image()
 
@@ -230,30 +214,6 @@ class DotToDotPlotter:
         self._processing_station.add_job(job)
 
         return job
-
-    def _save_and_reload_photo(self, photo: np.ndarray) -> np.ndarray:
-        if not os.path.isdir(self.temporary_directory):
-            os.mkdir(self.temporary_directory, 0o750)  # drwxr-x---
-
-        file_path = os.path.join(self.temporary_directory, self._file_name_provider.get_next_name())
-
-        cv2.imwrite(file_path, photo)
-        while True:
-            # Just in case (we don't have time to test if this loop is actually necessary!!)
-            photo = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
-            if photo is not None:
-                break
-            warnings.warn('Could not immediately reload image:\n{}'.format(file_path))
-
-        try:
-            os.remove(file_path)
-        except OSError:
-            warnings.warn('Could not delete file:\n{}'.format(file_path))
-            # The file is probably in use on a windows pc
-            # The user can clean them up themselves later (or this program will happily overwrite them next time round)
-            pass
-
-        return photo
 
     def _remove_unrecognised_number_clusters(self):
         self._number_clusters = [n for n in self._number_clusters if n.modal_numeric_value is not None]
@@ -352,23 +312,3 @@ def _warn_if_unexpected_numeric_values(final_numbers) -> None:
             warnings.warn('Did not find a set of consecutive numbers starting at 1!\n'
                           'Instead found {}'.format(', '.join([str(n.numeric_value) for n in final_numbers])))
             break
-
-
-class FileNameProvider:
-    """A simple, class to provide unique file names."""
-
-    def __init__(self, filename_pattern: str = 'tmp_{}'):
-        """
-        Args:
-            filename_pattern (str): str.format(index) will be called on the pattern to return the next filename. Here
-                                    index refers to an internally maintained counter to ensure all returned filenames
-                                    are unique.
-        """
-        self.index = 0
-        self.pattern = filename_pattern
-
-    def get_next_name(self) -> str:
-        """Return the next file name in the sequence."""
-        file_name = self.pattern.format(self.index)
-        self.index += 1
-        return file_name

@@ -38,8 +38,7 @@ try:
         hardware.plotter._camera = DummyCameraFromImagePaths(resolution_pixels_xy=(200, 200),
                                                              pixels_to_mm_scale_factors_xy=(0.233, 0.237),
                                                              image_paths=image_paths)
-
-    plotter = DotToDotPlotter(hardware.plotter, save_and_reload_all_photos=True)
+    plotter = DotToDotPlotter(hardware.plotter)
 
     # Do the dot-to-dot
     start_time = time.time()
