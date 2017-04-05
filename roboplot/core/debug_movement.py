@@ -57,6 +57,9 @@ class DebugImage:
         # Background image
         if bgimage_path is not None:
             self.debug_image = cv2.imread(bgimage_path)
+
+            if self.debug_image is None:
+                raise TypeError("Debug image could not be loaded")
         else:
             self.debug_image = np.zeros(self._image_dimensions_pixels + (3,), np.uint8)
 

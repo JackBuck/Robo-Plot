@@ -141,7 +141,7 @@ def process_image(image):
     if config.real_hardware:
         num_iterations = 8
     else:
-        num_iterations = 11
+        num_iterations = 8
 
         processed_img = cv2.GaussianBlur(processed_img, (21, 21), 0)
     _, processed_img = cv2.threshold(processed_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -349,8 +349,8 @@ def analyse_rows(pixels, search_width, is_rotated):
     if len(indices) < min_number and last_centroid_validity is image_analysis_enums.Centroid.INVALID_NO_WHITE:
         turn_to_next_scan = image_analysis_enums.Turning.INVALID
 
-    # If we end in black remove the last min number of indices
-    indices = indices[:-min_number+1]
+        # If we end in black remove the last min number of indices
+        indices = indices[:-min_number+1]
 
     return indices, turn_to_next_scan
 
@@ -500,13 +500,14 @@ def search_for_red_triangle_near_centre(photo, min_size):
     half_restricted_size = 30
 
     hsv_photo = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
-    (cX, cY) = cd.detect_red(hsv_photo, min_size, change_to_white=False)
+    centre_array = cd.detect_red(hsv_photo, min_size, change_to_white=False)
 
-    if (mid_point - half_restricted_size < cX < mid_point + half_restricted_size)\
-            and (mid_point - half_restricted_size < cY < mid_point + half_restricted_size):
-        return True, [cX, cY], hsv_photo[:, :, 2]
-    else:
-        return False, None, hsv_photo[:, :, 2]
+    for centre in centre_array:
+        if (mid_point - half_restricted_size < centre[0] < mid_point + half_restricted_size)\
+                and (mid_point - half_restricted_size < centre[1] < mid_point + half_restricted_size):
+            return True, [centre[0], centre[1]], hsv_photo[:, :, 2]
+
+    return False, None, hsv_photo[:, :, 2]
 
 
 def find_start_direction(img):
@@ -586,9 +587,7 @@ def analyse_candidate_path(computed_path, candidate_path):
             if distance_to_computed_path < 2.5 and distance_to_centre > 5: # This is based on a minimum angle of 30
                 return length, False
 
-
-
-            # If the path gets sufficiently far from the precious path - same to assume that we have not done a u
+            # If the path gets sufficiently far from the previous path - same to assume that we have not done a u
             if distance_to_computed_path > 40:
                 break
 
