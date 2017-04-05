@@ -174,7 +174,11 @@ class DotToDotImage:
             nearby_contour_groups = contour_tools.extract_contour_groups_close_to(self.contour_groups, spot.pt,
                                                                                   self._min_pixels_between_contour_groups)
             for grp in nearby_contour_groups:
-                i = self.contour_groups.index(grp)
+                # Find the index of grp in self.contour_groups -- list.index() method gives an error:
+                # ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+                for i in range(len(self.contour_groups)):
+                    if self.contour_groups[i] is grp:
+                        break
                 spots_organised_by_contour_group[i].append(spot)
 
         for i in range(len(self.contour_groups)):
