@@ -15,9 +15,11 @@ def _setup_small_axis_travels():
     # hidden dependence). But I've spent too long on this already!
     x_limit_switches = limit_switches.define_pretend_limit_switches(hardware.x_home_position, separation=5)
     _replace_limit_switches_on_axis(hardware.x_axis, x_limit_switches)
+    hardware.x_axis.limit_switch_separation = 5
 
     y_limit_switches = limit_switches.define_pretend_limit_switches(hardware.y_home_position, separation=5)
     _replace_limit_switches_on_axis(hardware.y_axis, y_limit_switches)
+    hardware.y_axis.limit_switch_separation = 5
 
 
 def _replace_limit_switches_on_axis(axis: Axis, switches):

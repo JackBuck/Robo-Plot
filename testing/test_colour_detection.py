@@ -30,16 +30,16 @@ class ColourDetectionTest(unittest.TestCase):
         hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
         # Declare minimum size.
-        MIN_SIZE = 10
+        MIN_SIZE = 50
 
         # Find green in image.
-        (cX, cY) = cd.detect_green(hsv_image, MIN_SIZE, False)
+        centre_array = cd.detect_green(hsv_image, MIN_SIZE, False)
 
         # Declare expected values.
         EXPECTED_CX = 381
         EXPECTED_CY = 493
-        self.assertEqual(cX, EXPECTED_CX)
-        self.assertEqual(cY, EXPECTED_CY)
+        self.assertEqual(centre_array[0][0], EXPECTED_CX)
+        self.assertEqual(centre_array[0][1], EXPECTED_CY)
 
     def testRedDetection(self):
         # Load image for testing.
@@ -53,16 +53,16 @@ class ColourDetectionTest(unittest.TestCase):
         hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
         # Declare minimum size.
-        MIN_SIZE = 10
+        MIN_SIZE = 50
 
         # Find green in image.
-        (cX, cY) = cd.detect_red(hsv_image, MIN_SIZE, False)
+        centre_array = cd.detect_red(hsv_image, MIN_SIZE, False)
 
         # Declare expected values.
         EXPECTED_CX = 177
         EXPECTED_CY = 443
-        self.assertEqual(cX, EXPECTED_CX)
-        self.assertEqual(cY, EXPECTED_CY)
+        self.assertEqual(centre_array[0][0], EXPECTED_CX)
+        self.assertEqual(centre_array[0][1], EXPECTED_CY)
 
 
 # Running this runs all the tests and outputs their results.

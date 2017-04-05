@@ -2,9 +2,8 @@
 
 import argparse
 
-import context
-import roboplot.challenge_two_functions as challenge2
 import roboplot.core.hardware as hardware
+import roboplot.imgproc.start_end_detection as start_end_detection
 from roboplot.core.gpio.gpio_wrapper import GPIO
 
 try:
@@ -20,8 +19,8 @@ try:
     args = parser.parse_args()
 
     hardware.plotter.home()
-    centre = challenge2.find_green_triangle(args.pen_millimetres_per_second, args.minsize)
-    centre, photo = challenge2.find_green_centre(centre, args.pen_millimetres_per_second, args.minsize)
+    centre = start_end_detection.find_green_triangle(args.minsize)
+    centre, photo = start_end_detection.find_green_centre(centre, args.minsize)
 
 finally:
     GPIO.cleanup()
