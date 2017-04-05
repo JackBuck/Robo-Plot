@@ -51,6 +51,7 @@ class Worker(threading.Thread):
             self._job_queue.task_done()
 
     def make_this_the_last_job(self):
+        print("Ending worker: {}".format(self.name))
         self._keep_working = False
 
 

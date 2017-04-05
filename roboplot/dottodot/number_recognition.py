@@ -428,7 +428,7 @@ def print_recognised_global_numbers_to_string(global_numbers) -> list:
             recognised_text = " ({!r})".format(number.recognised_text)
         else:
             recognised_text = ""
-        output.append("  * {}{}: ({2[0]:.1f}, {2[1]:.1f})".format(recognised_number, recognised_text,
+        output.append("  * {0}{1}: ({2[0]:.1f}, {2[1]:.1f})".format(recognised_number, recognised_text,
                                                                   number.dot_location_yx_mm))
     output.append("")
     return output
