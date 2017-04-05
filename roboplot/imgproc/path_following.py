@@ -1,5 +1,7 @@
 import math
 import operator
+import sys
+import traceback
 
 import cv2
 import numpy as np
@@ -252,7 +254,9 @@ class PathFinder:
                                                     False)
 
             except Exception as e:
-                print('Exception: ' + str(e))
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+                print(''.join('!! ' + line for line in lines))  # Log it or whatever here
                 break
 
         print("k={}".format(k))
