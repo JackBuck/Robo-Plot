@@ -65,7 +65,7 @@ class DotToDotImage:
     # Unfortunately the spot size doesn't really grow in proportion to the font size - to do it dynamically we
     # would need to actually look at distances between contours and choose a threshold based on that, maybe using
     # some sort of clustering algorithm.
-    _min_pixels_between_contour_groups = 10
+    _min_pixels_between_contour_groups = 12
 
     @staticmethod
     def load_image_from_file(file_path: str) -> 'DotToDotImage':
