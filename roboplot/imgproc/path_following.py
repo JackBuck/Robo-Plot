@@ -1,5 +1,7 @@
 import math
 import operator
+import sys
+import traceback
 
 import cv2
 import numpy as np
@@ -16,7 +18,7 @@ from roboplot.core.camera.camera_utils import convert_to_global_coords
 
 class PathFinder:
     computed_path = []
-    search_width = 15/config.X_PIXELS_TO_MILLIMETRE_SCALE
+    search_width = 15 / config.X_PIXELS_TO_MILLIMETRE_SCALE
     removal_count = 0
     path_end_position_at_last_removal = [10000000000, 1000000000]
 
@@ -45,7 +47,8 @@ class PathFinder:
         # Rotate image if required.
         if rotation_deg is not 0:
             # Rotation transform requires x then y.
-            M = cv2.getRotationMatrix2D((image_to_analyse.shape[1]/2, image_to_analyse.shape[0]/2), rotation_deg, 1.0)
+            M = cv2.getRotationMatrix2D((image_to_analyse.shape[1] / 2, image_to_analyse.shape[0] / 2), rotation_deg,
+                                        1.0)
 
             w = image_to_analyse.shape[1]
             h = image_to_analyse.shape[0]
@@ -87,7 +90,8 @@ class PathFinder:
                                                                       sub_image.shape[1] / 2)
 
                 # Analyse candidate path.
-                length, is_valid_path = image_analysis.analyse_candidate_path(self.computed_path, candidate_path_segments[i])
+                length, is_valid_path = image_analysis.analyse_candidate_path(self.computed_path,
+                                                                              candidate_path_segments[i])
                 if __debug__:
                     iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image.copy(), self.computed_path,
                                                     False)
@@ -128,10 +132,10 @@ class PathFinder:
                                 self.computed_path[current_segment][1] - self.computed_path[current_segment - 1][1])
 
             while offset_distance < current_retrace_length + length and offset_distance < total_num_position + 1:
-                proportion = (offset_distance - current_retrace_length)/length
+                proportion = (offset_distance - current_retrace_length) / length
                 new_position = list(self.computed_path[current_segment]
                                     + (np.array(self.computed_path[current_segment - 1])
-                                       - self.computed_path[current_segment])*proportion)
+                                       - self.computed_path[current_segment]) * proportion)
 
                 retreat_positions.append(new_position)
                 offset_distance += 1
@@ -174,8 +178,7 @@ class PathFinder:
         k = 0
         while k < 200:
             k += 1
-            if True: #try:
-
+            try:
                 # Move to new camera position and take photo.
                 hardware.plotter.move_camera_to(self.computed_path[-1])
                 image = hardware.plotter.take_photo_at(self.computed_path[-1])
@@ -252,9 +255,13 @@ class PathFinder:
                     iadebug.save_line_approximation(hardware.plotter.debug_image.debug_image.copy(), self.computed_path,
                                                     False)
 
-            #except Exception as e:
-            #    print('Exception: ' + str(e))
-            #    break
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+                print(''.join('!! ' + line for line in lines))  # Log it or whatever here
+                break
+
+        print("k={}".format(k))
 
         print(" K is: " + str(k))
 
@@ -284,7 +291,6 @@ class PathFinder:
             # Compare total path length to desired length. If the total is greater than the desired then this is the
             # segment to stop on. Otherwise continue to the next segment.
             if (path_length + segment_length) > length_to_extract:
-
                 # Calculate the distance along the final segment the final point needs to be.
                 distance_along_segment = length_to_extract - path_length
 
@@ -295,7 +301,7 @@ class PathFinder:
                 new_point = list(np.array(path[i]) * proportion + np.array(path[i + 1]) * (1 - proportion))
 
                 # Take the first i points from the original path.
-                new_path = path[:i+1]
+                new_path = path[:i + 1]
 
                 # Add the final calculated point to the path.
                 new_path.append(new_point)
@@ -335,7 +341,7 @@ class PathFinder:
         # Loop over all line segments in the path from the back - Note that we dont consider last segment as we dont
         # want to entirely remove path.
 
-        for i in range(len(self.computed_path)-2, 0, -1):
+        for i in range(len(self.computed_path) - 2, 0, -1):
 
             # Calculate segment length.
             segment_length = math.hypot(self.computed_path[i][0] - self.computed_path[i + 1][0],
@@ -344,7 +350,6 @@ class PathFinder:
             # Compare total path length from end to desired length. If the total is greater than the desired then
             # this is the segment to stop on. Otherwise continue to the next segment.
             if (path_length_from_end + segment_length) > length_to_remove:
-
                 # Calculate the distance along the final segment the final point needs to be.
                 distance_along_segment = length_to_remove - path_length_from_end
 
@@ -356,7 +361,7 @@ class PathFinder:
                                  + np.array(self.computed_path[i]) * (1 - proportion))
 
                 # Reduce the path to the first i points from the original path.
-                self.computed_path = self.computed_path[:i+1]
+                self.computed_path = self.computed_path[:i + 1]
 
                 # Add the final calculated point to the path.
                 self.computed_path.append(new_point)
@@ -454,5 +459,3 @@ class PathFinder:
                                       > image_analysis.white_threshold) > 0
 
         return white_in_first_row_north, white_in_first_row_east, white_in_first_row_south, white_in_first_row_west
-
-

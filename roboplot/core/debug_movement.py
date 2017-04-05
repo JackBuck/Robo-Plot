@@ -5,6 +5,7 @@ This module creates a debug images showing the movement of the plotter.
 
 """
 import os
+import queue
 import threading
 import warnings
 
@@ -69,6 +70,8 @@ class DebugImage:
         self.millimeters_between_saves = 20
         self.steps_between_saves = self.millimeters_between_saves / millimetres_per_step
 
+        # Initialise the image saver, and save the first image
+        self._image_saver = ThreadedImageSaver()
         self.save_image()
 
     def add_point(self, point):
@@ -112,7 +115,51 @@ class DebugImage:
 
         # Threaded in the hope that we can reduce time wasted waiting on IO
         debug_image_copy = self.debug_image.copy()
-        threading.Thread(target=lambda: cv2.imwrite(savepath, debug_image_copy)).start()
+        self._image_saver.save_image(img=debug_image_copy, savepath=savepath)
 
         #self.image_index += 1
         self.steps_since_save = 0
+
+
+class ThreadedImageSaver:
+    """
+    A class which manages the saving of images on a different thread.
+
+    When the queue is empty, the worker thread dies.
+    This means that we do not need to signal to the ThreadedImageSaver that there will be no more images when we
+    wish to end the program.
+
+    If the worker thread is dead when a new request to save an image is received, the image saver will restart the
+    worker thread.
+    """
+
+    def __init__(self):
+        self._image_queue = queue.Queue()
+        self._worker_thread = None  # type: threading.Thread
+
+    def save_image(self, img: np.ndarray, savepath: str) -> None:
+        """
+        Queue an image to be saved.
+
+        Args:
+            img (np.ndarray): The image to be saved. This is not copied, so if you wish to modify the image after
+                              saving it, then copy it first!
+            savepath (str): The file path at which to save the image.
+        """
+        self._image_queue.put({'image': img, 'savepath': savepath})
+        if self._worker_thread is None or not self._worker_thread.is_alive():
+            self._restart_image_saver()
+
+    def _restart_image_saver(self):
+        self._worker_thread = threading.Thread(target=self._image_saver_loop)
+        self._worker_thread.start()
+
+    def _image_saver_loop(self):
+        while True:
+            try:
+                item = self._image_queue.get(block=False)
+            except queue.Empty:
+                break
+
+            cv2.imwrite(item['savepath'], item['image'])
+            self._image_queue.task_done()
