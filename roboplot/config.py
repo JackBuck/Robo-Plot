@@ -20,7 +20,7 @@ else:
     print("Using simulated hardware")
 
 # Debugging image paths
-debug_image_file_path = os.path.join(resources_dir, 'Challenge_2_Test_Images', 'multiplePaths_test.png')
+debug_image_file_path = os.path.join(resources_dir, 'Challenge_2_Test_Images', 'multiplePaths_test2.png')
 debug_output_folder = os.path.join(resources_dir, 'DebugImages')
 
 # Camera constants
