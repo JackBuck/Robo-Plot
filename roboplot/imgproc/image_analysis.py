@@ -587,9 +587,7 @@ def analyse_candidate_path(computed_path, candidate_path):
             if distance_to_computed_path < 2.5 and distance_to_centre > 5: # This is based on a minimum angle of 30
                 return length, False
 
-
-
-            # If the path gets sufficiently far from the precious path - same to assume that we have not done a u
+            # If the path gets sufficiently far from the previous path - same to assume that we have not done a u
             if distance_to_computed_path > 40:
                 break
 

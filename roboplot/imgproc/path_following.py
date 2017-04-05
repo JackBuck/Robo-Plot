@@ -57,6 +57,7 @@ class PathFinder:
         candidate_path_segments = [[], [], [], []]
         selected_candidate = -1
         selected_candidate_length = -1
+        num_point_in_selected_candidate = 1000000
 
         for i in range(0, 4):
             # Extract sub image.
@@ -93,8 +94,17 @@ class PathFinder:
             else:
                 is_valid_path = False
 
-            if is_valid_path and length > selected_candidate_length:
+            update_selected_path = False
+            if is_valid_path:
+                if length - selected_candidate_length > 3:
+                    update_selected_path = True
+                elif -3 < length - selected_candidate_length <= 3:
+                    if len(candidate_path_segments[i]) < num_point_in_selected_candidate:
+                        update_selected_path = True
+
+            if update_selected_path:
                 selected_candidate = i
+                num_point_in_selected_candidate = len(candidate_path_segments[i])
                 selected_candidate_length = length
 
         if selected_candidate == -1:
@@ -154,7 +164,6 @@ class PathFinder:
             new_path = PathFinder.extract_start_of_path(new_path, length_to_extract=3)
             self.computed_path.extend(new_path)
         else:
-
             # If we didn't find any part initially throw as something is wrong.
             raise Exception("Did not find any path in first image")
 
