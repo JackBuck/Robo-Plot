@@ -31,8 +31,7 @@ try:
     print('Elapsed: {} seconds'.format(end_time - start_time))
 
     # Present paper.
-
-    hardware.plotter.move_pen_to([148.5, 0])
+    hardware.plotter.present_paper()
 
 finally:
     GPIO.cleanup()
