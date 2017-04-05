@@ -80,18 +80,26 @@ def find_red_at_position(camera_centre, min_size):
     # Create hsv version of image to analyse for colour detection.
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
 
-    # Find the centre of the largest green contour found on the image (if one exists)
-    (cX, cY) = colour_detection.detect_red(hsv_image, min_size, True)
+    # Find the centre of the largest red contour found on the image (if one exists)
+    centre_array = colour_detection.detect_red(hsv_image, min_size, True)
 
-    if cX != -1:
-        new_centre_list = roboplot.core.camera.camera_utils.convert_to_global_coords([[cY, cX]],
+    if len(centre_array):
+        max_size = 0
+        largest_centre = None
+        for centre in centre_array:
+            if centre[2] > max_size:
+                max_size = centre[2]
+                largest_centre = centre
+
+        new_centre_list = roboplot.core.camera.camera_utils.convert_to_global_coords([[largest_centre[1],
+                                                                                      largest_centre[0]]],
                                                                                      image_analysis_enums.Direction.SOUTH,
                                                                                      camera_centre,
                                                                                      int(photo.shape[0] / 2),
                                                                                      int(photo.shape[1] / 2))
         new_centre = new_centre_list[0]
     else:
-        new_centre = [cX, cY]
+        new_centre = [-1, -1]
 
     return new_centre, hsv_image[:, :, 2]
 
@@ -115,17 +123,25 @@ def find_green_at_position(camera_centre, min_size):
     hsv_image = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
 
     # Find the centre of the largest green contour found on the image (if one exists)
-    (cX, cY) = colour_detection.detect_green(hsv_image, min_size, True)
+    centre_array = colour_detection.detect_green(hsv_image, min_size, True)
 
-    if cX != -1:
-        new_centre_list = roboplot.core.camera.camera_utils.convert_to_global_coords([[cY, cX]],
+    if len(centre_array):
+        max_size = 0
+        largest_centre = None
+        for centre in centre_array:
+            if centre[2] > max_size:
+                max_size = centre[2]
+                largest_centre = centre
+
+        new_centre_list = roboplot.core.camera.camera_utils.convert_to_global_coords([[largest_centre[1],
+                                                                                      largest_centre[0]]],
                                                                                      image_analysis_enums.Direction.SOUTH,
                                                                                      camera_centre,
                                                                                      int(photo.shape[0] / 2),
                                                                                      int(photo.shape[1] / 2))
         new_centre = new_centre_list[0]
     else:
-        new_centre = [cX, cY]
+        new_centre = [-1, -1]
 
     return new_centre, hsv_image[:, :, 2]
 

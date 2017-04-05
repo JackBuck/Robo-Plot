@@ -500,13 +500,14 @@ def search_for_red_triangle_near_centre(photo, min_size):
     half_restricted_size = 30
 
     hsv_photo = cv2.cvtColor(photo, cv2.COLOR_BGR2HSV)
-    (cX, cY) = cd.detect_red(hsv_photo, min_size, change_to_white=False)
+    centre_array = cd.detect_red(hsv_photo, min_size, change_to_white=False)
 
-    if (mid_point - half_restricted_size < cX < mid_point + half_restricted_size)\
-            and (mid_point - half_restricted_size < cY < mid_point + half_restricted_size):
-        return True, [cX, cY], hsv_photo[:, :, 2]
-    else:
-        return False, None, hsv_photo[:, :, 2]
+    for centre in centre_array:
+        if (mid_point - half_restricted_size < centre[0] < mid_point + half_restricted_size)\
+                and (mid_point - half_restricted_size < centre[1] < mid_point + half_restricted_size):
+            return True, [centre[0], centre[1]], hsv_photo[:, :, 2]
+
+    return False, None, hsv_photo[:, :, 2]
 
 
 def find_start_direction(img):

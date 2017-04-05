@@ -17,6 +17,8 @@ from roboplot.core.camera.camera_utils import convert_to_global_coords
 class PathFinder:
     computed_path = []
     search_width = 15/config.X_PIXELS_TO_MILLIMETRE_SCALE
+    removal_count = 0
+    path_end_position_at_last_removal = [10000000000, 1000000000]
 
     def follow_computed_path(self):
         """
@@ -208,6 +210,26 @@ class PathFinder:
                     # If a path was still not found try rotating the image and computing path at different angles.
                     path_found, new_path = self.rotate_to_find_valid_path(image_to_analyse)
 
+                attempts = 0
+                while not path_found and attempts < 4 and self.removal_count < 10:
+                    attempts += 1
+
+                    # Move back along the path and retry.
+                    if not path_found:
+                        self.remove_end_of_path(length_to_remove=2)
+
+                        # Move to new camera position and take photo.
+                        hardware.plotter.move_camera_to(self.computed_path[-1])
+                        image = hardware.plotter.take_photo_at(self.computed_path[-1])
+
+                        # Process image for analysis.
+                        image_to_analyse = image_analysis.process_image(image)
+
+                        path_found, new_path = self.calculate_path_from_image(image_to_analyse)
+
+                    if not path_found:
+                        # If a path was still not found try rotating the image and computing path at different angles.
+                        path_found, new_path = self.rotate_to_find_valid_path(image_to_analyse)
 
                 # All options tried return to draw path.
                 if not path_found:
@@ -287,6 +309,14 @@ class PathFinder:
         Returns:
 
         """
+
+        self.removal_count += 1
+        if np.linalg.norm(np.array(self.computed_path) - self.path_end_position_at_last_removal) < length_to_remove + 1:
+            self.path_end_position_at_last_removal = self.computed_path[-1]
+            self.removal_count += 1
+        else:
+            self.removal_count = 0
+
         path_length_from_end = 0
 
         # Loop over all line segments in the path from the back - Note that we dont consider last segment as we dont

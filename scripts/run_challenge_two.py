@@ -17,7 +17,7 @@ try:
     start_time = time.time()
 
     hardware.plotter.home()
-    global_centre = start_end_detection.find_green_triangle(min_size=10)
+    global_centre = start_end_detection.find_green_triangle(min_size=50)
     centre, photo = start_end_detection.find_green_centre(global_centre, 20)
 
     # Find path

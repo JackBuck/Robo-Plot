@@ -1,5 +1,6 @@
 # import the necessary packages
 import os
+import datetime
 
 import numpy as np
 import cv2
@@ -27,13 +28,11 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
                                                 turned white
 
     Returns:
-        tuple - co-ordinates of centre of the feature (wrt top left corner of image)
+        centre_array - list of co-ordinates of the centres of the feature (wrt top left corner of image) and their size
 
     """
 
     (lower, upper) = hsv_boundary
-    cX = -1
-    cY = -1
 
     # Convert boundaries to np arrays
     lower = np.array(lower, dtype="uint8")
@@ -60,12 +59,14 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
     colour_found = False
     cnts = cnts[1]
 
+    centre_array = []
+
     # loop over the contours - We should only have one significant region.
     for c in cnts:
 
         # if the contour is not sufficiently large, ignore it - #This number will need to depend on image size.
         size = cv2.contourArea(c)
-        if cv2.contourArea(c) < min_size:
+        if size < min_size:
             continue
 
         colour_found = True
@@ -75,20 +76,20 @@ def detect_colour(hsv_image, hsv_boundary, min_size, change_to_white):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
 
+            centre_array.append([cX, cY, size])
+
             if __debug__:
                 # draw the contour and center of the shape on the image
                 image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
                 cv2.drawContours(image, [c], -1, (255, 55, 255), int(image.shape[0]/80))
                 cv2.circle(image, (cX, cY), 1, (255, 55, 255), int(image.shape[0]/80))
-                cv2.imwrite(os.path.join(config.debug_output_folder, 'Colour_Detection.jpg'), image)
+                cv2.imwrite(os.path.join(config.debug_output_folder, datetime.datetime.now().strftime("%M%S.%f_")
+                                         + 'Colour_Detection.jpg'), image)
                 
             if change_to_white:
                 hsv_image[mask == 255] = [0, 0, 255]
 
-    if colour_found:
-        return cX, cY
-    else:
-        return -1, -1
+    return centre_array
 
 
 def detect_red(hsv_image, min_size, change_to_white):
@@ -108,15 +109,15 @@ def detect_red(hsv_image, min_size, change_to_white):
                                                 turned white
 
     Returns:
-        tuple - co-ordinates of centre of the feature (wrt top left corner of image)
+        centre_array - list of co-ordinates of the centres of the feature (wrt top left corner of image) and their size
 
     """
 
     hsv_boundary = ([165, 100, 100], [10, 255, 255])
 
-    (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
+    centre_array = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
 
-    return cX, cY
+    return centre_array
 
 
 def detect_green(hsv_image, min_size, change_to_white):
@@ -136,15 +137,15 @@ def detect_green(hsv_image, min_size, change_to_white):
                                                 turned white
 
     Returns:
-        tuple - co-ordinates of centre of the feature (wrt top left corner of image)
+        centre_array - list of co-ordinates of the centres of the feature (wrt top left corner of image) and their size
 
     """
 
     hsv_boundary = ([40, 40, 50], [80, 255, 255])
 
-    (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
+    centre_array = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
 
-    return cX, cY
+    return centre_array
 
 
 def detect_black(hsv_image, min_size, change_to_white):
@@ -164,14 +165,14 @@ def detect_black(hsv_image, min_size, change_to_white):
                                                 turned white
 
     Returns:
-        tuple - co-ordinates of centre of the feature (wrt top left corner of image)
+        centre_array - list of co-ordinates of the centres of the feature (wrt top left corner of image) and their size
 
     """
 
     hsv_boundary = ([0, 0, 0], [255, 255, 120])
 
-    (cX, cY) = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
+    centre_array = detect_colour(hsv_image, hsv_boundary, min_size, change_to_white)
 
-    return cX, cY
+    return centre_array
 
 
