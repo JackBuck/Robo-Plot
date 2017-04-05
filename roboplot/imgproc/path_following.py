@@ -67,16 +67,18 @@ class PathFinder:
                 sub_image,
                 self.search_width)
 
-            # Rotate line indices back.
-            if rotation_deg is not 0 and rotated_computed_pixel_path_segment[1][1] != -1:
-                centre = (0, image_to_analyse.shape[1] / 2)
-                next_computed_pixel_path_segment = [image_analysis.rotate(centre, point, np.deg2rad(-rotation_deg))
-                                                    for point in rotated_computed_pixel_path_segment]
-            else:
-                next_computed_pixel_path_segment = rotated_computed_pixel_path_segment
+            if len(rotated_computed_pixel_path_segment) > 1 and rotated_computed_pixel_path_segment[1][1] != -1:
 
-            # Convert the co-ordinates.
-            if len(next_computed_pixel_path_segment) > 1 and rotated_computed_pixel_path_segment[1][1] != -1:
+                # Rotate line indices back.
+                if rotation_deg is not 0:
+                    centre = (0, image_to_analyse.shape[1] / 2)
+                    next_computed_pixel_path_segment = [image_analysis.rotate(centre, point, np.deg2rad(-rotation_deg))
+                                                        for point in rotated_computed_pixel_path_segment]
+                else:
+                    next_computed_pixel_path_segment = rotated_computed_pixel_path_segment
+
+                # Convert the co-ordinates.
+
                 camera_location = self.computed_path[-1]
                 candidate_path_segments[i] = convert_to_global_coords(next_computed_pixel_path_segment,
                                                                       current_direction,
@@ -253,6 +255,8 @@ class PathFinder:
             #except Exception as e:
             #    print('Exception: ' + str(e))
             #    break
+
+        print(" K is: " + str(k))
 
     @staticmethod
     def extract_start_of_path(path, length_to_extract):
