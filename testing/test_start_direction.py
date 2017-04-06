@@ -8,6 +8,7 @@ import cv2
 
 import context
 import roboplot.config as config
+import roboplot.imgproc.image_analysis_enums as image_analysis_enums
 import roboplot.imgproc.image_analysis as image_analysis
 
 
@@ -18,39 +19,39 @@ class StartDirectionTest(unittest.TestCase):
 
     def test_North(self):
         start_direction = self.startDirectionTest('north')
-        self.assertEqual(start_direction, image_analysis.Direction.NORTH)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.NORTH)
 
     def test_East(self):
         start_direction = self.startDirectionTest('east')
-        self.assertEqual(start_direction, image_analysis.Direction.EAST)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.EAST)
 
     def test_South(self):
         start_direction = self.startDirectionTest('south')
-        self.assertEqual(start_direction, image_analysis.Direction.SOUTH)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.SOUTH)
  
     def test_West(self):
         start_direction = self.startDirectionTest('west')
-        self.assertEqual(start_direction, image_analysis.Direction.WEST)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.WEST)
 
     def test_NorthNorthEast(self):
         start_direction = self.startDirectionTest('northnortheast')
         # Note that this is not the optimum result but the process should be able to handdle it.
         # If not the method will need to be revisited
-        self.assertEqual(start_direction, image_analysis.Direction.EAST)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.EAST)
 
     def test_EastNorthEast(self):
         start_direction = self.startDirectionTest('eastnortheast')
         # Note that this is not the optimum result but the process should be able to handdle it.
         # If not the method will need to be revisited
-        self.assertEqual(start_direction, image_analysis.Direction.NORTH)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.NORTH)
 
     def test_CurveSouthWest(self):
         start_direction = self.startDirectionTest('curvesouthwest')
-        self.assertEqual(start_direction, image_analysis.Direction.SOUTH)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.SOUTH)
 
     def test_CurveWestSouth(self):
         start_direction = self.startDirectionTest('curvewestsouth')
-        self.assertEqual(start_direction, image_analysis.Direction.WEST)
+        self.assertEqual(start_direction, image_analysis_enums.Direction.WEST)
 
     def startDirectionTest(self, filename_without_extension):
         # Load image

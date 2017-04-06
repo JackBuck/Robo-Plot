@@ -11,6 +11,7 @@ import numpy as np
 import context
 import roboplot.config as config
 import roboplot.imgproc.image_analysis as image_analysis
+import roboplot.imgproc.image_analysis_enums as image_analysis_enums
 import roboplot.imgproc.image_analysis_debug as iadebug
 
 
@@ -22,47 +23,47 @@ class PathFromImageTest(unittest.TestCase):
 
     def test_straight(self):
         turn_to_next_scan = self.computePathFromImage('straight')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.STRAIGHT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.STRAIGHT)
 
     def test_right_tilted_angle(self):
         turn_to_next_scan = self.computePathFromImage('right_tilted_angle')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.STRAIGHT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.STRAIGHT)
 
     def test_left_tilted_angle(self):
         turn_to_next_scan = self.computePathFromImage('left_tilted_angle')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.STRAIGHT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.STRAIGHT)
 
     def test_right_angle_left(self):
         turn_to_next_scan = self.computePathFromImage('right_angle_left')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.LEFT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.LEFT)
 
     def test_right_angle_right(self):
         turn_to_next_scan = self.computePathFromImage('right_angle_right')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.RIGHT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.RIGHT)
 
     def test_acute_angle_left(self):
         turn_to_next_scan = self.computePathFromImage('acute_angle_left')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.LEFT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.LEFT)
 
     def test_acute_angle_right(self):
             turn_to_next_scan = self.computePathFromImage('acute_angle_right')
-            self.assertEqual(turn_to_next_scan, image_analysis.Turning.RIGHT)
+            self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.RIGHT)
 
     def test_curve_left(self):
         turn_to_next_scan = self.computePathFromImage('curve_left')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.LEFT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.LEFT)
 
     def test_curve_right(self):
         turn_to_next_scan = self.computePathFromImage('curve_right')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.RIGHT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.RIGHT)
 
     def test_u_turn_left(self):
         turn_to_next_scan = self.computePathFromImage('u_turn_left')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.LEFT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.LEFT)
 
     def test_u_turn_right(self):
         turn_to_next_scan = self.computePathFromImage('u_turn_right')
-        self.assertEqual(turn_to_next_scan, image_analysis.Turning.RIGHT)
+        self.assertEqual(turn_to_next_scan, image_analysis_enums.Turning.RIGHT)
 
     def computePathFromImage(self, filename_without_extension):
         image = cv2.imread(os.path.join(self.path_to_test_data, filename_without_extension + '.jpg'))
@@ -82,7 +83,8 @@ class PathFromImageTest(unittest.TestCase):
         expected_results_file = os.path.join(self.path_to_test_data,
                                              'expected_pixel_path_' + filename_without_extension + '.csv')
 
-        debug_sub_image = iadebug.save_line_approximation(image, pixel_path, False)
+        debug_sub_image = iadebug.create_debug_image(image)
+        iadebug.save_line_approximation(debug_sub_image, pixel_path, False)
         # self._overwrite_expected_results_file(expected_results_file, pixel_path)  # For creating test data
 
         expected_pixel_path = np.loadtxt(expected_results_file, delimiter=",")

@@ -23,15 +23,13 @@ def take_remote_photo():
     try:
         remote_ip = socket.gethostbyname(HOST)
     except socket.oserror():
-        print
-        'Hostname could not be resolved. Exiting'
+        print('Hostname could not be resolved. Exiting')
         sys.exit()
 
     # Connect to remote server (other pi)
     s.connect((remote_ip, PORT))
 
-    print
-    'Socket connected to ' + HOST + ' on ip ' + remote_ip
+    print('Socket connected to ' + HOST + ' on ip ' + remote_ip)
 
     # Send request to remote pi
     message = 'Take_Photo'
@@ -72,5 +70,5 @@ def take_remote_photo():
         # turn the array into a cv2 image
         image = cv2.imdecode(data, 1)
 
-        return image
         s.close()
+        return image

@@ -41,15 +41,22 @@ camera = camera_wrapper.Camera()
 
 # Substitute objects
 if not config.real_hardware:
-    x_limit_switches = limit_switches.define_pretend_limit_switches(x_home_position, separation=220)
+    x_limit_switches = limit_switches.define_pretend_limit_switches(x_home_position, separation=250)
     y_limit_switches = limit_switches.define_pretend_limit_switches(y_home_position, separation=350)
+
+if not config.real_hardware:
+    limit_switch_separation_x = 230
+    limit_switch_separation_y = 320
+else:
+    limit_switch_separation_x = 214.8
+    limit_switch_separation_y = 293.56
 
 # Higher level objects
 x_axis = stepper_control.Axis(
     motor=x_axis_motor,
     lead=8,
     limit_switch_pair=x_limit_switches,
-    limit_switch_separation=214.8,
+    limit_switch_separation=limit_switch_separation_x,
     home_position=x_home_position,
     invert_axis=True)
 
@@ -57,7 +64,7 @@ y_axis = stepper_control.Axis(
     motor=y_axis_motor,
     lead=8,
     limit_switch_pair=y_limit_switches,
-    limit_switch_separation=293.56,
+    limit_switch_separation=limit_switch_separation_y,
     home_position=y_home_position,
     invert_axis=False)
 
