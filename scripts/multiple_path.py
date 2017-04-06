@@ -1,5 +1,6 @@
 import time
 
+import context
 import roboplot.core.hardware as hardware
 import roboplot.imgproc.colour_detection as colour_detection
 import roboplot.imgproc.start_end_detection as start_end_detection
