@@ -48,5 +48,8 @@ try:
     print('Predicted: ', end='')  # Admittedly, this relies on calculations performed by the objects we're testing...
     print(distance_travelled / args.pen_millimetres_per_second)
 
+    # Present the paper
+    hardware.plotter.present_paper()
+
 finally:
     GPIO.cleanup()
