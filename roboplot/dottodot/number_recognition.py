@@ -65,7 +65,7 @@ class DotToDotImage:
     # Unfortunately the spot size doesn't really grow in proportion to the font size - to do it dynamically we
     # would need to actually look at distances between contours and choose a threshold based on that, maybe using
     # some sort of clustering algorithm.
-    _min_pixels_between_contour_groups = 10
+    _min_pixels_between_contour_groups = 12
 
     @staticmethod
     def load_image_from_file(file_path: str) -> 'DotToDotImage':
@@ -106,6 +106,7 @@ class DotToDotImage:
         self._extract_contour_groups()
         self._mask_to_remove_contour_groups_near_edge()
         self._extract_spots()
+        self._resolve_spots_part_of_same_contour_groups()
         self._recognise_number_near_each_spot()
 
     def _clean_image(self) -> None:
@@ -166,6 +167,38 @@ class DotToDotImage:
         img_with_keypoints = cv2.drawKeypoints(img, self.spot_keypoints, outImage=np.array([]), color=(0, 0, 255),
                                                flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         self.intermediate_images.append(NamedImage(img_with_keypoints, 'Spot Detection Image'))
+
+    def _resolve_spots_part_of_same_contour_groups(self) -> None:
+        spots_organised_by_contour_group = [[] for grp in self.contour_groups]
+        for spot in self.spot_keypoints:
+            nearby_contour_groups = contour_tools.extract_contour_groups_close_to(self.contour_groups, spot.pt,
+                                                                                  self._min_pixels_between_contour_groups)
+            for grp in nearby_contour_groups:
+                # Find the index of grp in self.contour_groups -- list.index() method gives an error:
+                # ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+                for i in range(len(self.contour_groups)):
+                    if self.contour_groups[i] is grp:
+                        break
+                spots_organised_by_contour_group[i].append(spot)
+
+        for i in range(len(self.contour_groups)):
+            if len(spots_organised_by_contour_group[i]) > 1:
+                # Find furthest from centre
+                flattened_group = [c for grp in self.contour_groups[i] for c in grp]
+                points_in_group = np.row_stack(flattened_group)
+                x,y,w,h = cv2.boundingRect(points_in_group)
+                centre_of_contour_group = np.array([x+w/2, y+h/2])
+                correct_spot = max(spots_organised_by_contour_group[i],
+                                   key=lambda s: np.linalg.norm(s.pt - centre_of_contour_group))
+
+                # Remove the spots which aren't the closest from this and all other contour groups!
+                # If contour groups don't match up nicely then tough beans - we have bigger issues!!
+                for spot in spots_organised_by_contour_group[i]:
+                    if spot is not correct_spot:
+                        for j in range(len(self.contour_groups)):
+                            if spot in spots_organised_by_contour_group[j]:
+                                spots_organised_by_contour_group[j].remove(spot)
+                        self.spot_keypoints.remove(spot)
 
     def _recognise_number_near_each_spot(self) -> None:
         self.recognised_numbers = []  # type: list[LocalNumber]
@@ -415,3 +448,20 @@ def print_recognised_global_numbers(global_numbers) -> None:
             print(" ({!r})".format(number.recognised_text), end='')
         print(": ({0[0]:.1f}, {0[1]:.1f})".format(number.dot_location_yx_mm))
     print('')
+
+
+def print_recognised_global_numbers_to_string(global_numbers) -> list:
+    output = ["Recognised {} numbers:".format(len(global_numbers))]
+    for number in global_numbers:
+        if number.numeric_value is not None:
+            recognised_number = "{:2d}".format(number.numeric_value)
+        else:
+            recognised_number = "??"
+        if number.recognised_text is not None:
+            recognised_text = " ({!r})".format(number.recognised_text)
+        else:
+            recognised_text = ""
+        output.append("  * {0}{1}: ({2[0]:.1f}, {2[1]:.1f})".format(recognised_number, recognised_text,
+                                                                  number.dot_location_yx_mm))
+    output.append("")
+    return output
